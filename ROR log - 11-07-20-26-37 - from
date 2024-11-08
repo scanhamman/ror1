@@ -1,5 +1,0 @@
-ERROR - Goes to stderr and file
-WARN - Goes to stderr and file
-INFO - Goes to stderr and file
-DEBUG - Goes to file only
-TRACE - Goes to file only
