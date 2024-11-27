@@ -1,7 +1,7 @@
 use chrono::NaiveDate;
 use sqlx::{Pool, Postgres};
 use log::info;
-use crate::json_models::RorRecord;
+use crate::import::ror_json_models::RorRecord;
 use std::str::FromStr;
 
 // vectors to hold column values, 100 at a time

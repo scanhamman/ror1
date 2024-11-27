@@ -1,3 +1,11 @@
+/***************************************************************************
+ * Module uses clap crate to read command line arguments. These include 
+ * possible A, S and T flags, and possible strings for the data folder and 
+ * source file name. If no flags 'S' (= import data) is returned by default.
+ * Folder and file names return an empty string ("") rather than null if not 
+ * present. 
+ ***************************************************************************/
+
 use clap::{command, Arg, ArgMatches};
 
 #[derive(Debug)]
@@ -26,7 +34,7 @@ pub fn fetch_valid_arguments() -> CliPars
     let mut process = false;
     if a_flag == true  // 'a' (do all) flag set
     {
-        process = true;  // import alrteasdy true
+        process = true;  // import already true
     }
     else 
     {

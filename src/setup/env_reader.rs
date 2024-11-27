@@ -1,6 +1,29 @@
+/***************************************************************************
+ * Module uses std::env to read environmental values from an .env file 
+ * (must be in same folder as src). These include the database parameters, 
+ * which are loaded into a static singleton value, to allow it to be 
+ * interrogated later in the program if necessary. During setup, however, 
+ * the DB parameters are only used to provide a database connection string 
+ * for any specified database.
+ * The .env file also contains the default names for the overall folder path 
+ * (used for both source data and logs) and for the source and results file 
+ * name. 
+ * 
+ * Database parameters MUST be provided and be valid or the program can not
+ * continue. 
+ * The folder path and the source file name have defaults but these should 
+ * NOT be used. They are there only as placeholders, to be overwritten by 
+ * values provided as string arguments in the command line. In other words the 
+ * folder path and the source file name MUST be present EITHER in the .env 
+ * file OR in the CLI arguments. If both, the CLI arguments take precedence.
+ * The results file name has a timestamped default name that will be used if 
+ * none is provided explicitly.
+ ***************************************************************************/
+
 use std::sync::OnceLock;
 use std::env;
 use dotenv;
+use chrono::Local;
 
 #[derive(Debug)]
 pub struct DbPars {
@@ -48,7 +71,7 @@ pub fn fetch_db_conn_string(db_name: &str) -> Result<String, &str> {
 }
 
 pub fn fetch_folder_path() -> String {
-    env::var("folder_path").unwrap_or("E:\\ROR".to_string())
+    env::var("folder_path").unwrap_or("C:\\ROR".to_string())
 }
 
 pub fn fetch_source_file_name() -> String {
@@ -56,7 +79,8 @@ pub fn fetch_source_file_name() -> String {
 }
 
 pub fn fetch_results_file_name() -> String {
-    env::var("res_file_name").unwrap_or("analysis-results.json".to_string().to_string())
+    let datetime_string = Local::now().format("%m-%d-%H-%M-%S").to_string();
+    env::var("res_file_name").unwrap_or(format!("analysis-results - {}.json", datetime_string))
 }
 
 
