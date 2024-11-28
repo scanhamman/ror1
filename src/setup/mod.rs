@@ -1,11 +1,14 @@
 pub mod env_reader;
 pub mod cli_reader;
 pub mod log_helper;
+use crate::errors;
+use crate::errors::CustomFileError;
 
 use std::path::PathBuf;
 use std::path::Path;
+use errors::AppError;
 
-pub struct InitParams{
+pub struct InitParams {
     pub import_source: bool,
     pub process_source: bool,
     pub source_file_path : PathBuf,
@@ -13,7 +16,7 @@ pub struct InitParams{
     pub db_conn_string : String,
 }
 
-pub async fn get_params() -> Result<InitParams, sqlx::Error> {
+pub async fn get_params() -> Result<InitParams, errors::AppError> {
 
     // Called from main as the initial task of the program.
     // Returns a struct that conbtains the program's parameters.
@@ -21,23 +24,39 @@ pub async fn get_params() -> Result<InitParams, sqlx::Error> {
     // parameters from .env file.
 
     let cli_pars = cli_reader::fetch_valid_arguments();
-    env_reader::populate_env_vars();    
+    let _env_rdr = env_reader::populate_env_vars();  
 
     // If folder name also given in CL args the CL version takes precedence
 
     let mut source_folder =  env_reader::fetch_folder_path();
     if cli_pars.data_folder != "" {
-        source_folder =  cli_pars.data_folder;
+        source_folder = cli_pars.data_folder;
+    }
+    else {
+        if source_folder == "" {
+            // raise an AppError...both are missing
+            let msg = "Data folder name not provided in either command line or environment file";
+            let cf_err = CustomFileError::new(msg);
+            return Result::Err(AppError::CfErr(cf_err));
+        }
     }
     
-    // does this folder exist? - If not end the program...
+    
+    // does this folder exist and is it accessible? - If not end the program...
 
-    let x = Path::new(&source_folder).try_exists();
-    match x {
-        Ok(true) => println!("Yep, it exists"),
-        Ok(false) => println!("Nope, it doesn't exists"),
-        Err(e) => println!("Cannot proceed!!! - stipulated data folder does not exist ({})", e),           
-    } 
+    let xres = Path::new(&source_folder).try_exists();
+    let x = match xres {
+        Ok(true) => true,
+        Ok(false) => false,    // need specific error here 
+        Err(_e) => false,           
+    };
+    if x == false {
+        // raise an AppError...
+        let msg = "Stipulated data folder does not exists or is not accessible";
+        let cf_err = CustomFileError::new(msg);
+        return Result::Err(AppError::CfErr(cf_err));
+    }
+
 
     // If source file name given in CL args the CL version takes precedence.
     
@@ -45,6 +64,15 @@ pub async fn get_params() -> Result<InitParams, sqlx::Error> {
     if cli_pars.source_file != "" {
         source_file_name = cli_pars.source_file;
     }
+    else {
+            if source_file_name == "" {
+             // raise an AppError...both are missing
+            let msg = "Source file name not provided in either command line or environment file";
+            let cf_err = CustomFileError::new(msg);
+            return Result::Err(AppError::CfErr(cf_err));
+         }
+    }
+
     let source_file_path : PathBuf = [&source_folder, &source_file_name].iter().collect();
 
     // Checking the file's existence will take place on initieal read...

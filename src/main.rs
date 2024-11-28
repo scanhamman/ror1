@@ -1,8 +1,11 @@
 mod import;
 mod setup;
 mod transform;
+mod errors;
 
+use errors::AppError;
 use sqlx::postgres::PgPoolOptions;
+//use sqlx::Error;
 
 /// A small program to process the ROR organisation data, as made
 /// available in a JSON file download by ROR, and load that data
@@ -23,34 +26,55 @@ use sqlx::postgres::PgPoolOptions;
 
 #[tokio::main(flavor = "current_thread")]
 
-async fn main() -> Result<(), sqlx::Error> {
+async fn main() -> Result<(), AppError> {
     
-    // Fetch start parameters such as file names and CLI flags
-    // To check for error...
+    // Important that there are no errors in these intial two steps.
+    // If one does occur the error needs to be logged and 
+    // the program must then stop.
 
-    let p = setup::get_params().await.unwrap();
-
-    // Set up the database connection pool
+    // First, fetch start parameters such as file names and CLI flags
+    
+    let params_res = setup::get_params().await;
+    let p = match params_res {
+        Ok(pres) => pres,
+        Err(e) => {
+            log_critical_error(&e); 
+            return Err(e)
+        }, 
+    };
+    
+    // Second, set up the database connection pool
 
     let db_conn = p.db_conn_string;
-    let pool = PgPoolOptions::new().max_connections(5).connect(&db_conn).await?;
-    
-    // Import data into matching tables
-        
+    let pool = PgPoolOptions::new()
+    .max_connections(5)
+    .connect(&db_conn).await.unwrap();
+
     if p.import_source == true
     {
+        // Import data into matching tables
         let _i = import::import_data(&p.source_file_path, &pool).await;
     }
-        
-    // Transform data into more useful tables
     
+
     if p.process_source == true
     {
+        // Transform data into more useful tables
         let _i = transform::process_data(&p.res_file_path, &pool).await;
     }
 
-    Ok(())
+    Ok(())  
+}
 
+
+
+fn log_critical_error (_e : &AppError ) {
+    //println!("Error: {}", e)
+}
+
+
+fn _log_process_error (_e : &AppError ) {
+    //println!("Error: {}", e)
 }
 
 

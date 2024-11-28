@@ -12,7 +12,7 @@ use ror_data_vectors::{CoreDataVecs, RequiredDataVecs, NonRequiredDataVecs};
 
 pub async fn import_data(source_file_path : &PathBuf, pool : &Pool<Postgres>)
 {
-    //Import data into matching tables
+    // Import data into matching tables
 
     // First obtain the raw data as text
     // check the file exists...by opening it and checking no error

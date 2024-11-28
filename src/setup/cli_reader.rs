@@ -26,6 +26,7 @@ pub fn fetch_valid_arguments() -> CliPars
     // guaranteed to unwrap OK as a default value set of "" 
     let srce = parse_result.get_one::<String>("src_file").unwrap();
 
+    // flag values are false if not oresent, true if present.
     let a_flag = parse_result.get_flag("a_flag");
     let s_flag = parse_result.get_flag("s_flag");
     let t_flag = parse_result.get_flag("t_flag");

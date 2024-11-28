@@ -35,11 +35,15 @@ pub struct DbPars {
 
 pub static DB_PARS: OnceLock<DbPars> = OnceLock::new();
 
-pub fn populate_env_vars() -> () {
+pub fn populate_env_vars() -> Result< (), dotenv::Error> {
 
     // Use the dotenv from_filename function to load the variables into std::env.
-    
-    dotenv::from_filename("ror.env").expect("Problem in reading parameters from env file");
+    let env_res  = dotenv::from_filename("ror.env");
+    let _e = match env_res {
+        Ok(pb) => pb,
+        Err(err) => return Err(err),
+    };
+    //dotenv::from_filename("ror.env").expect("Problem in reading parameters from env file");
     
     // Extract the DB connection variables - N.B. user (name) and password have 
     // no meaningful defaults
@@ -55,7 +59,9 @@ pub fn populate_env_vars() -> () {
         password,
         port,
     };
-    DB_PARS.set(db_pars).expect("");
+    let _ = DB_PARS.set(db_pars);
+
+    Ok(())
 
 }
  
@@ -71,11 +77,11 @@ pub fn fetch_db_conn_string(db_name: &str) -> Result<String, &str> {
 }
 
 pub fn fetch_folder_path() -> String {
-    env::var("folder_path").unwrap_or("C:\\ROR".to_string())
+    env::var("folder_path").unwrap_or("".to_string())
 }
 
 pub fn fetch_source_file_name() -> String {
-    env::var("src_file_name").unwrap_or("source-data.json".to_string())
+    env::var("src_file_name").unwrap_or("".to_string())
 }
 
 pub fn fetch_results_file_name() -> String {
