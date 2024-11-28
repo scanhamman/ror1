@@ -6,6 +6,7 @@ pub enum AppError {
     DeErr(dotenv::Error),
     SqErr(sqlx::Error),
     IoErr(std::io::Error),
+    SdErr(serde_json::Error),
     CfErr(CustomFileError),
 }
 
@@ -17,6 +18,7 @@ impl fmt::Display for AppError { // Error message for users.
             AppError::DeErr(ref err) => write!(f, "environment error: {}", err),
             AppError::SqErr(ref err) => write!(f, "sqlx error: {}", err),
             AppError::IoErr(ref err) => write!(f, "io error: {}", err),
+            AppError::SdErr(ref err) => write!(f, "serde json error: {}", err),
             AppError::CfErr(ref err) => write!(f, "file error: {}", err),
         }
     }
@@ -25,6 +27,7 @@ impl fmt::Display for AppError { // Error message for users.
 impl std::fmt::Debug for AppError { // Error message for programmers.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "{self}")?;
+
         if let Some(e) = self.source() { // <-- Use source() to retrive the root cause.
             writeln!(f, "\tCaused by: {e:?}")?;
         }
@@ -50,12 +53,17 @@ impl From<std::io::Error> for AppError {
     }
 }
 
+impl From<serde_json::Error> for AppError {
+    fn from(err: serde_json::Error) -> AppError {
+        AppError::SdErr(err)
+    }
+}
+
 impl From<CustomFileError> for AppError {
     fn from(err: CustomFileError) -> AppError {
         AppError::CfErr(err)
     }
 }
-
 
 
 #[derive(Debug)]

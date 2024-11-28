@@ -1,6 +1,5 @@
 use chrono::NaiveDate;
 use sqlx::{Pool, Postgres};
-use log::info;
 use crate::import::ror_json_models::RorRecord;
 use std::str::FromStr;
 
@@ -52,7 +51,7 @@ impl CoreDataVecs{
     pub async fn store_data(&self, pool : &Pool<Postgres>) {
     
         // do the core data
-        let r = sqlx::query(r#"INSERT INTO src.core_data (id, ror_full_id, status, established) 
+        let _ = sqlx::query(r#"INSERT INTO src.core_data (id, ror_full_id, status, established) 
             SELECT * FROM UNNEST($1::text[], $2::text[], $3::text[], $4::int[])"#)
         .bind(&self.db_ids)
         .bind(&self.ror_ids)
@@ -60,10 +59,9 @@ impl CoreDataVecs{
         .bind(&self.estabs)
         .execute(pool)
         .await;
-        info!("Stored {} core organisation data records", r.unwrap().rows_affected());
-
+        
         // do the admin data
-        let r = sqlx::query(r#"INSERT INTO src.admin_data (id, created, cr_schema, last_modified, lm_schema) 
+        let _ = sqlx::query(r#"INSERT INTO src.admin_data (id, created, cr_schema, last_modified, lm_schema) 
             SELECT * FROM UNNEST($1::text[], $2::timestamp[], $3::text[], $4::timestamp[], $5::text[])"#)
         .bind(&self.db_ids)
         .bind(&self.created_dates)
@@ -72,7 +70,6 @@ impl CoreDataVecs{
         .bind(&self.lastmod_vs)
         .execute(pool)
         .await;
-        info!("Stored {} admin data records", r.unwrap().rows_affected());
     }
 
 }
@@ -174,7 +171,7 @@ impl RequiredDataVecs{
     pub async fn store_data(&self, pool : &Pool<Postgres>) {
         
         // do the name data
-        let r = sqlx::query(r#"INSERT INTO src.names (id, value, name_type, is_ror_name, lang) 
+        let _ = sqlx::query(r#"INSERT INTO src.names (id, value, name_type, is_ror_name, lang) 
         SELECT * FROM UNNEST($1::text[], $2::text[], $3::text[], $4::bool[], $5::text[])"#)
         .bind(&self.name_db_ids)
         .bind(&self.names)
@@ -183,19 +180,17 @@ impl RequiredDataVecs{
         .bind(&self.langs)
         .execute(pool)
         .await;
-        info!("Stored {} name data records", r.unwrap().rows_affected());
 
         // do the type data
-        let r = sqlx::query(r#"INSERT INTO src.type (id, org_type) 
+        let _ = sqlx::query(r#"INSERT INTO src.type (id, org_type) 
         SELECT * FROM UNNEST($1::text[], $2::text[])"#)
         .bind(&self.type_db_ids)
         .bind(&self.org_types)
         .execute(pool)
         .await;
-        info!("Stored {} type data records", r.unwrap().rows_affected());
 
         // do the location data
-        let r = sqlx::query(r#"INSERT INTO src.locations (id, geonames_id, name, lat, lng, country_code, country_name ) 
+        let _ = sqlx::query(r#"INSERT INTO src.locations (id, geonames_id, name, lat, lng, country_code, country_name ) 
         SELECT * FROM UNNEST($1::text[], $2::int[], $3::text[], $4::real[], $5::real[], $6::text[], $7::text[])"#)
         .bind(&self.loc_db_ids)
         .bind(&self.gn_ids)
@@ -206,7 +201,6 @@ impl RequiredDataVecs{
         .bind(&self.cy_names)
         .execute(pool)
         .await;
-        info!("Stored {} location data records", r.unwrap().rows_affected());
 
     }
 }
@@ -381,7 +375,6 @@ impl NonRequiredDataVecs{
         .bind(&self.is_prefs)
         .execute(pool)
         .await;
-        info!("Stored external id data");
     
         // do the domain data
         let _ = sqlx::query(r#"INSERT INTO src.domains (id, value) 

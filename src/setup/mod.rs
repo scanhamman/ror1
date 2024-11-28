@@ -3,6 +3,9 @@ pub mod cli_reader;
 pub mod log_helper;
 use crate::errors;
 use crate::errors::CustomFileError;
+use sqlx::postgres::PgPoolOptions;
+use sqlx::{Postgres, Pool};
+use log::error;
 
 use std::path::PathBuf;
 use std::path::Path;
@@ -103,3 +106,20 @@ pub async fn get_params() -> Result<InitParams, errors::AppError> {
     })
 
     }
+
+
+pub async fn get_db_pool(db_conn :String) -> Result<Pool<Postgres>, errors::AppError> {   
+
+    let try_pool = PgPoolOptions::new()
+              .max_connections(5).connect(&db_conn).await;
+    let pool = match try_pool {
+        Ok(p) => Ok(p),
+        Err(e) => {
+            error!("An error occured while creating the DB pool: {}", e);
+            return Err(AppError::SqErr(e))
+        }, 
+    };
+    pool
+}
+
+

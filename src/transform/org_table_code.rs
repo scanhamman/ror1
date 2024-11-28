@@ -6,7 +6,7 @@ pub async fn recreate_org_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Err
     create table org.core_data
     (
           id                varchar     not null primary key
-        , ror_full_id       varchar	    not null
+        , ror_full_id       varchar     not null
         , ror_name          varchar     not null	
         , status            varchar     not null default 1
         , established       int         null
@@ -20,7 +20,7 @@ pub async fn recreate_org_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Err
     create table org.admin_data
     (
           id                varchar     not null primary key
-        , ror_name          varchar	    not null	              
+        , ror_name          varchar     not null	              
         , n_locs            int         not null default 0
         , n_labels          int         not null default 0
         , n_aliases         int         not null default 0
@@ -43,7 +43,7 @@ pub async fn recreate_org_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Err
         , created           date        not null
         , cr_schema         varchar     not null
         , last_modified     date        not null
-        , lm_schema        varchar     not null  
+        , lm_schema        varchar      not null  
     );"#;
     sqlx::raw_sql(table_sql).execute(pool).await?;
 
@@ -119,7 +119,7 @@ pub async fn recreate_org_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Err
     (
           id                varchar     not null
         , ror_name          varchar     not null
-        , rel_type         	int         not null
+        , rel_type          int         not null
         , related_id        varchar     not null
         , related_name      varchar     not null
     );  
@@ -132,7 +132,7 @@ pub async fn recreate_org_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Err
     (
           id                varchar     not null
         , ror_name          varchar     not null
-        , domain           	varchar     not null
+        , domain            varchar     not null
     );
     create index domains_idx on org.domains(id);"#;
     sqlx::raw_sql(table_sql).execute(pool).await?;

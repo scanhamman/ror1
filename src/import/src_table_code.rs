@@ -1,4 +1,5 @@
 use sqlx::{Pool, Postgres};
+use log::info;
 
 pub async fn recreate_src_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Error> {
 
@@ -17,7 +18,7 @@ pub async fn recreate_src_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Err
     create table src.admin_data
     (
           id                varchar     not null primary key
-        , created         	date        not null
+        , created           date        not null
         , cr_schema         varchar     not null
         , last_modified     date        not null
         , lm_schema         varchar     not null  
@@ -112,3 +113,36 @@ pub async fn recreate_src_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Err
 }
 
 
+pub async fn log_record_nums (pool: &Pool<Postgres>) -> Result<(), sqlx::Error> {
+  
+  info!("");
+  info!("************************************");
+  info!("Total record numbers for each table:");
+  info!("************************************");
+  info!("");
+
+  write_record_num("core_data", pool).await?;
+  write_record_num("admin_data", pool).await?;
+  write_record_num("names", pool).await?;
+  write_record_num("locations", pool).await?;
+  write_record_num("external_ids", pool).await?;
+  write_record_num("links", pool).await?;
+  write_record_num("type", pool).await?;
+  write_record_num("relationships", pool).await?;
+  write_record_num("domains", pool).await?;
+  
+  info!("");
+  info!("************************************");
+  info!("");
+ 
+  Ok(())
+}
+
+pub async fn write_record_num (table_name: &str, pool: &Pool<Postgres>) -> Result<(), sqlx::Error> {
+    let sql = "SELECT COUNT(*) FROM src.".to_owned() + table_name;
+    let res: i64 = sqlx::query_scalar(&sql)
+    .fetch_one(pool)
+    .await?;
+    info!("Total records in src.{}: {}", table_name, res);
+    Ok(())
+}

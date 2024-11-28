@@ -38,8 +38,8 @@ pub static DB_PARS: OnceLock<DbPars> = OnceLock::new();
 pub fn populate_env_vars() -> Result< (), dotenv::Error> {
 
     // Use the dotenv from_filename function to load the variables into std::env.
-    let env_res  = dotenv::from_filename("ror.env");
-    let _e = match env_res {
+    let _env_res  = match dotenv::from_filename("ror.env")
+    {
         Ok(pb) => pb,
         Err(err) => return Err(err),
     };
@@ -85,8 +85,12 @@ pub fn fetch_source_file_name() -> String {
 }
 
 pub fn fetch_results_file_name() -> String {
-    let datetime_string = Local::now().format("%m-%d-%H-%M-%S").to_string();
-    env::var("res_file_name").unwrap_or(format!("analysis-results - {}.json", datetime_string))
+    let mut s = env::var("res_file_name").unwrap_or("".to_string());
+    if s == "" {
+        let datetime_string = Local::now().format("%m-%d-%H-%M-%S").to_string();
+        s = format!("analysis-{}.json", datetime_string).to_string()
+    }
+    s
 }
 
 

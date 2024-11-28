@@ -4,25 +4,10 @@ mod transform;
 mod errors;
 
 use errors::AppError;
-use sqlx::postgres::PgPoolOptions;
-//use sqlx::Error;
 
 /// A small program to process the ROR organisation data, as made
 /// available in a JSON file download by ROR, and load that data
 /// into a series of tables in a Postgres database. 
-/// 
-/// The program is designed to illustrate various aspects of 'real'
-/// data oriented systems, including logging, use of environment 
-/// variables, use of command line parameters, and database access.
-/// 
-/// There are two phases to the system. In phase 1 the data is downloaded,
-/// transformed to matching structs with very little additional processing, 
-/// which are then stored in the db. The resulting tables therefore mirror 
-/// the source ROR data very closely. In phase 2 the data is processed to 
-/// form a new set of tables, incorporating additional information, 
-/// e.g. summary records for each organisation. The second set are designed 
-/// to be used as the basis for use of the organisation data, including its
-/// display, editing and incorporation into other systems.
 
 #[tokio::main(flavor = "current_thread")]
 
@@ -34,49 +19,49 @@ async fn main() -> Result<(), AppError> {
 
     // First, fetch start parameters such as file names and CLI flags
     
-    let params_res = setup::get_params().await;
-    let p = match params_res {
-        Ok(pres) => pres,
+    let try_params = setup::get_params().await;
+    let ip = match try_params {
+        Ok(p) => p,
         Err(e) => {
-            log_critical_error(&e); 
             return Err(e)
         }, 
     };
     
     // Second, set up the database connection pool
 
-    let db_conn = p.db_conn_string;
-    let pool = PgPoolOptions::new()
-    .max_connections(5)
-    .connect(&db_conn).await.unwrap();
+    let db_conn = ip.db_conn_string;
+    let try_pool = setup::get_db_pool(db_conn).await;
+    let pool = match try_pool {
+        Ok(p) => p,
+        Err(e) => {
+            return Err(e)
+        }, 
+    };
 
-    if p.import_source == true
+    // Next two stages dependent on the presence of the relevant flag(s)
+    // In each, initial step is to recreate the DB tables, before doing
+    // the processing and summarising
+
+    if ip.import_source == true
     {
-        // Import data into matching tables
-        let _i = import::import_data(&p.source_file_path, &pool).await;
+        import::create_src_tables(&pool).await?;
+        
+        import::import_data(&ip.source_file_path, &pool).await?;
+
+        import::summarise_import(&pool).await?;
     }
     
 
-    if p.process_source == true
+    if ip.process_source == true
     {
-        // Transform data into more useful tables
-        let _i = transform::process_data(&p.res_file_path, &pool).await;
+        transform::create_org_tables(&pool).await?;
+
+        transform::process_data(&ip.res_file_path, &pool).await?;
+
+        //transform::summarise_results(&pool).await?;
     }
 
     Ok(())  
+
 }
-
-
-
-fn log_critical_error (_e : &AppError ) {
-    //println!("Error: {}", e)
-}
-
-
-fn _log_process_error (_e : &AppError ) {
-    //println!("Error: {}", e)
-}
-
-
-
 
