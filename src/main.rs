@@ -56,9 +56,9 @@ async fn main() -> Result<(), AppError> {
     {
         transform::create_org_tables(&pool).await?;
 
-        transform::process_data(&ip.res_file_path, &pool).await?;
+        transform::process_data(&pool).await?;
 
-        //transform::summarise_results(&pool).await?;
+        transform::summarise_results(&ip.res_file_path, &pool).await?;
     }
 
     Ok(())  

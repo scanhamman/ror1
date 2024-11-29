@@ -7,7 +7,8 @@ pub enum AppError {
     SqErr(sqlx::Error),
     IoErr(std::io::Error),
     SdErr(serde_json::Error),
-    CfErr(CustomFileError),
+    LgErr(log::SetLoggerError),
+    CsErr(CustomError),
 }
 
 impl std::error::Error for AppError {}
@@ -19,7 +20,8 @@ impl fmt::Display for AppError { // Error message for users.
             AppError::SqErr(ref err) => write!(f, "sqlx error: {}", err),
             AppError::IoErr(ref err) => write!(f, "io error: {}", err),
             AppError::SdErr(ref err) => write!(f, "serde json error: {}", err),
-            AppError::CfErr(ref err) => write!(f, "file error: {}", err),
+            AppError::LgErr(ref err) => write!(f, "log set config error: {}", err),
+            AppError::CsErr(ref err) => write!(f, "file error: {}", err),
         }
     }
 }
@@ -59,31 +61,37 @@ impl From<serde_json::Error> for AppError {
     }
 }
 
-impl From<CustomFileError> for AppError {
-    fn from(err: CustomFileError) -> AppError {
-        AppError::CfErr(err)
+impl From<log::SetLoggerError> for AppError {
+    fn from(err: log::SetLoggerError) -> AppError {
+        AppError::LgErr(err)
+    }
+}
+
+impl From<CustomError> for AppError {
+    fn from(err: CustomError) -> AppError {
+        AppError::CsErr(err)
     }
 }
 
 
 #[derive(Debug)]
-pub struct CustomFileError {
+pub struct CustomError {
     message: String,
 }
 
-impl CustomFileError {
-    pub fn new(message: &str) -> CustomFileError {
-        CustomFileError {
+impl CustomError {
+    pub fn new(message: &str) -> CustomError {
+        CustomError {
             message: message.to_string(),
         }
     }
 }
 
-impl fmt::Display for CustomFileError {
+impl fmt::Display for CustomError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.message)
     }
 }
 
-impl Error for CustomFileError {}
+impl Error for CustomError {}
 

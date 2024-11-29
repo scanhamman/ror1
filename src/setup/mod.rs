@@ -1,15 +1,14 @@
 pub mod env_reader;
 pub mod cli_reader;
 pub mod log_helper;
-use crate::errors;
-use crate::errors::CustomFileError;
+
+use crate::errors::{AppError, CustomError};
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Postgres, Pool};
 use log::error;
-
 use std::path::PathBuf;
 use std::path::Path;
-use errors::AppError;
+
 
 pub struct InitParams {
     pub import_source: bool,
@@ -19,7 +18,7 @@ pub struct InitParams {
     pub db_conn_string : String,
 }
 
-pub async fn get_params() -> Result<InitParams, errors::AppError> {
+pub async fn get_params() -> Result<InitParams, AppError> {
 
     // Called from main as the initial task of the program.
     // Returns a struct that conbtains the program's parameters.
@@ -39,12 +38,11 @@ pub async fn get_params() -> Result<InitParams, errors::AppError> {
         if source_folder == "" {
             // raise an AppError...both are missing
             let msg = "Data folder name not provided in either command line or environment file";
-            let cf_err = CustomFileError::new(msg);
-            return Result::Err(AppError::CfErr(cf_err));
+            let cf_err = CustomError::new(msg);
+            return Result::Err(AppError::CsErr(cf_err));
         }
     }
-    
-    
+        
     // does this folder exist and is it accessible? - If not end the program...
 
     let xres = Path::new(&source_folder).try_exists();
@@ -56,8 +54,8 @@ pub async fn get_params() -> Result<InitParams, errors::AppError> {
     if x == false {
         // raise an AppError...
         let msg = "Stipulated data folder does not exists or is not accessible";
-        let cf_err = CustomFileError::new(msg);
-        return Result::Err(AppError::CfErr(cf_err));
+        let cf_err = CustomError::new(msg);
+        return Result::Err(AppError::CsErr(cf_err));
     }
 
 
@@ -71,8 +69,8 @@ pub async fn get_params() -> Result<InitParams, errors::AppError> {
             if source_file_name == "" {
              // raise an AppError...both are missing
             let msg = "Source file name not provided in either command line or environment file";
-            let cf_err = CustomFileError::new(msg);
-            return Result::Err(AppError::CfErr(cf_err));
+            let cf_err = CustomError::new(msg);
+            return Result::Err(AppError::CsErr(cf_err));
          }
     }
 
@@ -90,12 +88,12 @@ pub async fn get_params() -> Result<InitParams, errors::AppError> {
 
     let log_file_name = log_helper::get_log_file_name(&source_file_name);
     let log_file_path: PathBuf = [&source_folder, &log_file_name].iter().collect();
-    log_helper::setup_log(&log_file_path);
+    log_helper::setup_log(&log_file_path)?;
 
     log_helper::log_startup_params(&source_folder, &source_file_name, &res_file_name, 
                            cli_pars.import_source, cli_pars.process_source );
     
-    let db_conn_string = env_reader::fetch_db_conn_string("ror").unwrap();  // need to handle error
+    let db_conn_string = env_reader::fetch_db_conn_string("ror")?;  
 
     Ok(InitParams {
         import_source : cli_pars.import_source,
@@ -108,7 +106,7 @@ pub async fn get_params() -> Result<InitParams, errors::AppError> {
     }
 
 
-pub async fn get_db_pool(db_conn :String) -> Result<Pool<Postgres>, errors::AppError> {   
+pub async fn get_db_pool(db_conn :String) -> Result<Pool<Postgres>, AppError> {   
 
     let try_pool = PgPoolOptions::new()
               .max_connections(5).connect(&db_conn).await;
@@ -116,6 +114,7 @@ pub async fn get_db_pool(db_conn :String) -> Result<Pool<Postgres>, errors::AppE
         Ok(p) => Ok(p),
         Err(e) => {
             error!("An error occured while creating the DB pool: {}", e);
+            error!("Check the DB credentials and confirm the database is available");
             return Err(AppError::SqErr(e))
         }, 
     };

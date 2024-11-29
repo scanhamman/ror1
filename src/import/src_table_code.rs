@@ -24,7 +24,7 @@ pub async fn recreate_src_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Err
         , lm_schema         varchar     not null  
     );"#;
     sqlx::raw_sql(table_sql).execute(pool).await?;
-    
+
 
     let table_sql = r#"drop table if exists src.names;
     create table src.names
@@ -37,7 +37,7 @@ pub async fn recreate_src_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Err
     );
     create index src_names_idx on src.names(id);"#;
     sqlx::raw_sql(table_sql).execute(pool).await?;
-    
+
 
     let table_sql = r#"drop table if exists src.locations;
     create table src.locations
@@ -52,11 +52,11 @@ pub async fn recreate_src_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Err
     );
     create index src_locations_idx on src.locations(id);"#;
     sqlx::raw_sql(table_sql).execute(pool).await?;
-    
+
 
     let table_sql = r#"drop table if exists src.external_ids;
     create table src.external_ids
-    (  
+    (
           id                varchar     not null
         , id_type           varchar     not null
         , id_value          varchar     not null
@@ -64,18 +64,18 @@ pub async fn recreate_src_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Err
     );
     create index src_external_ids_idx on src.external_ids(id);"#;
     sqlx::raw_sql(table_sql).execute(pool).await?;
-    
+
 
     let table_sql = r#"drop table if exists src.links;
     create table src.links
-    (  
+    (
           id                varchar	    not null
         , link_type         varchar     not null
-        , value             varchar	    not null
+        , value             varchar     not null
     );
     create index src_links_idx on src.links(id);"#;
     sqlx::raw_sql(table_sql).execute(pool).await?;
-    
+
 
     let table_sql = r#"drop table if exists src.type;
     create table src.type
@@ -85,24 +85,24 @@ pub async fn recreate_src_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Err
     ); 
     create index src_type_idx on src.type(id);"#;
     sqlx::raw_sql(table_sql).execute(pool).await?;
-    
+
 
     let table_sql = r#"drop table if exists src.relationships;
     create table src.relationships
     (
-          id                varchar	    not null
+          id                varchar     not null
         , rel_type          varchar     not null
-        , related_id        varchar	    not null
-        , related_label     varchar	    not null
+        , related_id        varchar     not null
+        , related_label     varchar     not null
     ); 
     create index src_relationships_idx on src.relationships(id);"#;
     sqlx::raw_sql(table_sql).execute(pool).await?;
-    
+
 
     let table_sql = r#"drop table if exists src.domains;
     create table src.domains
-    (  
-          id                varchar	    not null
+    (
+          id                varchar     not null
         , value             varchar     not null
     );
     create index src_domains_idx on src.domains(id);"#;

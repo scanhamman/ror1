@@ -24,6 +24,7 @@ use std::sync::OnceLock;
 use std::env;
 use dotenv;
 use chrono::Local;
+use crate::errors::{AppError, CustomError};
 
 #[derive(Debug)]
 pub struct DbPars {
@@ -59,16 +60,25 @@ pub fn populate_env_vars() -> Result< (), dotenv::Error> {
         password,
         port,
     };
-    let _ = DB_PARS.set(db_pars);
+    let _ = DB_PARS.set(db_pars);  // should always work in this environment
 
     Ok(())
 
 }
  
-pub fn fetch_db_conn_string(db_name: &str) -> Result<String, &str> {
-    let db_pars = DB_PARS.get().unwrap();
+pub fn fetch_db_conn_string(db_name: &str) -> Result<String, AppError> {
+    let db_pars = match DB_PARS.get() {
+         Some(dbp) => dbp,
+         None => {
+            let msg = "Unable to obtain DB parameters when building connection string";
+            let cf_err = CustomError::new(msg);
+            return Result::Err(AppError::CsErr(cf_err));
+        },
+    };
     if db_pars.user == "no user" ||  db_pars.password == "no password"{  
-        Err("No user or password present in environment file")
+        let msg = "No user or password present in environment file";
+        let cf_err = CustomError::new(msg);
+        return Result::Err(AppError::CsErr(cf_err));
     } 
     else {
         Ok(format!("postgres://{}:{}@{}:{}/{}", 
@@ -85,12 +95,12 @@ pub fn fetch_source_file_name() -> String {
 }
 
 pub fn fetch_results_file_name() -> String {
-    let mut s = env::var("res_file_name").unwrap_or("".to_string());
-    if s == "" {
+    let mut res_file = env::var("res_file_name").unwrap_or("".to_string());
+    if res_file == "" {
         let datetime_string = Local::now().format("%m-%d-%H-%M-%S").to_string();
-        s = format!("analysis-{}.json", datetime_string).to_string()
+        res_file = format!("analysis-{}.json", datetime_string).to_string()
     }
-    s
+    res_file
 }
 
 
