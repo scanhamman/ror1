@@ -17,12 +17,12 @@ pub async fn import_data (pool: &Pool<Postgres>) -> Result<(), sqlx::Error> {
 
 async fn import_to_core_data (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Error> {
 
-    let import_sql  = r#"insert into org.core_data (id, ror_full_id, 
+    let import_sql  = r#"insert into src.core_data (id, ror_full_id, 
           ror_name, status, established)
           select c.id, c.ror_full_id, m.value, c.status, c.established 
-          from src.core_data c
+          from ror.core_data c
           inner join
-              (select id, value from src.names where is_ror_name = true) m
+              (select id, value from ror.names where is_ror_name = true) m
           on c.id = m.id;"#;
     let qry_res = sqlx::raw_sql(import_sql).execute(pool).await?;
     Ok(qry_res)
@@ -30,10 +30,10 @@ async fn import_to_core_data (pool: &Pool<Postgres>) -> Result<PgQueryResult, sq
 
 async fn update_core_data_locations (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Error> {
 
-    let import_sql  = r#"update org.core_data c
+    let import_sql  = r#"update src.core_data c
           set location = t.name,
           country_code = t.country_code
-          from src.locations t
+          from ror.locations t
           where c.id = t.id;"#;
     let qry_res = sqlx::raw_sql(import_sql).execute(pool).await?;
     Ok(qry_res)
@@ -41,11 +41,11 @@ async fn update_core_data_locations (pool: &Pool<Postgres>) -> Result<PgQueryRes
 
 async fn import_admin_data_base (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Error> {
 
-    let import_sql  = r#"insert into org.admin_data(id, ror_name, created, cr_schema, 
+    let import_sql  = r#"insert into src.admin_data(id, ror_name, created, cr_schema, 
           last_modified, lm_schema)
           select a.id, c.ror_name, a.created, a.cr_schema, a.last_modified, a.lm_schema 
-          from src.admin_data a
-          inner join org.core_data c
+          from ror.admin_data a
+          inner join src.core_data c
           on a.id = c.id;"#;
     let qry_res = sqlx::raw_sql(import_sql).execute(pool).await?;
     Ok(qry_res)
@@ -53,7 +53,7 @@ async fn import_admin_data_base (pool: &Pool<Postgres>) -> Result<PgQueryResult,
 
 async fn import_names (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Error> {
 
-    let import_sql  = r#"insert into org.names(id, value, name_type, 
+    let import_sql  = r#"insert into src.names(id, value, name_type, 
           is_ror_name, lang_code)
           select id, value, 
           case 
@@ -67,14 +67,14 @@ async fn import_names (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Err
               else false
           end, 
           lang
-          from src.names a;"#;
+          from ror.names a;"#;
     let qry_res = sqlx::raw_sql(import_sql).execute(pool).await?;
     Ok(qry_res)
 }
 
 async fn import_links (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Error> {
 
-    let import_sql  = r#"insert into org.links(id, ror_name, link_type, link)
+    let import_sql  = r#"insert into src.links(id, ror_name, link_type, link)
           select a.id, c.ror_name, 
           case 
               when a.link_type = 'wikipedia' then 21
@@ -82,8 +82,8 @@ async fn import_links (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Err
               else 0
           end, 
           value
-          from src.links a
-          inner join org.core_data c
+          from ror.links a
+          inner join src.core_data c
         on a.id = c.id;"#;
     let qry_res = sqlx::raw_sql(import_sql).execute(pool).await?;
     Ok(qry_res)
@@ -91,10 +91,10 @@ async fn import_links (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Err
 
 async fn import_domains (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Error> {
 
-    let import_sql  = r#"insert into org.domains(id, ror_name, domain)
+    let import_sql  = r#"insert into src.domains(id, ror_name, domain)
           select a.id, c.ror_name, a.value
-          from src.domains a
-          inner join org.core_data c
+          from ror.domains a
+          inner join src.core_data c
           on a.id = c.id;"#;
     let qry_res = sqlx::raw_sql(import_sql).execute(pool).await?;
     Ok(qry_res)
@@ -102,7 +102,7 @@ async fn import_domains (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::E
 
 async fn import_external_ids (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Error> {
 
-    let import_sql  = r#"insert into org.external_ids(id, ror_name, id_type, id_value, is_preferred)
+    let import_sql  = r#"insert into src.external_ids(id, ror_name, id_type, id_value, is_preferred)
           select a.id, c.ror_name,
           case 
 	          when id_type = 'isni' then 11
@@ -116,8 +116,8 @@ async fn import_external_ids (pool: &Pool<Postgres>) -> Result<PgQueryResult, sq
               when a.is_preferred = true then true
               else false
           end
-          from src.external_ids a
-          inner join org.core_data c
+          from ror.external_ids a
+          inner join src.core_data c
           on a.id = c.id;"#;
     let qry_res = sqlx::raw_sql(import_sql).execute(pool).await?;
     Ok(qry_res)
@@ -125,7 +125,7 @@ async fn import_external_ids (pool: &Pool<Postgres>) -> Result<PgQueryResult, sq
 
 async fn import_types (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Error> {
 
-    let import_sql  = r#"insert into org.type(id, ror_name, org_type)
+    let import_sql  = r#"insert into src.type(id, ror_name, org_type)
           select a.id, c.ror_name, 
           case 
               when org_type = 'government' then 100
@@ -139,8 +139,8 @@ async fn import_types (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Err
               when org_type = 'other' then 900
               else 0
           end
-          from src.type a
-          inner join org.core_data c
+          from ror.type a
+          inner join src.core_data c
           on a.id = c.id;"#;
     let qry_res = sqlx::raw_sql(import_sql).execute(pool).await?;
     Ok(qry_res)
@@ -148,12 +148,12 @@ async fn import_types (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Err
 
 async fn import_locations (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Error> {
 
-    let import_sql  = r#"insert into org.locations(id, ror_name, geonames_id, 
+    let import_sql  = r#"insert into src.locations(id, ror_name, geonames_id, 
 	      geonames_name, lat, lng, country_code, country_name)
           select a.id, c.ror_name, a.geonames_id, a.name,
                  a.lat, a.lng, a.country_code, a.country_name
-          from src.locations a
-          inner join org.core_data c
+          from ror.locations a
+          inner join src.core_data c
           on a.id = c.id;"#;
     let qry_res = sqlx::raw_sql(import_sql).execute(pool).await?;
     Ok(qry_res)
@@ -161,33 +161,20 @@ async fn import_locations (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx:
 
 async fn import_relationships (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Error> {
 
-    let import_sql  = r#"insert into org.relationships(id, ror_name, rel_type, related_id, related_name)
+    let import_sql  = r#"insert into src.relationships(id, ror_name, rel_type, related_id, related_name)
           select a.id, c.ror_name, 
           case 
 	          when a.rel_type = 'parent' then 1
 	          when a.rel_type = 'child' then 2
 	          when a.rel_type = 'related' then 3
+              when a.rel_type = 'predecessor' then 4
+	          when a.rel_type = 'successor' then 5
+              else 0
           end, 
           a.related_id, a.related_label
-          from src.relationships a
-          inner join org.core_data c
+          from ror.relationships a
+          inner join src.core_data c
           on a.id = c.id;"#;
     let qry_res = sqlx::raw_sql(import_sql).execute(pool).await?;
     Ok(qry_res)
-}
-
-pub async fn summarise_data (_pool: &Pool<Postgres>) -> Result<(), sqlx::Error> {
-
-	/* 
-    summarise_locations (pool).await?;
-    summarise_names (pool).await?;
-    summarise_links (pool).await?;
-	summarise_domains (pool).await?;
-    summarise_external_ids (pool).await?;
-	summarise_types (pool).await?;
-	summarise_locations (pool).await?;
-    summarise_relationships (pool).await?;
-    */
-
-    Ok(())
 }

@@ -1,6 +1,7 @@
-pub mod org_table_code;
-pub mod org_data_import;
-pub mod org_data_reporter;
+pub mod src_table_creator;
+pub mod src_data_importer;
+pub mod src_data_processor;
+pub mod src_data_reporter;
 
 use log::{info, error};
 use std::path::PathBuf;
@@ -9,7 +10,7 @@ use crate::AppError;
 
 pub async fn create_org_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
 {
-    let r = org_table_code::recreate_org_tables(&pool).await;
+    let r = src_table_creator::recreate_src_tables(&pool).await;
     match r {
         Ok(()) => {
             info!("Org tables created"); 
@@ -26,7 +27,7 @@ pub async fn process_data(pool : &Pool<Postgres>) -> Result<(), AppError>
 {
     // import the data
 
-    let r = org_data_import::import_data(pool).await;
+    let r = src_data_importer::import_data(pool).await;
     match r {
         Ok(()) => {
             info!("Initial data imported to org tables"); 
@@ -39,7 +40,7 @@ pub async fn process_data(pool : &Pool<Postgres>) -> Result<(), AppError>
 
     // Summarise data and populate the admin data table with results
 
-    let r = org_data_import::summarise_data(pool).await;
+    let r = src_data_processor::summarise_data(pool).await;
     match r {
         Ok(()) => {
             info!("Data processed and results added to admin table"); 
@@ -56,7 +57,7 @@ pub async fn process_data(pool : &Pool<Postgres>) -> Result<(), AppError>
 
 pub async fn summarise_results(res_file_path: &PathBuf, pool : &Pool<Postgres>) -> Result<(), AppError>
 {
-    let r = org_data_reporter::report_on_data(res_file_path, pool).await;
+    let r = src_data_reporter::report_on_data(res_file_path, pool).await;
     match r {
         Ok(()) => {
             info!("Data summarised and written out"); 

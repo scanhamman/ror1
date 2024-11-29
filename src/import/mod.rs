@@ -1,5 +1,5 @@
 pub mod ror_json_models;
-pub mod src_table_code;
+pub mod ror_table_creator;
 pub mod ror_data_vectors;
 
 use log::{info, error};
@@ -14,7 +14,7 @@ use ror_data_vectors::{CoreDataVecs, RequiredDataVecs, NonRequiredDataVecs};
 
 pub async fn create_src_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
 {
-    let r = src_table_code::recreate_src_tables(&pool).await;
+    let r = ror_table_creator::recreate_ror_tables(&pool).await;
     match r {
         Ok(()) => {
             info!("Source tables created"); 
@@ -116,7 +116,7 @@ pub async fn import_data(source_file_path : &PathBuf, pool : &Pool<Postgres>) ->
 pub async fn summarise_import(pool : &Pool<Postgres>) -> Result<(), AppError>
 {
      // Go through each table and get total record number
-    src_table_code::log_record_nums(pool).await?;
+    ror_table_creator::log_record_nums(pool).await?;
     Ok(())
 }
 

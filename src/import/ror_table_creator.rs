@@ -1,10 +1,10 @@
 use sqlx::{Pool, Postgres};
 use log::info;
 
-pub async fn recreate_src_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Error> {
+pub async fn recreate_ror_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Error> {
 
-    let table_sql  = r#"drop table if exists src.core_data;
-    create table src.core_data
+    let table_sql  = r#"drop table if exists ror.core_data;
+    create table ror.core_data
     (
           id                varchar     not null primary key 
         , ror_full_id       varchar     not null  
@@ -14,8 +14,8 @@ pub async fn recreate_src_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Err
     sqlx::raw_sql(table_sql).execute(pool).await?;
 
 
-    let table_sql = r#"drop table if exists src.admin_data;
-    create table src.admin_data
+    let table_sql = r#"drop table if exists ror.admin_data;
+    create table ror.admin_data
     (
           id                varchar     not null primary key
         , created           date        not null
@@ -26,8 +26,8 @@ pub async fn recreate_src_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Err
     sqlx::raw_sql(table_sql).execute(pool).await?;
 
 
-    let table_sql = r#"drop table if exists src.names;
-    create table src.names
+    let table_sql = r#"drop table if exists ror.names;
+    create table ror.names
     (  
           id                varchar     not null
         , value             varchar     not null  
@@ -35,12 +35,12 @@ pub async fn recreate_src_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Err
         , is_ror_name       bool        null
         , lang              varchar     null
     );
-    create index src_names_idx on src.names(id);"#;
+    create index src_names_idx on ror.names(id);"#;
     sqlx::raw_sql(table_sql).execute(pool).await?;
 
 
-    let table_sql = r#"drop table if exists src.locations;
-    create table src.locations
+    let table_sql = r#"drop table if exists ror.locations;
+    create table ror.locations
     (  
           id                varchar     not null
         , geonames_id       int         null
@@ -50,62 +50,62 @@ pub async fn recreate_src_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Err
         , country_code      varchar     null
         , country_name      varchar     null	
     );
-    create index src_locations_idx on src.locations(id);"#;
+    create index src_locations_idx on ror.locations(id);"#;
     sqlx::raw_sql(table_sql).execute(pool).await?;
 
 
-    let table_sql = r#"drop table if exists src.external_ids;
-    create table src.external_ids
+    let table_sql = r#"drop table if exists ror.external_ids;
+    create table ror.external_ids
     (
           id                varchar     not null
         , id_type           varchar     not null
         , id_value          varchar     not null
         , is_preferred      bool        null
     );
-    create index src_external_ids_idx on src.external_ids(id);"#;
+    create index src_external_ids_idx on ror.external_ids(id);"#;
     sqlx::raw_sql(table_sql).execute(pool).await?;
 
 
-    let table_sql = r#"drop table if exists src.links;
-    create table src.links
+    let table_sql = r#"drop table if exists ror.links;
+    create table ror.links
     (
           id                varchar	    not null
         , link_type         varchar     not null
         , value             varchar     not null
     );
-    create index src_links_idx on src.links(id);"#;
+    create index src_links_idx on ror.links(id);"#;
     sqlx::raw_sql(table_sql).execute(pool).await?;
 
 
-    let table_sql = r#"drop table if exists src.type;
-    create table src.type
+    let table_sql = r#"drop table if exists ror.type;
+    create table ror.type
     (  
           id                varchar	    not null
         , org_type          varchar     not null
     ); 
-    create index src_type_idx on src.type(id);"#;
+    create index src_type_idx on ror.type(id);"#;
     sqlx::raw_sql(table_sql).execute(pool).await?;
 
 
-    let table_sql = r#"drop table if exists src.relationships;
-    create table src.relationships
+    let table_sql = r#"drop table if exists ror.relationships;
+    create table ror.relationships
     (
           id                varchar     not null
         , rel_type          varchar     not null
         , related_id        varchar     not null
         , related_label     varchar     not null
     ); 
-    create index src_relationships_idx on src.relationships(id);"#;
+    create index src_relationships_idx on ror.relationships(id);"#;
     sqlx::raw_sql(table_sql).execute(pool).await?;
 
 
-    let table_sql = r#"drop table if exists src.domains;
-    create table src.domains
+    let table_sql = r#"drop table if exists ror.domains;
+    create table ror.domains
     (
           id                varchar     not null
         , value             varchar     not null
     );
-    create index src_domains_idx on src.domains(id);"#;
+    create index src_domains_idx on ror.domains(id);"#;
     sqlx::raw_sql(table_sql).execute(pool).await?;
 
     Ok(())
@@ -139,10 +139,10 @@ pub async fn log_record_nums (pool: &Pool<Postgres>) -> Result<(), sqlx::Error> 
 }
 
 pub async fn write_record_num (table_name: &str, pool: &Pool<Postgres>) -> Result<(), sqlx::Error> {
-    let sql = "SELECT COUNT(*) FROM src.".to_owned() + table_name;
+    let sql = "SELECT COUNT(*) FROM ror.".to_owned() + table_name;
     let res: i64 = sqlx::query_scalar(&sql)
     .fetch_one(pool)
     .await?;
-    info!("Total records in src.{}: {}", table_name, res);
+    info!("Total records in ror.{}: {}", table_name, res);
     Ok(())
 }

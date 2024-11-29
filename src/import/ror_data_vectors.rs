@@ -51,7 +51,7 @@ impl CoreDataVecs{
     pub async fn store_data(&self, pool : &Pool<Postgres>) {
     
         // do the core data
-        let _ = sqlx::query(r#"INSERT INTO src.core_data (id, ror_full_id, status, established) 
+        let _ = sqlx::query(r#"INSERT INTO ror.core_data (id, ror_full_id, status, established) 
             SELECT * FROM UNNEST($1::text[], $2::text[], $3::text[], $4::int[])"#)
         .bind(&self.db_ids)
         .bind(&self.ror_ids)
@@ -61,7 +61,7 @@ impl CoreDataVecs{
         .await;
         
         // do the admin data
-        let _ = sqlx::query(r#"INSERT INTO src.admin_data (id, created, cr_schema, last_modified, lm_schema) 
+        let _ = sqlx::query(r#"INSERT INTO ror.admin_data (id, created, cr_schema, last_modified, lm_schema) 
             SELECT * FROM UNNEST($1::text[], $2::timestamp[], $3::text[], $4::timestamp[], $5::text[])"#)
         .bind(&self.db_ids)
         .bind(&self.created_dates)
@@ -171,7 +171,7 @@ impl RequiredDataVecs{
     pub async fn store_data(&self, pool : &Pool<Postgres>) {
         
         // do the name data
-        let _ = sqlx::query(r#"INSERT INTO src.names (id, value, name_type, is_ror_name, lang) 
+        let _ = sqlx::query(r#"INSERT INTO ror.names (id, value, name_type, is_ror_name, lang) 
         SELECT * FROM UNNEST($1::text[], $2::text[], $3::text[], $4::bool[], $5::text[])"#)
         .bind(&self.name_db_ids)
         .bind(&self.names)
@@ -182,7 +182,7 @@ impl RequiredDataVecs{
         .await;
 
         // do the type data
-        let _ = sqlx::query(r#"INSERT INTO src.type (id, org_type) 
+        let _ = sqlx::query(r#"INSERT INTO ror.type (id, org_type) 
         SELECT * FROM UNNEST($1::text[], $2::text[])"#)
         .bind(&self.type_db_ids)
         .bind(&self.org_types)
@@ -190,7 +190,7 @@ impl RequiredDataVecs{
         .await;
 
         // do the location data
-        let _ = sqlx::query(r#"INSERT INTO src.locations (id, geonames_id, name, lat, lng, country_code, country_name ) 
+        let _ = sqlx::query(r#"INSERT INTO ror.locations (id, geonames_id, name, lat, lng, country_code, country_name ) 
         SELECT * FROM UNNEST($1::text[], $2::int[], $3::text[], $4::real[], $5::real[], $6::text[], $7::text[])"#)
         .bind(&self.loc_db_ids)
         .bind(&self.gn_ids)
@@ -346,7 +346,7 @@ impl NonRequiredDataVecs{
     pub async fn store_data(&self, pool : &Pool<Postgres>) {
 
         // do the relationships data
-        let _ = sqlx::query(r#"INSERT INTO src.relationships (id, rel_type, related_id, related_label) 
+        let _ = sqlx::query(r#"INSERT INTO ror.relationships (id, rel_type, related_id, related_label) 
         SELECT * FROM UNNEST($1::text[], $2::text[], $3::text[], $4::text[])"#)
         .bind(&self.rel_db_ids)
         .bind(&self.rel_types)
@@ -357,7 +357,7 @@ impl NonRequiredDataVecs{
 
     
         // do the links data
-        let _ = sqlx::query(r#"INSERT INTO src.links (id, link_type, value) 
+        let _ = sqlx::query(r#"INSERT INTO ror.links (id, link_type, value) 
         SELECT * FROM UNNEST($1::text[], $2::text[], $3::text[])"#)
         .bind(&self.link_db_ids)
         .bind(&self.link_types)
@@ -367,7 +367,7 @@ impl NonRequiredDataVecs{
 
     
         // do the external ids data
-        let _ = sqlx::query(r#"INSERT INTO src.external_ids (id, id_type, id_value, is_preferred) 
+        let _ = sqlx::query(r#"INSERT INTO ror.external_ids (id, id_type, id_value, is_preferred) 
         SELECT * FROM UNNEST($1::text[], $2::text[], $3::text[], $4::bool[])"#)
         .bind(&self.id_db_ids)
         .bind(&self.id_types)
@@ -377,7 +377,7 @@ impl NonRequiredDataVecs{
         .await;
     
         // do the domain data
-        let _ = sqlx::query(r#"INSERT INTO src.domains (id, value) 
+        let _ = sqlx::query(r#"INSERT INTO ror.domains (id, value) 
         SELECT * FROM UNNEST($1::text[], $2::text[])"#)
         .bind(&self.dom_db_ids)
         .bind(&self.doms)
