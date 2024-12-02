@@ -31,7 +31,7 @@ pub async fn recreate_src_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Err
         , n_grid            int         not null default 0
         , n_fundref         int         not null default 0
         , n_wikidata        int         not null default 0
-        , n_wikipaedia      int         not null default 0
+        , n_wikipedia       int         not null default 0
         , n_website         int         not null default 0
         , n_types           int         not null default 0
         , n_relrels         int         not null default 0

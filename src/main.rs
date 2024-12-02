@@ -56,9 +56,16 @@ async fn main() -> Result<(), AppError> {
     {
         transform::create_org_tables(&pool).await?;
 
+        if ip.create_context == true
+        {  
+            transform::create_lup_tables(&pool).await?;
+        }
+
         transform::process_data(&pool).await?;
 
-        transform::summarise_results(&ip.res_file_path, &pool).await?;
+        transform::store_results(&ip.data_date, &pool).await?;
+
+        transform::output_results(&ip.res_file_path, &pool).await?;
     }
 
     Ok(())  

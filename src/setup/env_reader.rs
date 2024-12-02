@@ -94,6 +94,10 @@ pub fn fetch_source_file_name() -> String {
     env::var("src_file_name").unwrap_or("".to_string())
 }
 
+pub fn fetch_data_date_string() -> String {
+    env::var("data_date").unwrap_or("".to_string())
+}
+
 pub fn fetch_results_file_name() -> String {
     let mut res_file = env::var("res_file_name").unwrap_or("".to_string());
     if res_file == "" {

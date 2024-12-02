@@ -12,25 +12,27 @@ use clap::{command, Arg, ArgMatches};
 pub struct CliPars {
     pub data_folder: String,
     pub source_file: String,
+    pub data_date: String,
     pub import_source: bool,
     pub process_source: bool,
+    pub create_context: bool,
 }
 
 pub fn fetch_valid_arguments() -> CliPars
 {
     let parse_result = parse_args ();
 
-    // guaranteed to unwrap OK as a default value set of "" 
+    // these 3 parameters guaranteed to unwrap OK as all have a default value of "" 
     let folder = parse_result.get_one::<String>("data_folder").unwrap();
-
-    // guaranteed to unwrap OK as a default value set of "" 
+    let data_date = parse_result.get_one::<String>("data_date").unwrap();
     let srce = parse_result.get_one::<String>("src_file").unwrap();
 
-    // flag values are false if not oresent, true if present.
+    // flag values are false if not present, true if present.
     let a_flag = parse_result.get_flag("a_flag");
     let s_flag = parse_result.get_flag("s_flag");
     let t_flag = parse_result.get_flag("t_flag");
-    
+    let c_flag = parse_result.get_flag("c_flag");
+
     let mut import = true;
     let mut process = false;
     if a_flag == true  // 'a' (do all) flag set
@@ -52,8 +54,10 @@ pub fn fetch_valid_arguments() -> CliPars
     CliPars {
         data_folder: folder.clone(),
         source_file: srce.clone(),
+        data_date: data_date.clone(),
         import_source: import,
         process_source: process,
+        create_context: c_flag,
     }
 
 }
@@ -80,13 +84,21 @@ fn parse_args () -> ArgMatches {
             .default_value("")
         )
         .arg(
+            Arg::new("data_date")
+           .short('d')
+           .long("date")
+           .required(false)
+           .help("A string with a date in ISO format that gives the date of the data")
+           .default_value("")
+        )
+        .arg(
             Arg::new("a_flag")
            .short('A')
            .long("A-flag")
            .required(false)
            .help("A flag signifying run the entire program")
            .action(clap::ArgAction::SetTrue)
-       )
+         )
         .arg(
             Arg::new("s_flag")
            .short('S')
@@ -103,6 +115,14 @@ fn parse_args () -> ArgMatches {
             .help("A flag signifying process source table data and analyse results")
             .action(clap::ArgAction::SetTrue)
         )
+        .arg(
+            Arg::new("c_flag")
+           .short('C')
+           .long("C-flag")
+           .required(false)
+           .help("A flag signifying that context tables need to be rebuilt")
+           .action(clap::ArgAction::SetTrue)
+       )
     .get_matches()
 
 }

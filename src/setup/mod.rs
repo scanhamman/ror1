@@ -3,6 +3,7 @@ pub mod cli_reader;
 pub mod log_helper;
 
 use crate::errors::{AppError, CustomError};
+use chrono::NaiveDate;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Postgres, Pool};
 use log::error;
@@ -13,8 +14,10 @@ use std::path::Path;
 pub struct InitParams {
     pub import_source: bool,
     pub process_source: bool,
+    pub create_context: bool,
     pub source_file_path : PathBuf,
     pub res_file_path : PathBuf,
+    pub data_date : NaiveDate,
     pub db_conn_string : String,
 }
 
@@ -58,7 +61,7 @@ pub async fn get_params() -> Result<InitParams, AppError> {
         return Result::Err(AppError::CsErr(cf_err));
     }
 
-
+ 
     // If source file name given in CL args the CL version takes precedence.
     
     let mut source_file_name =  env_reader::fetch_source_file_name();
@@ -82,6 +85,41 @@ pub async fn get_params() -> Result<InitParams, AppError> {
     let res_file_name =  env_reader::fetch_results_file_name();
     let res_file_path : PathBuf = [&source_folder, &res_file_name].iter().collect();
 
+    // get the date of the data
+
+    // first check CLI date, if any... 
+    // start with a default base date
+    
+    let base_date = NaiveDate::from_ymd_opt(1900,1,1).unwrap();
+    let mut date_of_data = base_date.clone();
+        
+    if cli_pars.data_date != "" {
+        // check if date
+        date_of_data = match NaiveDate::parse_from_str(&cli_pars.data_date, "%Y-%m-%d")
+        {
+            Ok(d) => d,
+            Err(_e) => base_date,
+        }
+    }
+
+    if date_of_data == base_date  // no date in CLI or was not valid format
+    {
+        // need to check env. date
+        date_of_data = match NaiveDate::parse_from_str(&env_reader::fetch_data_date_string(), "%Y-%m-%d")
+        {
+            Ok(d) => d,
+            Err(_e) => base_date,
+        }
+    }
+
+    if date_of_data == base_date {
+
+        // no date anywhere - we have a problem - // raise an AppError
+        let msg = "Data date not provided in either command line or environment file";
+        let cf_err = CustomError::new(msg);
+        return Result::Err(AppError::CsErr(cf_err));
+    }
+
     // Create and open a log file. Construct log file name, then full log_path, 
     // and then set up logging mechanism using log4rs by call to logging helper.
     // Finally log the initial parameters.
@@ -92,14 +130,16 @@ pub async fn get_params() -> Result<InitParams, AppError> {
 
     log_helper::log_startup_params(&source_folder, &source_file_name, &res_file_name, 
                            cli_pars.import_source, cli_pars.process_source );
-    
+
     let db_conn_string = env_reader::fetch_db_conn_string("ror")?;  
 
     Ok(InitParams {
         import_source : cli_pars.import_source,
         process_source : cli_pars.process_source,
+        create_context: cli_pars.create_context,
         source_file_path : source_file_path.clone(),
         res_file_path : res_file_path.clone(),
+        data_date : date_of_data.clone(),
         db_conn_string,
     })
 

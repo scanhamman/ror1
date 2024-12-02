@@ -1,4 +1,6 @@
 pub mod src_table_creator;
+pub mod cxt_table_creator;
+
 pub mod src_data_importer;
 pub mod src_data_processor;
 pub mod src_data_reporter;
@@ -7,10 +9,26 @@ use log::{info, error};
 use std::path::PathBuf;
 use sqlx::{Pool, Postgres};
 use crate::AppError;
+use chrono::NaiveDate;
 
 pub async fn create_org_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
 {
     let r = src_table_creator::recreate_src_tables(&pool).await;
+    match r {
+        Ok(()) => {
+            info!("Org tables created"); 
+            return Ok(())
+        },
+        Err(e) => {
+            error!("An error occured while creating the org tables: {}", e);
+            return Err(AppError::SqErr(e))
+            },
+    }
+}
+
+pub async fn create_lup_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
+{
+    let r = cxt_table_creator::recreate_lup_tables(&pool).await;
     match r {
         Ok(()) => {
             info!("Org tables created"); 
@@ -55,7 +73,25 @@ pub async fn process_data(pool : &Pool<Postgres>) -> Result<(), AppError>
 }
 
 
-pub async fn summarise_results(res_file_path: &PathBuf, pool : &Pool<Postgres>) -> Result<(), AppError>
+pub async fn store_results(_data_date: &NaiveDate, _pool : &Pool<Postgres>) -> Result<(), AppError>
+{
+    //let r = src_data_reporter::report_on_data(data_date, pool).await;
+    //match r {
+    //    Ok(()) => {
+    //        info!("Data summarised and written out"); 
+    //        return Ok(())
+    //    },
+    //    Err(e) => {
+    //        error!("An error occured while reporting on the the org tables: {}", e);
+    //        return Err(AppError::SqErr(e))
+    //        },
+    //}
+
+    Ok(())
+}
+
+
+pub async fn output_results(res_file_path: &PathBuf, pool : &Pool<Postgres>) -> Result<(), AppError>
 {
     let r = src_data_reporter::report_on_data(res_file_path, pool).await;
     match r {

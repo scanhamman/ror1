@@ -119,7 +119,7 @@ async fn summarise_external_ids (pool: &Pool<Postgres>) -> Result<PgQueryResult,
 async fn summarise_links (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Error> {
 
     let import_sql  = r#"update src.admin_data ad
-          set n_wikipaedia = n
+          set n_wikipedia = n
           from (
               select id, count(id) as n
               from src.links 
