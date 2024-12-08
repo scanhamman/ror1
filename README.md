@@ -16,9 +16,9 @@ DB schema, 'src'. This data is designed to be used as the basis for ad hoc SQL q
 data, and for an organisation data system UI, allowing data display and editing. They are also
 used as the basis of the summary statistics described below, and are designed to be the base data
 when integrating ror data into other systems.
-4) Summarising - Key summary statistics about the processed data are derived and stored in a collection of 
-permanent tables. There is one set of statistics per downloaded file. These tables can then be 
-interrogated to examine the changing characteristics of the ror data over time.
+4) Summarising - Key summary statistics about the processed data are derived and stored in a 
+collection of permanent tables. There is one set of statistics per downloaded file. These tables 
+can then be interrogated to examine the changing characteristics of the ror data over time.
 5) Reporting - The key summary statistics of the data can also be reported (for any one downloaded file)
 as both a JSON and a text file.
 
