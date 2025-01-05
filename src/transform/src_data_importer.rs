@@ -32,6 +32,7 @@ async fn update_core_data_locations (pool: &Pool<Postgres>) -> Result<PgQueryRes
 
     let import_sql  = r#"update src.core_data c
           set location = t.name,
+          csubdiv_code = t.csubdiv_code,
           country_code = t.country_code
           from ror.locations t
           where c.id = t.id;"#;
@@ -149,9 +150,11 @@ async fn import_types (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Err
 async fn import_locations (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Error> {
 
     let import_sql  = r#"insert into src.locations(id, ror_name, geonames_id, 
-	      geonames_name, lat, lng, country_code, country_name)
+	      geonames_name, lat, lng, cont_code, cont_name, 
+          country_code, country_name, csubdiv_code, csubdiv_name)
           select a.id, c.ror_name, a.geonames_id, a.name,
-                 a.lat, a.lng, a.country_code, a.country_name
+                 a.lat, a.lng, a.cont_code, a.cont_name, 
+                 a.country_code, a.country_name, a.csubdiv_code, a.csubdiv_name
           from ror.locations a
           inner join src.core_data c
           on a.id = c.id;"#;

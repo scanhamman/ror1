@@ -90,9 +90,12 @@ pub struct RequiredDataVecs {
     pub gn_names: Vec<String>,
     pub lats: Vec<f64>,
     pub lngs: Vec<f64>,
+    pub cont_codes: Vec<Option<String>>,
+    pub cont_names: Vec<Option<String>>,
     pub cy_codes: Vec<String>,
     pub cy_names: Vec<String>,
-
+    pub cy_subdiv_codes: Vec<Option<String>>,
+    pub cy_subdiv_names: Vec<Option<String>>,
 }
 
 
@@ -113,8 +116,12 @@ impl RequiredDataVecs{
             gn_names: Vec::with_capacity(vsize),
             lats: Vec::with_capacity(vsize),
             lngs: Vec::with_capacity(vsize),
+            cont_codes: Vec::with_capacity(vsize),
+            cont_names: Vec::with_capacity(vsize),
             cy_codes: Vec::with_capacity(vsize),
             cy_names: Vec::with_capacity(vsize),
+            cy_subdiv_codes: Vec::with_capacity(vsize),
+            cy_subdiv_names: Vec::with_capacity(vsize),
         }
     }
 
@@ -161,8 +168,12 @@ impl RequiredDataVecs{
                 self.gn_names.push(loc.geonames_details.name.clone());
                 self.lats.push(loc.geonames_details.lat.clone());
                 self.lngs.push(loc.geonames_details.lng.clone());
+                self.cont_codes.push(loc.geonames_details.continent_code.clone());
+                self.cont_names.push(loc.geonames_details.continent_name.clone());
                 self.cy_codes.push(loc.geonames_details.country_code.clone());
                 self.cy_names.push(loc.geonames_details.country_name.clone());
+                self.cy_subdiv_codes.push(loc.geonames_details.country_subdivision_code.clone());
+                self.cy_subdiv_names.push(loc.geonames_details.country_subdivision_name.clone());
             }
         }
 
@@ -190,15 +201,19 @@ impl RequiredDataVecs{
         .await;
 
         // do the location data
-        let _ = sqlx::query(r#"INSERT INTO ror.locations (id, geonames_id, name, lat, lng, country_code, country_name ) 
-        SELECT * FROM UNNEST($1::text[], $2::int[], $3::text[], $4::real[], $5::real[], $6::text[], $7::text[])"#)
+        let _ = sqlx::query(r#"INSERT INTO ror.locations (id, geonames_id, name, lat, lng, cont_code, cont_name, country_code, country_name, csubdiv_code, csubdiv_name ) 
+        SELECT * FROM UNNEST($1::text[], $2::int[], $3::text[], $4::real[], $5::real[], $6::text[], $7::text[], $8::text[], $9::text[], $10::text[], $11::text[])"#)
         .bind(&self.loc_db_ids)
         .bind(&self.gn_ids)
         .bind(&self.gn_names)
         .bind(&self.lats)
         .bind(&self.lngs)
+        .bind(&self.cont_codes)
+        .bind(&self.cont_names)
         .bind(&self.cy_codes)
         .bind(&self.cy_names)
+        .bind(&self.cy_subdiv_codes)
+        .bind(&self.cy_subdiv_names)
         .execute(pool)
         .await;
 
@@ -389,7 +404,23 @@ impl NonRequiredDataVecs{
 }
 
 
-fn extract_id_from(full_id: &String) -> &str {
+pub fn extract_id_from(full_id: &String) -> &str {
     let b = full_id.as_bytes();
     std::str::from_utf8(&b[b.len()-9..]).unwrap()
 }
+
+// Tests
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    // Ensure the extract_id_from utility function works as expected.
+
+    #[test]
+    fn test_extracting_id() {
+        let test_id = "https://ror.org/123456789".to_string();
+        assert_eq!(extract_id_from(&(test_id)), "123456789")
+    }
+}
+

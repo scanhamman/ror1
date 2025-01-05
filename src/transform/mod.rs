@@ -1,9 +1,13 @@
-pub mod src_table_creator;
-pub mod cxt_table_creator;
+// The transform module. Referenced in main by 'mod transform'.
+// It makes use of the other modules in the folder, each corresponding to a file of the same name.
+// The folder modules do not need to be public - they are referenced only within this module.
 
-pub mod src_data_importer;
-pub mod src_data_processor;
-pub mod src_data_reporter;
+mod src_table_creator;
+mod cxt_table_creator;
+
+mod src_data_importer;
+mod src_data_processor;
+mod src_data_reporter;
 
 use log::{info, error};
 use std::path::PathBuf;

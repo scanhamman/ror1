@@ -12,10 +12,11 @@
  * Database parameters MUST be provided and be valid or the program can not
  * continue. 
  * The folder path and the source file name have defaults but these should 
- * NOT be used. They are there only as placeholders, to be overwritten by 
- * values provided as string arguments in the command line. In other words the 
- * folder path and the source file name MUST be present EITHER in the .env 
- * file OR in the CLI arguments. If both, the CLI arguments take precedence.
+ * NOT normally be used. They are there only as placeholders, to be overwritten by 
+ * values provided as string arguments in the command line or the .env file. 
+ * In other words the folder path and the source file name MUST be present 
+ * EITHER in the .env file OR in the CLI arguments. 
+ * If both, the CLI arguments take precedence.
  * The results file name has a timestamped default name that will be used if 
  * none is provided explicitly.
  ***************************************************************************/
@@ -24,7 +25,7 @@ use std::sync::OnceLock;
 use std::env;
 use dotenv;
 use chrono::Local;
-use crate::errors::{AppError, CustomError};
+use crate::error_defs::{AppError, CustomError};
 
 #[derive(Debug)]
 pub struct DbPars {
@@ -36,16 +37,16 @@ pub struct DbPars {
 
 pub static DB_PARS: OnceLock<DbPars> = OnceLock::new();
 
-pub fn populate_env_vars() -> Result< (), dotenv::Error> {
+pub fn populate_env_vars() -> Result< (), AppError> {
 
     // Use the dotenv from_filename function to load the variables into std::env.
+
     let _env_res  = match dotenv::from_filename("ror.env")
     {
         Ok(pb) => pb,
-        Err(err) => return Err(err),
+        Err(err) => return Err(AppError::DeErr(err)),
     };
-    //dotenv::from_filename("ror.env").expect("Problem in reading parameters from env file");
-    
+       
     // Extract the DB connection variables - N.B. user (name) and password have 
     // no meaningful defaults
     
@@ -109,7 +110,16 @@ pub fn fetch_results_file_name() -> String {
 
 
 
+//tests
 
+// does DB_PARS contan the correct parameters?
+// Have the correct db parameters been read?
+// How can we test them without giving away their values?
+// ASnswer -> Ensure that db access occurs without error...
+// using both conn string function and / or DB_PARS
+
+// Do the file readewrs work...
+// Valid values are checked later, when they are read
 
 
 

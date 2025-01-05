@@ -11,6 +11,7 @@ pub async fn recreate_src_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Err
         , status            varchar     not null default 1
         , established       int         null
         , location          varchar     null
+        , csubdiv_code      varchar     null
         , country_code      varchar     null
     );"#;
     sqlx::raw_sql(table_sql).execute(pool).await?;
@@ -71,8 +72,12 @@ pub async fn recreate_src_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Err
         , geonames_name     varchar     null	
         , lat               real        null
         , lng               real        null
+        , cont_code         varchar     null
+        , cont_name         varchar     null
         , country_code      varchar     null
-        , country_name      varchar     null	
+        , country_name      varchar     null
+        , csubdiv_code      varchar     null
+        , csubdiv_name      varchar     null	
     );
     create index locations_idx on src.locations(id);"#;
     sqlx::raw_sql(table_sql).execute(pool).await?;

@@ -1,13 +1,14 @@
 /***************************************************************************
  * Establishes the log for the programme's operation using log and log4rs, 
  * and includes various helper functions.
- * Once established the log file apperars to be accessible to any log
- * statement within the rest of the program.
+ * Once established the log file appears to be accessible to any log
+ * statement within the rest of the program (after 'use log:: ...').
  ***************************************************************************/
 
 use chrono::Local;
 use std::path::PathBuf;
-use crate::errors::AppError;
+use crate::error_defs::AppError;
+use crate::setup::InitParams;
 
 use log::{info, LevelFilter};
 use log4rs::{
@@ -31,8 +32,8 @@ pub fn get_log_file_name(source_file_name : &String) -> String{
 
 pub fn setup_log (log_file_path: &PathBuf) -> Result<log4rs::Handle, AppError> {
     
-    // Called from within the setup module to establish the logger mechanism
-    // Initially establish a pattern for each log line
+    // Called from within the setup module to establish the logger mechanism.
+    // Initially establish a pattern for each log line.
 
     let log_pattern = "{d(%d/%m %H:%M:%S)}  {h({l})}  {({M}.{L}):>35.45}:  {m}\n";
 
@@ -71,9 +72,9 @@ pub fn setup_log (log_file_path: &PathBuf) -> Result<log4rs::Handle, AppError> {
 
 }
 
-
+/* 
 pub fn log_startup_params (folder_name: &String, source_file_name: &String, results_file_name: &String, 
-    import_source: bool, process_source: bool ) {
+    data_date: &String, create_context: bool, import_source: bool, process_source: bool ) {
     
     // Called at the end of set up to record the input parameters
 
@@ -84,8 +85,31 @@ pub fn log_startup_params (folder_name: &String, source_file_name: &String, resu
     info!("folder_name: {}", folder_name);
     info!("source_file_name: {}", source_file_name);
     info!("results_file_name: {}", results_file_name);
+    info!("data_date: {}", data_date);
+    info!("create context: {}", create_context);
     info!("import_source: {}", import_source);
     info!("process_source: {}", process_source);
+    info!("");
+    info!("************************************");
+    info!("");
+}
+
+*/
+
+pub fn log_startup_params (ip : &InitParams) {
+    
+    // Called at the end of set up to record the input parameters
+
+    info!("PROGRAM START");
+    info!("");
+    info!("************************************");
+    info!("");
+    info!("source_file_name: {}", ip.source_file_path.display());
+    info!("results_file_name: {}", ip.res_file_path.display());
+    info!("data_date: {}", ip.data_date);
+    info!("create context: {}", ip.create_context);
+    info!("import_source: {}", ip.import_source);
+    info!("process_source: {}", ip.process_source);
     info!("");
     info!("************************************");
     info!("");

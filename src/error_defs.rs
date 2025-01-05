@@ -1,9 +1,16 @@
+// The errors module, that defines a general 'AppError' struct.
+// This allows various types of error (I/O, sql, dotenv, serde,  etc.) to be transformed
+// into the same error type, allowing function signatures returning a result type 
+// to propogate any error up the call stack by simply using the '?' operator.
+// Also defines a 'custom error' type to deal with cases not covered by 
+// the errors returned from the standard or external crates.
+
 use std::fmt;
 use std::error::Error;
 
-//#[derive(Debug)]
 pub enum AppError {
     DeErr(dotenv::Error),
+    CpErr(clap::Error),
     SqErr(sqlx::Error),
     IoErr(std::io::Error),
     SdErr(serde_json::Error),
@@ -17,6 +24,7 @@ impl fmt::Display for AppError { // Error message for users.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             AppError::DeErr(ref err) => write!(f, "environment error: {}", err),
+            AppError::CpErr(ref err) => write!(f, "clap error: {}", err),
             AppError::SqErr(ref err) => write!(f, "sqlx error: {}", err),
             AppError::IoErr(ref err) => write!(f, "io error: {}", err),
             AppError::SdErr(ref err) => write!(f, "serde json error: {}", err),
@@ -30,7 +38,7 @@ impl std::fmt::Debug for AppError { // Error message for programmers.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "{self}")?;
 
-        if let Some(e) = self.source() { // <-- Use source() to retrive the root cause.
+        if let Some(e) = self.source() { // <-- Use source() to retrieve the root cause.
             writeln!(f, "\tCaused by: {e:?}")?;
         }
         Ok(())
@@ -40,6 +48,12 @@ impl std::fmt::Debug for AppError { // Error message for programmers.
 impl From<dotenv::Error> for AppError {
     fn from(err: dotenv::Error) -> AppError {
         AppError::DeErr(err)
+    }
+}
+
+impl From<clap::Error> for AppError {
+    fn from(err:clap::Error) -> AppError {
+        AppError::CpErr(err)
     }
 }
 
@@ -79,6 +93,8 @@ pub struct CustomError {
     message: String,
 }
 
+impl std::error::Error for CustomError {}
+
 impl CustomError {
     pub fn new(message: &str) -> CustomError {
         CustomError {
@@ -93,5 +109,5 @@ impl fmt::Display for CustomError {
     }
 }
 
-impl Error for CustomError {}
+
 

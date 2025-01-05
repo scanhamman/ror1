@@ -47,8 +47,12 @@ pub async fn recreate_ror_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Err
         , name              varchar     null	
         , lat               real        null
         , lng               real        null
+        , cont_code         varchar     null
+        , cont_name         varchar     null	    
         , country_code      varchar     null
         , country_name      varchar     null	
+        , csubdiv_code      varchar     null
+        , csubdiv_name      varchar     null	
     );
     create index src_locations_idx on ror.locations(id);"#;
     sqlx::raw_sql(table_sql).execute(pool).await?;
@@ -146,3 +150,5 @@ pub async fn write_record_num (table_name: &str, pool: &Pool<Postgres>) -> Resul
     info!("Total records in ror.{}: {}", table_name, res);
     Ok(())
 }
+
+

@@ -31,8 +31,12 @@ use serde::{Serialize, Deserialize};
 
     #[derive(Serialize, Deserialize, Debug)]
     pub struct GeoDetails {
+        pub continent_code : Option<String>,
+        pub continent_name : Option<String>,
         pub country_code: String,
         pub country_name: String,
+        pub country_subdivision_code : Option<String>,
+        pub country_subdivision_name : Option<String>,
         pub lat: f64,
         pub lng: f64,
         pub name: String,

@@ -1,9 +1,12 @@
 mod import;
 mod setup;
 mod transform;
-mod errors;
+mod error_defs;
 
-use errors::AppError;
+use error_defs::AppError;
+use setup::log_helper;
+use std::env;
+use std::path::PathBuf;
 
 /// A small program to process the ROR organisation data, as made
 /// available in a JSON file download by ROR, and load that data
@@ -13,24 +16,35 @@ use errors::AppError;
 
 async fn main() -> Result<(), AppError> {
     
-    // Important that there are no errors in these intial two steps.
-    // If one does occur the error needs to be logged and 
-    // the program must then stop.
+    // Important that there are no errors in these intial three steps.
+    // If one does occur the program exits.
 
-    // First, fetch start parameters such as file names and CLI flags
-    
-    let try_params = setup::get_params().await;
-    let ip = match try_params {
+    // First, collect program arguments and fetch start parameters 
+    // such as file names and CLI flags. Arguments are collected explicitly 
+    // to allow unit testing of the process (using injected arguments).
+      
+    let args: Vec<_> = env::args_os().collect();
+    let try_params = setup::get_params(args).await;
+    let initial_params = match try_params {
         Ok(p) => p,
         Err(e) => {
             return Err(e)
         }, 
     };
-    
-    // Second, set up the database connection pool
 
-    let db_conn = ip.db_conn_string;
-    let try_pool = setup::get_db_pool(db_conn).await;
+
+    // Secondly, a log file is also established in the specified data folder.
+    // It's name references the source data file, as well as the date-time.
+    // The startup parameters are recorded as the initial part of the log.
+
+    let log_file_name = log_helper::get_log_file_name(&initial_params.source_file_name);
+    let log_file_path: PathBuf = [&initial_params.data_folder, &log_file_name].iter().collect();
+    log_helper::setup_log(&log_file_path)?;
+    log_helper::log_startup_params(&initial_params);
+    
+    // Third, The database connection pool is established for the database "ror"
+    
+    let try_pool = setup::get_db_pool("ror").await;
     let pool = match try_pool {
         Ok(p) => p,
         Err(e) => {
@@ -38,34 +52,35 @@ async fn main() -> Result<(), AppError> {
         }, 
     };
 
+
     // Next two stages dependent on the presence of the relevant flag(s)
     // In each, initial step is to recreate the DB tables, before doing
-    // the processing and summarising
+    // the processing and, where necessary, the summarising.
 
-    if ip.import_source == true
+    if initial_params.import_source == true
     {
         import::create_src_tables(&pool).await?;
         
-        import::import_data(&ip.source_file_path, &pool).await?;
+        import::import_data(&initial_params.source_file_path, &pool).await?;
 
         import::summarise_import(&pool).await?;
     }
     
 
-    if ip.process_source == true
+    if initial_params.process_source == true
     {
         transform::create_org_tables(&pool).await?;
 
-        if ip.create_context == true
+        if initial_params.create_context == true
         {  
             transform::create_lup_tables(&pool).await?;
         }
 
         transform::process_data(&pool).await?;
 
-        transform::store_results(&ip.data_date, &pool).await?;
+        transform::store_results(&initial_params.data_date, &pool).await?;
 
-        transform::output_results(&ip.res_file_path, &pool).await?;
+        transform::output_results(&initial_params.res_file_path, &pool).await?;
     }
 
     Ok(())  

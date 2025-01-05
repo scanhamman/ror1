@@ -1,6 +1,10 @@
-pub mod ror_json_models;
-pub mod ror_table_creator;
-pub mod ror_data_vectors;
+// The import module. Referenced in main by 'mod import'.
+// It makes use of the other modules in the folder, each corresponding to a file of the same name.
+// The folder modules do not need to be public - they are referenced only within this module.
+
+mod ror_json_models;
+mod ror_table_creator;
+mod ror_data_vectors;
 
 use log::{info, error};
 use std::path::PathBuf;
@@ -9,7 +13,7 @@ use sqlx::{Pool, Postgres};
 use crate::AppError;
 
 use ror_json_models::RorRecord;
-use ror_data_vectors::{CoreDataVecs, RequiredDataVecs, NonRequiredDataVecs};
+use ror_data_vectors::{CoreDataVecs, RequiredDataVecs, NonRequiredDataVecs, extract_id_from};
 
 
 pub async fn create_src_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
@@ -115,13 +119,9 @@ pub async fn import_data(source_file_path : &PathBuf, pool : &Pool<Postgres>) ->
 
 pub async fn summarise_import(pool : &Pool<Postgres>) -> Result<(), AppError>
 {
-     // Go through each table and get total record number
+    // Goes through each table and get total record number.
+
     ror_table_creator::log_record_nums(pool).await?;
     Ok(())
 }
 
-
-fn extract_id_from(full_id: &String) -> &str {
-    let b = full_id.as_bytes();
-    std::str::from_utf8(&b[b.len()-9..]).unwrap()
-}
