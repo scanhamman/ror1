@@ -1,7 +1,7 @@
 use sqlx::{postgres::PgQueryResult, Pool, Postgres};
 
 
-pub async fn summarise_data (pool: &Pool<Postgres>) -> Result<(), sqlx::Error> {
+pub async fn store_org_attribute_numbers (pool: &Pool<Postgres>) -> Result<(), sqlx::Error> {
  
     summarise_names (pool).await?;
     summarise_nametypes (pool).await?;

@@ -6,81 +6,73 @@ mod error_defs;
 use error_defs::AppError;
 use setup::log_helper;
 use std::env;
-use std::path::PathBuf;
 
 /// A small program to process the ROR organisation data, as made
 /// available in a JSON file download by ROR, and load that data
 /// into a series of tables in a Postgres database. 
 
 #[tokio::main(flavor = "current_thread")]
-
 async fn main() -> Result<(), AppError> {
     
-    // Important that there are no errors in these intial three steps.
+    // Important that there are no errors in the intial three steps.
     // If one does occur the program exits.
+    // 1) Collect initial parameters such as file names and CLI flags. 
+    // CLI arguments are collected explicitly to facilitate unit testing. 
+    // of 'get_params'. Relevant environmental variables are also read.
+    // 2) Establish a log file, in the specified data folder.
+    // The initial parameters are recorded as the initial part of the log.
+    // 3) The database connection pool is established for the database "ror".
 
-    // First, collect program arguments and fetch start parameters 
-    // such as file names and CLI flags. Arguments are collected explicitly 
-    // to allow unit testing of the process (using injected arguments).
-      
     let args: Vec<_> = env::args_os().collect();
-    let try_params = setup::get_params(args).await;
-    let initial_params = match try_params {
-        Ok(p) => p,
-        Err(e) => {
-            return Err(e)
-        }, 
-    };
+    let params = setup::get_params(args).await?;
+  
+    log_helper::setup_log(&params.log_folder, &params.source_file_name)?;
+    log_helper::log_startup_params(&params);
+            
+    let pool = setup::get_db_pool("ror").await?;
 
+    // Processing of the remaining stages depends on the 
+    // presence of the relevant CLI flag(s).
 
-    // Secondly, a log file is also established in the specified data folder.
-    // It's name references the source data file, as well as the date-time.
-    // The startup parameters are recorded as the initial part of the log.
+    // The first two routines normally run only as an initial 
+    // 'setup' of the program's DB, but can be repeated later if required.
+    // If combined with data import / processing they will obviously 
+    // occur before that import / processing.
 
-    let log_file_name = log_helper::get_log_file_name(&initial_params.source_file_name);
-    let log_file_path: PathBuf = [&initial_params.data_folder, &log_file_name].iter().collect();
-    log_helper::setup_log(&log_file_path)?;
-    log_helper::log_startup_params(&initial_params);
-    
-    // Third, The database connection pool is established for the database "ror"
-    
-    let try_pool = setup::get_db_pool("ror").await;
-    let pool = match try_pool {
-        Ok(p) => p,
-        Err(e) => {
-            return Err(e)
-        }, 
-    };
+    if params.create_context
+    {  
+        transform::create_lup_tables(&pool).await?;
+    }
 
-
-    // Next two stages dependent on the presence of the relevant flag(s)
-    // In each, initial step is to recreate the DB tables, before doing
-    // the processing and, where necessary, the summarising.
-
-    if initial_params.import_source == true
-    {
-        import::create_src_tables(&pool).await?;
-        
-        import::import_data(&initial_params.source_file_path, &pool).await?;
-
-        import::summarise_import(&pool).await?;
+    if params.create_summary
+    {  
+        transform::create_smm_tables(&pool).await?;
     }
     
+    // In each of the following stages, the initial step is to recreate 
+    // the relevant DB tables, before doing the processing and summarising.
+    // These steps are not considered if both create_context and create_summary 
+    // are true (as in initial database installation).
 
-    if initial_params.process_source == true
-    {
-        transform::create_org_tables(&pool).await?;
+    if !(params.create_context && params.create_summary) {
 
-        if initial_params.create_context == true
-        {  
-            transform::create_lup_tables(&pool).await?;
+        if params.import_ror    // import ror from json file and store in ror schema tables
+        {
+            import::create_ror_tables(&pool).await?;
+            import::import_data(&params.data_folder, &params.source_file_name, &pool).await?;
+            import::summarise_import(&pool).await?;
+        }
+    
+        if params.process_data  // transfer data to src tables, and summarise in smm tables
+        {
+            transform::create_src_tables(&pool).await?;
+            transform::process_data(&params.data_version, &params.data_date, &pool).await?;
         }
 
-        transform::process_data(&pool).await?;
-
-        transform::store_results(&initial_params.data_date, &pool).await?;
-
-        transform::output_results(&initial_params.res_file_path, &pool).await?;
+        if params.report_data  // write out summary data from data in src tables
+        { 
+            transform::report_results(&params.output_folder, &params.output_file_name, &pool).await?;
+        }
     }
 
     Ok(())  

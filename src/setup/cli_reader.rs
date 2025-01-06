@@ -14,56 +14,90 @@ use std::ffi::OsString;
 pub struct CliPars {
     pub data_folder: String,
     pub source_file: String,
+    pub data_version: String,
     pub data_date: String,
-    pub import_source: bool,
-    pub process_source: bool,
-    pub create_context: bool,
+    pub import_ror: bool,
+    pub process_data: bool,
+    pub report_data: bool,
+    pub create_lup: bool,
+    pub create_smm: bool,
 }
 
 pub fn fetch_valid_arguments(args: Vec<OsString>) -> Result<CliPars, AppError>
-{
+{ 
     let parse_result = parse_args(args)?;
 
-    // These 3 parameters guaranteed to unwrap OK as all have a default value of "".
+    // These parameters guaranteed to unwrap OK as all have a default value of "".
 
-    let folder = parse_result.get_one::<String>("data_folder").unwrap();
+    let data_folder = parse_result.get_one::<String>("data_folder").unwrap();
+    let source_file = parse_result.get_one::<String>("src_file").unwrap();
+    let data_version = parse_result.get_one::<String>("data_version").unwrap();
     let data_date = parse_result.get_one::<String>("data_date").unwrap();
-    let srce = parse_result.get_one::<String>("src_file").unwrap();
 
     // Flag values are false if not present, true if present.
 
     let a_flag = parse_result.get_flag("a_flag");
-    let s_flag = parse_result.get_flag("s_flag");
+    let i_flag = parse_result.get_flag("i_flag");
+
+    let r_flag = parse_result.get_flag("r_flag");
+    let p_flag = parse_result.get_flag("p_flag");
     let t_flag = parse_result.get_flag("t_flag");
     let c_flag = parse_result.get_flag("c_flag");
+    let m_flag = parse_result.get_flag("m_flag");
+
 
     let mut import = true;
     let mut process = false;
+    let mut report_data = false;
+
     if a_flag == true  // 'a' (do all) flag set
     {
         process = true;  // import already true
+        report_data = true;
     }
     else 
     {
-        // none, one or both s and t flags set
-        // if neither set, use initial default values,
-        // else use values as provided
+        // none, one, two or all r, p and t flags set
+        // if none set, use initial default values,
+        // otherwise use values as provided
 
-        if !(s_flag == false && t_flag == false) {
-            import = s_flag;
-            process = t_flag;
+        if !(r_flag == false && p_flag == false && t_flag == false) {
+            import = r_flag;
+            process = p_flag;
+            report_data = t_flag;
         }
     }
 
-    Ok(CliPars {
-        data_folder: folder.clone(),
-        source_file: srce.clone(),
-        data_date: data_date.clone(),
-        import_source: import,
-        process_source: process,
-        create_context: c_flag,
-    })
-
+    // If both c and m flags set (may be by using 'i' (initialise) flag)
+    {
+        if i_flag || (c_flag && m_flag) {
+            Ok(CliPars {
+                data_folder: "".to_string(),
+                source_file: "".to_string(),
+                data_version: "".to_string(),
+                data_date: "".to_string(),
+                import_ror: false,
+                process_data: false,
+                report_data: false,
+                create_lup: true,
+                create_smm: true
+            })
+        }
+    
+        else {
+            Ok(CliPars {
+                data_folder: data_folder.clone(),
+                source_file: source_file.clone(),
+                data_version: data_version.clone(),
+                data_date: data_date.clone(),
+                import_ror: import,
+                process_data: process,
+                report_data: report_data,
+                create_lup: c_flag,
+                create_smm: m_flag
+            })
+        }
+    }
 }
 
 
@@ -88,6 +122,14 @@ fn parse_args(args: Vec<OsString>) -> Result<ArgMatches, clap::Error> {
             .default_value("")
         )
         .arg(
+            Arg::new("data_version")
+           .short('v')
+           .long("data_version")
+           .required(false)
+           .help("A string with the version ascribed to the data by ror, in a semver format")
+           .default_value("")
+        )
+        .arg(
             Arg::new("data_date")
            .short('d')
            .long("date")
@@ -100,32 +142,56 @@ fn parse_args(args: Vec<OsString>) -> Result<ArgMatches, clap::Error> {
            .short('A')
            .long("A-flag")
            .required(false)
-           .help("A flag signifying run the entire program")
+           .help("A flag signifying run the entire program, equivalent to R and P")
            .action(clap::ArgAction::SetTrue)
          )
         .arg(
-            Arg::new("s_flag")
-           .short('S')
-           .long("S-flag")
+            Arg::new("r_flag")
+           .short('R')
+           .long("R-flag")
            .required(false)
-           .help("A flag signifying import from source file to src tables only")
+           .help("A flag signifying import from ror file to ror schema tables only")
            .action(clap::ArgAction::SetTrue)
        )
         .arg(
-             Arg::new("t_flag")
-            .short('T')
-            .long("T-flag")
+             Arg::new("p_flag")
+            .short('P')
+            .long("P-flag")
             .required(false)
-            .help("A flag signifying process source table data and analyse results")
+            .help("A flag signifying process ror data to src data and analyse and store results")
             .action(clap::ArgAction::SetTrue)
         )
         .arg(
-            Arg::new("c_flag")
-           .short('C')
-           .long("C-flag")
+            Arg::new("t_flag")
+           .short('T')
+           .long("T-flag")
            .required(false)
-           .help("A flag signifying that context tables need to be rebuilt")
+           .help("A flag signifying output a summary of the current data into a text file")
            .action(clap::ArgAction::SetTrue)
+       )
+       .arg(
+            Arg::new("i_flag")
+           .short('I')
+           .long("Install")
+           .required(false)
+           .help("A flag signifying initial run, creates summary and context tables only")
+           .action(clap::ArgAction::SetTrue)
+       )
+       .arg(
+            Arg::new("c_flag")
+            .short('C')
+            .long("C-flag")
+            .required(false)
+            .help("A flag signifying that context tables need to be rebuilt")
+            .action(clap::ArgAction::SetTrue)
+       )
+       .arg(
+            Arg::new("m_flag")
+            .short('M')
+            .long("M-flag")
+            .required(false)
+            .help("A flag signifying that summary tables should be recreated")
+            .action(clap::ArgAction::SetTrue)
        )
     .try_get_matches_from(args)
 
@@ -144,72 +210,121 @@ mod tests {
         let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
 
         let res = fetch_valid_arguments(test_args).unwrap();
-        assert_eq!(res.import_source, true);
-        assert_eq!(res.process_source, false);
-        assert_eq!(res.create_context, false);
-        assert_eq!(res.data_date, "");
         assert_eq!(res.data_folder, "");
         assert_eq!(res.source_file, "");
-    }
+        assert_eq!(res.import_ror, true);
+        assert_eq!(res.process_data, false);
+        assert_eq!(res.report_data, false);
+        assert_eq!(res.create_lup, false);
+        assert_eq!(res.create_smm, false);
+        assert_eq!(res.data_date, "");
+        assert_eq!(res.data_version, "");
 
+    }
+  
     #[test]
     fn check_cli_with_a_flag() {
         let args : Vec<&str> = vec!["target\\debug\\ror1.exe", "-A"];
         let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
 
         let res = fetch_valid_arguments(test_args).unwrap();
-
-        assert_eq!(res.import_source, true);
-        assert_eq!(res.process_source, true);
-        assert_eq!(res.create_context, false);
-        assert_eq!(res.data_date, "");
         assert_eq!(res.data_folder, "");
         assert_eq!(res.source_file, "");
+        assert_eq!(res.import_ror, true);
+        assert_eq!(res.process_data, true);
+        assert_eq!(res.report_data, true);
+        assert_eq!(res.create_lup, false);
+        assert_eq!(res.create_smm, false);
+        assert_eq!(res.data_date, "");
+        assert_eq!(res.data_version, "");
     }
 
     #[test]
-    fn check_cli_with_c_flag() {
-        let args : Vec<&str> = vec!["target\\debug\\ror1.exe", "-C"];
+    fn check_cli_with_i_flag() {
+        let args : Vec<&str> = vec!["target\\debug\\ror1.exe", "-I"];
         let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
 
         let res = fetch_valid_arguments(test_args).unwrap();
-
-        assert_eq!(res.import_source, true);
-        assert_eq!(res.process_source, false);
-        assert_eq!(res.create_context, true);
-        assert_eq!(res.data_date, "");
         assert_eq!(res.data_folder, "");
         assert_eq!(res.source_file, "");
+        assert_eq!(res.import_ror, false);
+        assert_eq!(res.process_data, false);
+        assert_eq!(res.report_data, false);
+        assert_eq!(res.create_lup, true);
+        assert_eq!(res.create_smm, true);
+        assert_eq!(res.data_date, "");
+        assert_eq!(res.data_version, "");
+    }
+
+    #[test]
+    fn check_cli_with_c_and_m_flags() {
+        let args : Vec<&str> = vec!["target\\debug\\ror1.exe", "-C", "-M"];
+        let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
+
+        let res = fetch_valid_arguments(test_args).unwrap();
+        assert_eq!(res.data_folder, "");
+        assert_eq!(res.source_file, "");
+        assert_eq!(res.import_ror, false);
+        assert_eq!(res.process_data, false);
+        assert_eq!(res.report_data, false);
+        assert_eq!(res.create_lup, true);
+        assert_eq!(res.create_smm, true);
+        assert_eq!(res.data_date, "");
+        assert_eq!(res.data_version, "");
+    }
+
+
+    #[test]
+    fn check_cli_with_c_and_p_flag() {
+        let args : Vec<&str> = vec!["target\\debug\\ror1.exe", "-C", "-P"];
+        let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
+
+        let res = fetch_valid_arguments(test_args).unwrap();
+        assert_eq!(res.data_folder, "");
+        assert_eq!(res.source_file, "");
+        assert_eq!(res.import_ror, false);
+        assert_eq!(res.process_data, true);
+        assert_eq!(res.report_data, false);
+        assert_eq!(res.create_lup, true);
+        assert_eq!(res.create_smm, false);
+        assert_eq!(res.data_date, "");
+        assert_eq!(res.data_version, "");
     }
 
     #[test]
     fn check_cli_with_explicit_string_pars() {
-        let args : Vec<&str> = vec!["target\\debug\\ror1.exe", "-f", "E:\\ROR\\some data folder", "-d", "2025-12-25", "-s", "schema2 data.json"];
+        let args : Vec<&str> = vec!["target\\debug\\ror1.exe", "-f", "E:\\ROR\\some data folder", 
+                                    "-s", "schema2 data.json", "-d", "2025-12-25", "-v", "1.62"];
         let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
 
         let res = fetch_valid_arguments(test_args).unwrap();
-
-        assert_eq!(res.import_source, true);
-        assert_eq!(res.process_source, false);
-        assert_eq!(res.create_context, false);
-        assert_eq!(res.data_date, "2025-12-25");
         assert_eq!(res.data_folder, "E:\\ROR\\some data folder");
         assert_eq!(res.source_file, "schema2 data.json");
+        assert_eq!(res.import_ror, true);
+        assert_eq!(res.process_data, false);
+        assert_eq!(res.report_data, false);
+        assert_eq!(res.create_lup, false);
+        assert_eq!(res.create_smm, false);
+        assert_eq!(res.data_date, "2025-12-25");
+        assert_eq!(res.data_version, "1.62");
     }
 
     #[test]
-    fn check_cli_with_all_params_explicit() {
-        let args : Vec<&str> = vec!["target\\debug\\ror1.exe", "-S", "-C", "-T", "-f", "E:\\ROR\\some data folder", "-d", "2025-12-25", "-s", "schema2 data.json"];
+    fn check_cli_with_most_params_explicit() {
+        let args : Vec<&str> = vec!["target\\debug\\ror1.exe", "-f", "E:\\ROR\\some other data folder", 
+        "-s", "schema2.1 data.json", "-d", "2026-12-25", "-v", "1.63", "-R", "-P", "-T", "-C"];
         let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
 
         let res = fetch_valid_arguments(test_args).unwrap();
-
-        assert_eq!(res.import_source, true);
-        assert_eq!(res.process_source, true);
-        assert_eq!(res.create_context, true);
-        assert_eq!(res.data_date, "2025-12-25");
-        assert_eq!(res.data_folder, "E:\\ROR\\some data folder");
-        assert_eq!(res.source_file, "schema2 data.json");
+        assert_eq!(res.data_folder, "E:\\ROR\\some other data folder");
+        assert_eq!(res.source_file, "schema2.1 data.json");
+        assert_eq!(res.import_ror, true);
+        assert_eq!(res.process_data, true);
+        assert_eq!(res.report_data, true);
+        assert_eq!(res.create_lup, true);
+        assert_eq!(res.create_smm, false);
+        assert_eq!(res.data_date, "2026-12-25");
+        assert_eq!(res.data_version, "1.63");
     }
 }
 

@@ -13,18 +13,23 @@ use chrono::NaiveDate;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Postgres, Pool};
 use log::error;
-use std::path::PathBuf;
+use chrono::Local;
 use std::path::Path;
 use std::ffi::OsString;
+use std::fs;
 
 pub struct InitParams {
-    pub import_source: bool,
-    pub process_source: bool,
+    pub import_ror: bool,
+    pub process_data: bool,
+    pub report_data: bool,
     pub create_context: bool,
+    pub create_summary: bool,
     pub data_folder : String,
+    pub log_folder: String,
+    pub output_folder: String,
     pub source_file_name : String,
-    pub source_file_path : PathBuf,
-    pub res_file_path : PathBuf,
+    pub output_file_name : String,
+    pub data_version: String,
     pub data_date : NaiveDate,
 }
 
@@ -37,112 +42,148 @@ pub async fn get_params(args: Vec<OsString>) -> Result<InitParams, AppError> {
     let cli_pars = cli_reader::fetch_valid_arguments(args)?;
     env_reader::populate_env_vars()?; 
     
-    
-    // If folder name also given in CL args the CL version takes precedence
-
-    let mut data_folder =  env_reader::fetch_folder_path();
-    if cli_pars.data_folder != "" {
-        data_folder = cli_pars.data_folder;
-    }
-    else {
-        if data_folder == "" {
-            // raise an AppError...both are missing
-            let msg = "Data folder name not provided in either command line or environment file";
-            let cf_err = CustomError::new(msg);
-            return Result::Err(AppError::CsErr(cf_err));
-        }
-    }
-        
-    // Does this folder exist and is it accessible? - If not end the program...
-
-    let xres = Path::new(&data_folder).try_exists();
-    let x = match xres {
-        Ok(true) => true,
-        Ok(false) => false,    // need specific error here 
-        Err(_e) => false,           
-    };
-    if x == false {
-        // raise an AppError...
-        let msg = "Stipulated data folder does not exists or is not accessible";
-        let cf_err = CustomError::new(msg);
-        return Result::Err(AppError::CsErr(cf_err));
-    }
- 
-    // If source file name given in CL args the CL version takes precedence.
-    
-    let mut source_file_name =  env_reader::fetch_source_file_name();
-    if cli_pars.source_file != "" {
-        source_file_name = cli_pars.source_file;
-    }
-    else {
-            if source_file_name == "" {
-             // raise an AppError...both are missing
-            let msg = "Source file name not provided in either command line or environment file";
-            let cf_err = CustomError::new(msg);
-            return Result::Err(AppError::CsErr(cf_err));
-         }
-    }
-    
-    let source_file_path : PathBuf = [&data_folder, &source_file_name].iter().collect();
-
-    // Checking the source file's existence will take place on initial read...
-    // For results file name simply read from the environment variables and add to data_folder
-
-    let res_file_name =  env_reader::fetch_results_file_name();
-    let res_file_path : PathBuf = [&data_folder, &res_file_name].iter().collect();
-
-    // get the date of the data
-    // first check CLI date, if any...  start with a default base date.
-    
     let base_date = NaiveDate::from_ymd_opt(1900,1,1).unwrap();
-    let mut date_of_data = base_date.clone();
+
+    if cli_pars.create_lup && cli_pars.create_smm {
+
+       // Returned ONLY if this is the 'install' situation - 
+       // which sets up the lookup and summary tables but does not process 
+       // any ror data (and when any other flags or arguments are ignored).
+
+        Ok(InitParams {
+            import_ror : false,
+            process_data : false,
+            report_data : false,
+            create_context: true,
+            create_summary: true,
+            data_folder: "".to_string(),
+            log_folder: "".to_string(),
+            output_folder: "".to_string(),
+            source_file_name: "".to_string(),
+            output_file_name: "".to_string(),
+            data_version: "".to_string(),
+            data_date : base_date,
+        })
+    }
+    else {
+
+        // Normal import and / or processing and / or outputting
+        // If folder name also given in CL args the CL version takes precedence
+
+        let mut data_folder = cli_pars.data_folder;
+        if data_folder == "" {
+            data_folder =  env_reader::fetch_data_folder();
+            if data_folder == "" {   // Required data is missing - Raise error and exit program.
+                let msg = "Data folder name not provided in either command line or environment file";
+                let cf_err = CustomError::new(msg);
+                return Result::Err(AppError::CsErr(cf_err));
+             }
+        }
         
-    if cli_pars.data_date != "" {
-        // check if date
-        date_of_data = match NaiveDate::parse_from_str(&cli_pars.data_date, "%Y-%m-%d")
-        {
-            Ok(d) => d,
-            Err(_e) => base_date,
+        // Does this folder exist and is it accessible? - If not raise error and exit program.
+        
+        if !folder_exists (&data_folder) { // Raise an AppError.
+            let msg = "Stipulated data folder does not exists or is not accessible";
+            let cf_err = CustomError::new(msg);
+            return Result::Err(AppError::CsErr(cf_err));
         }
-    }
 
-    if date_of_data == base_date  // No data date in CLI or was not valid format
-    {
-        // Need to check env. data date.
-
-        date_of_data = match NaiveDate::parse_from_str(&env_reader::fetch_data_date_string(), "%Y-%m-%d")
-        {
-            Ok(d) => d,
-            Err(_e) => base_date,
+        let mut log_folder = env_reader::fetch_log_folder();
+        if log_folder == "" {
+            log_folder = data_folder.clone();
         }
-    }
+        else {
+            if !folder_exists (&log_folder) { 
+                fs::create_dir_all(&log_folder)?;
+             }
+        }
 
-    if date_of_data == base_date {
+        let mut output_folder = env_reader::fetch_output_folder();
+        if output_folder == "" {
+            output_folder = data_folder.clone();
+        }
+        else {
+            if !folder_exists (&output_folder) { 
+                fs::create_dir_all(&output_folder)?;
+            }
+        }
 
-        // No date anywhere - we have a problem - raise an AppError and end program.
+               
 
-        let msg = "Data date not provided in either command line or environment file";
-        let cf_err = CustomError::new(msg);
-        return Result::Err(AppError::CsErr(cf_err));
-    }
-
-    // For execution flags simply read from the environment variables
+        // If source file name given in CL args the CL version takes precedence.
+    
+        let mut source_file_name= cli_pars.source_file;
+        if source_file_name == "" {
+            source_file_name =  env_reader::fetch_source_file_name();
+            if source_file_name == "" {   // Required data is missing - Raise error and exit program.
+                let msg = "Source file name not provided in either command line or environment file";
+                let cf_err = CustomError::new(msg);
+                return Result::Err(AppError::CsErr(cf_err));
+             }
+        }
        
-    Ok(InitParams {
-        import_source : cli_pars.import_source,
-        process_source : cli_pars.process_source,
-        create_context: cli_pars.create_context,
-        data_folder: data_folder,
-        source_file_name : source_file_name,
-        source_file_path : source_file_path.clone(),
-        res_file_path : res_file_path.clone(),
-        data_date : date_of_data.clone(),
-    })
+        // get the version of the data 
+
+        let mut data_version= cli_pars.data_version;
+        if data_version == "" {
+            data_version =  env_reader::fetch_data_version();
+            if data_version == "" {   // Required data is missing - Raise error and exit program.
+                let msg = "Data version not provided in either command line or environment file";
+                let cf_err = CustomError::new(msg);
+                return Result::Err(AppError::CsErr(cf_err));
+             }
+        }
+
+        // get the output file name - if anywhere it is in the .env variables
+        
+        let mut output_file_name =  env_reader::fetch_output_file_name();
+        if output_file_name == "" {
+            output_file_name = format!("v{} summary", data_version).to_string()
+        }
+        let datetime_string = Local::now().format("%m-%d %H%M%S").to_string();
+        output_file_name = format!("{} at {}.txt", output_file_name, datetime_string);
+
+
+        // get the date of the data
+        // first check cli date, then .env date ..  start with a default base date.
+    
+        let mut data_date = match NaiveDate::parse_from_str(&cli_pars.data_date, "%Y-%m-%d")
+        {
+            Ok(d) => d,
+            Err(_e) => base_date,
+        };
+        if data_date == base_date {  
+                data_date = match NaiveDate::parse_from_str(&env_reader::fetch_data_date(), 
+                                        "%Y-%m-%d") {
+                Ok(d) => d,
+                Err(_e) => base_date,
+            };
+            if data_date == base_date {   // Raise an AppError...required data is missing.
+                let msg = "Data date not provided in either command line or environment file";
+                let cf_err = CustomError::new(msg);
+                return Result::Err(AppError::CsErr(cf_err));
+            }
+        }
+  
+        // For execution flags read from the environment variables
+       
+        Ok(InitParams {
+            import_ror : cli_pars.import_ror,
+            process_data : cli_pars.process_data,
+            report_data: cli_pars.report_data,
+            create_context: cli_pars.create_lup,
+            create_summary: cli_pars.create_smm,
+            data_folder,
+            log_folder,
+            output_folder,
+            source_file_name,
+            output_file_name,
+            data_version,
+            data_date,
+        })
+    }
 
 }
-
-
-
 
 
 pub async fn get_db_pool(db_name :&str) -> Result<Pool<Postgres>, AppError> {  
@@ -160,6 +201,18 @@ pub async fn get_db_pool(db_name :&str) -> Result<Pool<Postgres>, AppError> {
     };
     pool
 }
+
+fn folder_exists(folder_name: &String) -> bool {
+    let xres = Path::new(folder_name).try_exists();
+    let res = match xres {
+        Ok(true) => true,
+        Ok(false) => false, 
+        Err(_e) => false,           
+    };
+    res
+}
+
+
 
 
 // Tests
@@ -187,23 +240,30 @@ mod tests {
 
         temp_env::async_with_vars(
         [
-            ("folder_path", Some("E:\\ROR\\20241211 1.58 data")),
+            ("data_folder_path", Some("E:\\ROR\\20241211 1.58 data")),
             ("src_file_name", Some("v1.58 20241211.json")),
+            ("output_file_name", Some("results 25.json")),
+            ("data_version", Some("1.60")),
             ("data_date", Some("2025-12-11")),
-            ("res_file_name", Some("results 25.json")),
+
         ],
         async { 
             let args : Vec<&str> = vec!["target\\debug\\ror1.exe"];
             let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
             let res = get_params(test_args).await.unwrap();
     
-            assert_eq!(res.import_source, true);
-            assert_eq!(res.process_source, false);
+            assert_eq!(res.import_ror, true);
+            assert_eq!(res.process_data, false);
+            assert_eq!(res.report_data, false);
             assert_eq!(res.create_context, false);
-            let sf_path: PathBuf = ["E:\\ROR\\20241211 1.58 data", "v1.58 20241211.json"].iter().collect();
-            assert_eq!(res.source_file_path, sf_path);
-            let rf_path: PathBuf = ["E:\\ROR\\20241211 1.58 data", "results 25.json"].iter().collect();
-            assert_eq!(res.res_file_path, rf_path);
+            assert_eq!(res.create_summary, false);
+            assert_eq!(res.data_folder, "E:\\ROR\\20241211 1.58 data");
+            assert_eq!(res.log_folder, "E:\\ROR\\20241211 1.58 data");
+            assert_eq!(res.output_folder, "E:\\ROR\\20241211 1.58 data");
+            assert_eq!(res.source_file_name, "v1.58 20241211.json");
+            let lt = Local::now().format("%m-%d %H%M%S").to_string();
+            assert_eq!(res.output_file_name, format!("results 25.json at {}.txt", lt));
+            assert_eq!(res.data_version, "1.60");
             let nd = NaiveDate::parse_from_str("2025-12-11", "%Y-%m-%d").unwrap();
             assert_eq!(res.data_date, nd);
         }
@@ -221,28 +281,141 @@ mod tests {
 
         temp_env::async_with_vars(
         [
-            ("folder_path", Some("E:\\ROR\\20241211 1.58 data")),
+            ("data_folder_path", Some("E:\\ROR\\20241211 1.58 data")),
             ("src_file_name", Some("v1.58 20241211.json")),
+            ("data_version", Some("1.59")),
             ("data_date", Some("2025-12-11")),
-            ("res_file_name", Some("results 27.json")),
+            ("output_file_name", Some("results 27.json")),
         ],
         async { 
-            let args : Vec<&str> = vec!["target\\debug\\ror1.exe", "-S", "-C", "-T", "-f", "E:\\ROR\\20240607 1.47 data", "-d", "2026-12-25", "-s", "schema2 data.json"];
+            let args : Vec<&str> = vec!["target\\debug\\ror1.exe", "-R", "-P", "-T", 
+                                     "-f", "E:\\ROR\\20240607 1.47 data", "-d", "2026-12-25", "-s", "schema2 data.json", "-v", "1.60"];
             let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
             let res = get_params(test_args).await.unwrap();
     
-            assert_eq!(res.import_source, true);
-            assert_eq!(res.process_source, true);
-            assert_eq!(res.create_context, true);
-            let sf_path: PathBuf = ["E:\\ROR\\20240607 1.47 data", "schema2 data.json"].iter().collect();
-            assert_eq!(res.source_file_path, sf_path);
-            let rf_path: PathBuf = ["E:\\ROR\\20240607 1.47 data", "results 27.json"].iter().collect();
-            assert_eq!(res.res_file_path, rf_path);
+            assert_eq!(res.import_ror, true);
+            assert_eq!(res.process_data, true);
+            assert_eq!(res.report_data, true);
+            assert_eq!(res.create_context, false);
+            assert_eq!(res.create_summary, false);
+            assert_eq!(res.data_folder, "E:\\ROR\\20240607 1.47 data");
+            assert_eq!(res.log_folder, "E:\\ROR\\20240607 1.47 data");
+            assert_eq!(res.output_folder, "E:\\ROR\\20240607 1.47 data");
+            assert_eq!(res.source_file_name, "schema2 data.json");
+            let lt = Local::now().format("%m-%d %H%M%S").to_string();
+            assert_eq!(res.output_file_name, format!("results 27.json at {}.txt", lt));
+            assert_eq!(res.data_version, "1.60");
             let nd = NaiveDate::parse_from_str("2026-12-25", "%Y-%m-%d").unwrap();
             assert_eq!(res.data_date, nd);
         }
        ).await;
 
     }
+
+
+    #[tokio::test]
+    async fn check_cli_vars_with_i_flag() {
+
+        // Note that the folder path given must exist, 
+        // and be accessible, or get_params will panic
+        // and an error will be thrown. 
+
+        temp_env::async_with_vars(
+        [
+            ("data_folder_path", Some("E:\\ROR\\20241211 1.58 data")),
+            ("src_file_name", Some("v1.58 20241211.json")),
+            ("data_date", Some("2025-12-11")),
+            ("output_file_name", Some("results 27.json")),
+        ],
+        async { 
+            let args : Vec<&str> = vec!["target\\debug\\ror1.exe", "-R", "-P", "-I", "-f", "E:\\ROR\\20240607 1.47 data", "-d", "2026-12-25", "-s", "schema2 data.json"];
+            let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
+            let res = get_params(test_args).await.unwrap();
+    
+            assert_eq!(res.import_ror, false);
+            assert_eq!(res.process_data, false);
+            assert_eq!(res.report_data, false);
+            assert_eq!(res.create_context,true);
+            assert_eq!(res.create_summary, true);
+            assert_eq!(res.data_folder, "".to_string());
+            assert_eq!(res.log_folder, "".to_string());
+            assert_eq!(res.output_folder, "".to_string());
+            assert_eq!(res.source_file_name, "".to_string());
+            assert_eq!(res.output_file_name, "".to_string());
+            assert_eq!(res.data_version, "".to_string());
+            let base_date = NaiveDate::parse_from_str("1900-01-01", "%Y-%m-%d").unwrap();
+            assert_eq!(res.data_date, base_date);
+        }
+       ).await;
+
+    }
+
+
+    #[tokio::test]
+    async fn check_cli_vars_with_a_flag_and_new_folders() {
+
+        // Note that the folder path given must exist, 
+        // and be accessible, or get_params will panic
+        // and an error will be thrown. 
+
+        temp_env::async_with_vars(
+        [
+            ("data_folder_path", Some("E:\\ROR\\20241211 1.58 data")),
+            ("log_folder_path", Some("E:\\ROR\\some logs")),
+            ("output_folder_path", Some("E:\\ROR\\dummy\\some outputs")),
+            ("src_file_name", Some("v1.58 20241211.json")),
+            ("data_date", Some("2025-12-11")),
+            ("output_file_name", Some("results 28.json")),
+        ],
+        async { 
+            let args : Vec<&str> = vec!["target\\debug\\ror1.exe", "-A", "-f", "E:\\ROR\\20240607 1.47 data", 
+                                       "-d", "2026-12-25", "-s", "schema2 data.json", "-v", "1.60"];
+            let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
+            let res = get_params(test_args).await.unwrap();
+    
+            assert_eq!(res.import_ror, true);
+            assert_eq!(res.process_data, true);
+            assert_eq!(res.report_data, true);
+            assert_eq!(res.create_context, false);
+            assert_eq!(res.create_summary, false);
+            assert_eq!(res.data_folder, "E:\\ROR\\20240607 1.47 data");
+            assert_eq!(res.log_folder, "E:\\ROR\\some logs");
+            assert_eq!(res.output_folder, "E:\\ROR\\dummy\\some outputs");
+            assert_eq!(res.source_file_name, "schema2 data.json");
+            let lt = Local::now().format("%m-%d %H%M%S").to_string();
+            assert_eq!(res.output_file_name, format!("results 28.json at {}.txt", lt));
+            assert_eq!(res.data_version, "1.60");
+            let nd = NaiveDate::parse_from_str("2026-12-25", "%Y-%m-%d").unwrap();
+            assert_eq!(res.data_date, nd);
+        }
+      ).await;
+
+    }
+       
+    #[tokio::test]
+    #[should_panic]
+    async fn check_wrong_data_folder_panics() {
+    
+    temp_env::async_with_vars(
+    [
+        ("data_folder_path", Some("E:\\ROR\\silly folder name")),
+        ("log_folder_path", Some("E:\\ROR\\some logs")),
+        ("output_folder_path", Some("E:\\ROR\\dummy\\some outputs")),
+        ("src_file_name", Some("v1.58 20241211.json")),
+        ("data_date", Some("2025-12-11")),
+        ("output_file_name", Some("results 28.json")),
+    ],
+    async { 
+        let args : Vec<&str> = vec!["target\\debug\\ror1.exe", "-A", "-f", "E:\\ROR\\20240607 1.47 data", 
+                                    "-d", "2026-12-25", "-s", "schema2 data.json", "-v", "1.60"];
+        let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
+        let res = get_params(test_args).await.unwrap();
+        assert_eq!(res.data_folder, "E:\\ROR\\silly folder name");
+        }
+      ).await;
+
+    }
+
 }
+
 

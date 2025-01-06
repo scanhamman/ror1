@@ -7,6 +7,7 @@ mod ror_table_creator;
 mod ror_data_vectors;
 
 use log::{info, error};
+
 use std::path::PathBuf;
 use std::fs;
 use sqlx::{Pool, Postgres};
@@ -16,29 +17,28 @@ use ror_json_models::RorRecord;
 use ror_data_vectors::{CoreDataVecs, RequiredDataVecs, NonRequiredDataVecs, extract_id_from};
 
 
-pub async fn create_src_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
+pub async fn create_ror_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
 {
     let r = ror_table_creator::recreate_ror_tables(&pool).await;
     match r {
         Ok(()) => {
-            info!("Source tables created"); 
+            info!("tables created for ror schema"); 
             return Ok(())
         },
         Err(e) => {
-            error!("An error occured while creating the source tables: {}", e);
+            error!("An error occured while creating the ror tables: {}", e);
             return Err(AppError::SqErr(e))
             },
     }
 }
 
 
-pub async fn import_data(source_file_path : &PathBuf, pool : &Pool<Postgres>) -> Result<(), AppError>
+pub async fn import_data(data_folder : &String, source_file_name: &String, pool : &Pool<Postgres>) -> Result<(), AppError>
 {
-    // Import data into matching tables
-
-    // First obtain the raw data as text
+    // Import data into matching tables. First obtain the raw data as text
     // This also checks the file exists...by opening it and checking no error
 
+    let source_file_path: PathBuf = [data_folder, source_file_name].iter().collect();
     let data: String = match fs::read_to_string(source_file_path)
     {
         Ok(d) => {

@@ -24,7 +24,6 @@
 use std::sync::OnceLock;
 use std::env;
 use dotenv;
-use chrono::Local;
 use crate::error_defs::{AppError, CustomError};
 
 #[derive(Debug)]
@@ -87,40 +86,33 @@ pub fn fetch_db_conn_string(db_name: &str) -> Result<String, AppError> {
     }
 }
 
-pub fn fetch_folder_path() -> String {
-    env::var("folder_path").unwrap_or("".to_string())
+pub fn fetch_data_folder() -> String {
+    env::var("data_folder_path").unwrap_or("".to_string())
+}
+
+pub fn fetch_log_folder() -> String {
+    env::var("log_folder_path").unwrap_or("".to_string())
+}
+
+pub fn fetch_output_folder() -> String {
+    env::var("output_folder_path").unwrap_or("".to_string())
 }
 
 pub fn fetch_source_file_name() -> String {
     env::var("src_file_name").unwrap_or("".to_string())
 }
 
-pub fn fetch_data_date_string() -> String {
+pub fn fetch_output_file_name() -> String {
+    env::var("output_file_name").unwrap_or("".to_string())
+}
+
+pub fn fetch_data_version() -> String {
+    env::var("data_version").unwrap_or("".to_string())
+}
+
+pub fn fetch_data_date() -> String {
     env::var("data_date").unwrap_or("".to_string())
 }
-
-pub fn fetch_results_file_name() -> String {
-    let mut res_file = env::var("res_file_name").unwrap_or("".to_string());
-    if res_file == "" {
-        let datetime_string = Local::now().format("%m-%d-%H-%M-%S").to_string();
-        res_file = format!("analysis-{}.json", datetime_string).to_string()
-    }
-    res_file
-}
-
-
-
-//tests
-
-// does DB_PARS contan the correct parameters?
-// Have the correct db parameters been read?
-// How can we test them without giving away their values?
-// ASnswer -> Ensure that db access occurs without error...
-// using both conn string function and / or DB_PARS
-
-// Do the file readewrs work...
-// Valid values are checked later, when they are read
-
 
 
 

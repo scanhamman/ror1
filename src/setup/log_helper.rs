@@ -20,19 +20,30 @@ use log4rs::{
     encode::pattern::PatternEncoder,
 };
 
-
-pub fn get_log_file_name(source_file_name : &String) -> String{
-    
-    // Called from within the setup module to get the log file name
-
-    let datetime_string = Local::now().format("%m-%d-%H-%M-%S").to_string();
-    let source_file = &source_file_name[..(source_file_name.len() - 5)];
-    format!("Import - {} - from {}.log", datetime_string, source_file)
+pub fn setup_log (data_folder: &String, source_file_name : &String) -> Result<log4rs::Handle, AppError> {
+    let log_file_path = get_log_file_path(data_folder, source_file_name);
+    config_log (&log_file_path)
 }
 
-pub fn setup_log (log_file_path: &PathBuf) -> Result<log4rs::Handle, AppError> {
+fn get_log_file_path(data_folder: &String, source_file_name : &String) -> PathBuf {
     
-    // Called from within the setup module to establish the logger mechanism.
+    // Derives the log file name, returns the full path
+
+    let datetime_string = Local::now().format("%m-%d %H%M%S").to_string();
+    let mut log_file_name = format!("ror {} ", datetime_string);
+    if source_file_name != "" {
+        let source_file = &source_file_name[..(source_file_name.len() - 5)];
+        log_file_name = format!("{} from {}.log", log_file_name, source_file);
+    }
+    else {
+        log_file_name = format!("{} initialisation.log", log_file_name);
+    }
+    [data_folder, &log_file_name].iter().collect()
+
+}
+
+fn config_log (log_file_path: &PathBuf) -> Result<log4rs::Handle, AppError> {
+    
     // Initially establish a pattern for each log line.
 
     let log_pattern = "{d(%d/%m %H:%M:%S)}  {h({l})}  {({M}.{L}):>35.45}:  {m}\n";
@@ -72,29 +83,6 @@ pub fn setup_log (log_file_path: &PathBuf) -> Result<log4rs::Handle, AppError> {
 
 }
 
-/* 
-pub fn log_startup_params (folder_name: &String, source_file_name: &String, results_file_name: &String, 
-    data_date: &String, create_context: bool, import_source: bool, process_source: bool ) {
-    
-    // Called at the end of set up to record the input parameters
-
-    info!("PROGRAM START");
-    info!("");
-    info!("************************************");
-    info!("");
-    info!("folder_name: {}", folder_name);
-    info!("source_file_name: {}", source_file_name);
-    info!("results_file_name: {}", results_file_name);
-    info!("data_date: {}", data_date);
-    info!("create context: {}", create_context);
-    info!("import_source: {}", import_source);
-    info!("process_source: {}", process_source);
-    info!("");
-    info!("************************************");
-    info!("");
-}
-
-*/
 
 pub fn log_startup_params (ip : &InitParams) {
     
@@ -104,12 +92,18 @@ pub fn log_startup_params (ip : &InitParams) {
     info!("");
     info!("************************************");
     info!("");
-    info!("source_file_name: {}", ip.source_file_path.display());
-    info!("results_file_name: {}", ip.res_file_path.display());
+    info!("data_folder: {}", ip.data_folder);
+    info!("log_folder: {}", ip.log_folder);
+    info!("output_folder: {}", ip.output_folder);
+    info!("source_file_name: {}", ip.source_file_name);
+    info!("output_file_name: {}", ip.output_file_name);
+    info!("data_version: {}", ip.data_version);
     info!("data_date: {}", ip.data_date);
-    info!("create context: {}", ip.create_context);
-    info!("import_source: {}", ip.import_source);
-    info!("process_source: {}", ip.process_source);
+    info!("create look up tables: {}", ip.create_context);
+    info!("create summary tables: {}", ip.create_summary);
+    info!("import_ror: {}", ip.import_ror);
+    info!("process_data: {}", ip.process_data);
+    info!("report_data: {}", ip.report_data);
     info!("");
     info!("************************************");
     info!("");
