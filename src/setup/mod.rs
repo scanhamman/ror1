@@ -14,7 +14,7 @@ use sqlx::postgres::PgPoolOptions;
 use sqlx::{Postgres, Pool};
 use log::error;
 use chrono::Local;
-use std::path::Path;
+use std::path::PathBuf;
 use std::ffi::OsString;
 use std::fs;
 
@@ -24,9 +24,9 @@ pub struct InitParams {
     pub report_data: bool,
     pub create_context: bool,
     pub create_summary: bool,
-    pub data_folder : String,
-    pub log_folder: String,
-    pub output_folder: String,
+    pub data_folder : PathBuf,
+    pub log_folder: PathBuf,
+    pub output_folder: PathBuf,
     pub source_file_name : String,
     pub output_file_name : String,
     pub data_version: String,
@@ -56,9 +56,9 @@ pub async fn get_params(args: Vec<OsString>) -> Result<InitParams, AppError> {
             report_data : false,
             create_context: true,
             create_summary: true,
-            data_folder: "".to_string(),
-            log_folder: "".to_string(),
-            output_folder: "".to_string(),
+            data_folder: PathBuf::new(),
+            log_folder: PathBuf::new(),
+            output_folder: PathBuf::new(),
             source_file_name: "".to_string(),
             output_file_name: "".to_string(),
             data_version: "".to_string(),
@@ -69,37 +69,44 @@ pub async fn get_params(args: Vec<OsString>) -> Result<InitParams, AppError> {
 
         // Normal import and / or processing and / or outputting
         // If folder name also given in CL args the CL version takes precedence
-
+        let empty_pb = PathBuf::from("");
         let mut data_folder = cli_pars.data_folder;
-        if data_folder == "" {
+        if data_folder == empty_pb {
             data_folder =  env_reader::fetch_data_folder();
-            if data_folder == "" {   // Required data is missing - Raise error and exit program.
+            if data_folder == empty_pb {   // Required data is missing - Raise error and exit program.
                 let msg = "Data folder name not provided in either command line or environment file";
                 let cf_err = CustomError::new(msg);
                 return Result::Err(AppError::CsErr(cf_err));
              }
         }
         
-        // Does this folder exist and is it accessible? - If not raise error and exit program.
+        // Does this folder exist and is it accessible? - If not and the 
+        // 'R' (import ror) option is active, raise error and exit program.
         
-        if !folder_exists (&data_folder) { // Raise an AppError.
-            let msg = "Stipulated data folder does not exists or is not accessible";
+        let mut data_folder_good = true;
+        if !folder_exists (&data_folder) 
+        {   
+            data_folder_good = false;
+        }
+
+        if !data_folder_good && cli_pars.import_ror { 
+            let msg = "Required data folder does not exists or is not accessible";
             let cf_err = CustomError::new(msg);
             return Result::Err(AppError::CsErr(cf_err));
         }
 
         let mut log_folder = env_reader::fetch_log_folder();
-        if log_folder == "" {
+        if log_folder == empty_pb && data_folder_good {
             log_folder = data_folder.clone();
         }
         else {
             if !folder_exists (&log_folder) { 
                 fs::create_dir_all(&log_folder)?;
-             }
+            }
         }
 
         let mut output_folder = env_reader::fetch_output_folder();
-        if output_folder == "" {
+        if output_folder == empty_pb && data_folder_good {
             output_folder = data_folder.clone();
         }
         else {
@@ -107,7 +114,6 @@ pub async fn get_params(args: Vec<OsString>) -> Result<InitParams, AppError> {
                 fs::create_dir_all(&output_folder)?;
             }
         }
-
                
 
         // If source file name given in CL args the CL version takes precedence.
@@ -202,8 +208,8 @@ pub async fn get_db_pool(db_name :&str) -> Result<Pool<Postgres>, AppError> {
     pool
 }
 
-fn folder_exists(folder_name: &String) -> bool {
-    let xres = Path::new(folder_name).try_exists();
+fn folder_exists(folder_name: &PathBuf) -> bool {
+    let xres = folder_name.try_exists();
     let res = match xres {
         Ok(true) => true,
         Ok(false) => false, 
@@ -240,7 +246,7 @@ mod tests {
 
         temp_env::async_with_vars(
         [
-            ("data_folder_path", Some("E:\\ROR\\20241211 1.58 data")),
+            ("data_folder_path", Some("E:/ROR/20241211 1.58 data")),
             ("src_file_name", Some("v1.58 20241211.json")),
             ("output_file_name", Some("results 25.json")),
             ("data_version", Some("1.60")),
@@ -248,7 +254,7 @@ mod tests {
 
         ],
         async { 
-            let args : Vec<&str> = vec!["target\\debug\\ror1.exe"];
+            let args : Vec<&str> = vec!["target/debug/ror1.exe"];
             let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
             let res = get_params(test_args).await.unwrap();
     
@@ -257,9 +263,9 @@ mod tests {
             assert_eq!(res.report_data, false);
             assert_eq!(res.create_context, false);
             assert_eq!(res.create_summary, false);
-            assert_eq!(res.data_folder, "E:\\ROR\\20241211 1.58 data");
-            assert_eq!(res.log_folder, "E:\\ROR\\20241211 1.58 data");
-            assert_eq!(res.output_folder, "E:\\ROR\\20241211 1.58 data");
+            assert_eq!(res.data_folder, PathBuf::from("E:/ROR/20241211 1.58 data"));
+            assert_eq!(res.log_folder, PathBuf::from("E:/ROR/20241211 1.58 data"));
+            assert_eq!(res.output_folder, PathBuf::from("E:/ROR/20241211 1.58 data"));
             assert_eq!(res.source_file_name, "v1.58 20241211.json");
             let lt = Local::now().format("%m-%d %H%M%S").to_string();
             assert_eq!(res.output_file_name, format!("results 25.json at {}.txt", lt));
@@ -281,15 +287,15 @@ mod tests {
 
         temp_env::async_with_vars(
         [
-            ("data_folder_path", Some("E:\\ROR\\20241211 1.58 data")),
+            ("data_folder_path", Some("E:/ROR/20241211 1.58 data")),
             ("src_file_name", Some("v1.58 20241211.json")),
             ("data_version", Some("1.59")),
             ("data_date", Some("2025-12-11")),
             ("output_file_name", Some("results 27.json")),
         ],
         async { 
-            let args : Vec<&str> = vec!["target\\debug\\ror1.exe", "-R", "-P", "-T", 
-                                     "-f", "E:\\ROR\\20240607 1.47 data", "-d", "2026-12-25", "-s", "schema2 data.json", "-v", "1.60"];
+            let args : Vec<&str> = vec!["target/debug/ror1.exe", "-R", "-P", "-T", 
+                                     "-f", "E:/ROR/20240607 1.47 data", "-d", "2026-12-25", "-s", "schema2 data.json", "-v", "1.60"];
             let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
             let res = get_params(test_args).await.unwrap();
     
@@ -298,9 +304,9 @@ mod tests {
             assert_eq!(res.report_data, true);
             assert_eq!(res.create_context, false);
             assert_eq!(res.create_summary, false);
-            assert_eq!(res.data_folder, "E:\\ROR\\20240607 1.47 data");
-            assert_eq!(res.log_folder, "E:\\ROR\\20240607 1.47 data");
-            assert_eq!(res.output_folder, "E:\\ROR\\20240607 1.47 data");
+            assert_eq!(res.data_folder, PathBuf::from("E:/ROR/20240607 1.47 data"));
+            assert_eq!(res.log_folder, PathBuf::from("E:/ROR/20240607 1.47 data"));
+            assert_eq!(res.output_folder, PathBuf::from("E:/ROR/20240607 1.47 data"));
             assert_eq!(res.source_file_name, "schema2 data.json");
             let lt = Local::now().format("%m-%d %H%M%S").to_string();
             assert_eq!(res.output_file_name, format!("results 27.json at {}.txt", lt));
@@ -322,13 +328,13 @@ mod tests {
 
         temp_env::async_with_vars(
         [
-            ("data_folder_path", Some("E:\\ROR\\20241211 1.58 data")),
+            ("data_folder_path", Some("E:/ROR/20241211 1.58 data")),
             ("src_file_name", Some("v1.58 20241211.json")),
             ("data_date", Some("2025-12-11")),
             ("output_file_name", Some("results 27.json")),
         ],
         async { 
-            let args : Vec<&str> = vec!["target\\debug\\ror1.exe", "-R", "-P", "-I", "-f", "E:\\ROR\\20240607 1.47 data", "-d", "2026-12-25", "-s", "schema2 data.json"];
+            let args : Vec<&str> = vec!["target/debug/ror1.exe", "-R", "-P", "-I", "-f", "E:/ROR/20240607 1.47 data", "-d", "2026-12-25", "-s", "schema2 data.json"];
             let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
             let res = get_params(test_args).await.unwrap();
     
@@ -337,9 +343,9 @@ mod tests {
             assert_eq!(res.report_data, false);
             assert_eq!(res.create_context,true);
             assert_eq!(res.create_summary, true);
-            assert_eq!(res.data_folder, "".to_string());
-            assert_eq!(res.log_folder, "".to_string());
-            assert_eq!(res.output_folder, "".to_string());
+            assert_eq!(res.data_folder, PathBuf::new());
+            assert_eq!(res.log_folder, PathBuf::new());
+            assert_eq!(res.output_folder, PathBuf::new());
             assert_eq!(res.source_file_name, "".to_string());
             assert_eq!(res.output_file_name, "".to_string());
             assert_eq!(res.data_version, "".to_string());
@@ -352,7 +358,7 @@ mod tests {
 
 
     #[tokio::test]
-    async fn check_cli_vars_with_a_flag_and_new_folders() {
+    async fn check_cli_vars_with_a_flag_and_new_win_folders() {
 
         // Note that the folder path given must exist, 
         // and be accessible, or get_params will panic
@@ -368,7 +374,7 @@ mod tests {
             ("output_file_name", Some("results 28.json")),
         ],
         async { 
-            let args : Vec<&str> = vec!["target\\debug\\ror1.exe", "-A", "-f", "E:\\ROR\\20240607 1.47 data", 
+            let args : Vec<&str> = vec!["target/debug/ror1.exe", "-A", "-f", "E:\\ROR\\20240607 1.47 data", 
                                        "-d", "2026-12-25", "-s", "schema2 data.json", "-v", "1.60"];
             let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
             let res = get_params(test_args).await.unwrap();
@@ -378,9 +384,9 @@ mod tests {
             assert_eq!(res.report_data, true);
             assert_eq!(res.create_context, false);
             assert_eq!(res.create_summary, false);
-            assert_eq!(res.data_folder, "E:\\ROR\\20240607 1.47 data");
-            assert_eq!(res.log_folder, "E:\\ROR\\some logs");
-            assert_eq!(res.output_folder, "E:\\ROR\\dummy\\some outputs");
+            assert_eq!(res.data_folder, PathBuf::from("E:/ROR/20240607 1.47 data"));
+            assert_eq!(res.log_folder, PathBuf::from("E:/ROR/some logs"));
+            assert_eq!(res.output_folder, PathBuf::from("E:/ROR/dummy/some outputs"));
             assert_eq!(res.source_file_name, "schema2 data.json");
             let lt = Local::now().format("%m-%d %H%M%S").to_string();
             assert_eq!(res.output_file_name, format!("results 28.json at {}.txt", lt));
@@ -391,29 +397,107 @@ mod tests {
       ).await;
 
     }
-       
+    
+    #[tokio::test]
+    async fn check_cli_vars_with_a_flag_and_new_posix_folders() {
+
+        // Note that the folder path given must exist, 
+        // and be accessible, or get_params will panic
+        // and an error will be thrown. 
+
+        temp_env::async_with_vars(
+        [
+            ("data_folder_path", Some("E:/ROR/20241211 1.58 data")),
+            ("log_folder_path", Some("E:/ROR/some logs 2")),
+            ("output_folder_path", Some("E:/ROR/dummy 2/some outputs")),
+            ("src_file_name", Some("v1.58 20241211.json")),
+            ("data_date", Some("2025-12-11")),
+            ("output_file_name", Some("results 28.json")),
+        ],
+        async { 
+            let args : Vec<&str> = vec!["target/debug/ror1.exe", "-A", "-f", "E:/ROR/20240607 1.47 data", 
+                                       "-d", "2026-12-25", "-s", "schema2 data.json", "-v", "1.60"];
+            let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
+            let res = get_params(test_args).await.unwrap();
+    
+            assert_eq!(res.import_ror, true);
+            assert_eq!(res.process_data, true);
+            assert_eq!(res.report_data, true);
+            assert_eq!(res.create_context, false);
+            assert_eq!(res.create_summary, false);
+            assert_eq!(res.data_folder, PathBuf::from("E:/ROR/20240607 1.47 data"));
+            assert_eq!(res.log_folder, PathBuf::from("E:/ROR/some logs 2"));
+            assert_eq!(res.output_folder, PathBuf::from("E:/ROR/dummy 2/some outputs"));
+            assert_eq!(res.source_file_name, "schema2 data.json");
+            let lt = Local::now().format("%m-%d %H%M%S").to_string();
+            assert_eq!(res.output_file_name, format!("results 28.json at {}.txt", lt));
+            assert_eq!(res.data_version, "1.60");
+            let nd = NaiveDate::parse_from_str("2026-12-25", "%Y-%m-%d").unwrap();
+            assert_eq!(res.data_date, nd);
+        }
+      ).await;
+
+    }
+
+
     #[tokio::test]
     #[should_panic]
-    async fn check_wrong_data_folder_panics() {
+    async fn check_wrong_data_folder_panics_if_r() {
     
     temp_env::async_with_vars(
     [
-        ("data_folder_path", Some("E:\\ROR\\silly folder name")),
-        ("log_folder_path", Some("E:\\ROR\\some logs")),
-        ("output_folder_path", Some("E:\\ROR\\dummy\\some outputs")),
+        ("data_folder_path", Some("E:/ROR/20240607 1.47 data")),
+        ("log_folder_path", Some("E:/ROR/some logs")),
+        ("output_folder_path", Some("E:/ROR/dummy/some outputs")),
         ("src_file_name", Some("v1.58 20241211.json")),
         ("data_date", Some("2025-12-11")),
         ("output_file_name", Some("results 28.json")),
     ],
     async { 
-        let args : Vec<&str> = vec!["target\\debug\\ror1.exe", "-A", "-f", "E:\\ROR\\20240607 1.47 data", 
+        let args : Vec<&str> = vec!["target/debug/ror1.exe", "-A", "-f", "E:/silly folder name", 
                                     "-d", "2026-12-25", "-s", "schema2 data.json", "-v", "1.60"];
         let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
-        let res = get_params(test_args).await.unwrap();
-        assert_eq!(res.data_folder, "E:\\ROR\\silly folder name");
+        let _res = get_params(test_args).await.unwrap();
         }
       ).await;
+    }
 
+    #[tokio::test]
+    async fn check_wrong_data_folder_does_not_panic_if_not_r() {
+    
+        temp_env::async_with_vars(
+        [
+            ("data_folder_path", Some("E:/ROR/20240607 1.47 data")),
+            ("log_folder_path", Some("E:/ROR/some logs")),
+            ("output_folder_path", Some("E:/ROR/dummy/some outputs")),
+            ("src_file_name", Some("v1.58 20241211.json")),
+            ("data_date", Some("2025-12-11")),
+            ("output_file_name", Some("results 28.json")),
+        ],
+        async { 
+            let args : Vec<&str> = vec!["target/debug/ror1.exe", "-P", "-f", "E:/ROR/silly folder name", 
+                                        "-d", "2026-12-25", "-s", "schema2 data.json", "-v", "1.60"];
+            let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
+            let res = get_params(test_args).await.unwrap();
+            assert_eq!(res.import_ror, false);
+            assert_eq!(res.process_data, true);
+            assert_eq!(res.report_data, false);
+            assert_eq!(res.create_context, false);
+            assert_eq!(res.create_summary, false);
+            assert_eq!(res.data_folder, PathBuf::from("E:/ROR/silly folder name"));
+            assert_eq!(res.log_folder, PathBuf::from("E:/ROR/some logs"));
+            assert_eq!(res.output_folder, PathBuf::from("E:/ROR/dummy/some outputs"));
+            assert_eq!(res.source_file_name, "schema2 data.json");
+            let lt = Local::now().format("%m-%d %H%M%S").to_string();
+            assert_eq!(res.output_file_name, format!("results 28.json at {}.txt", lt));
+            assert_eq!(res.data_version, "1.60");
+            let nd = NaiveDate::parse_from_str("2026-12-25", "%Y-%m-%d").unwrap();
+            assert_eq!(res.data_date, nd);
+
+            }
+        ).await;
+
+        
     }
 
 }

@@ -3,7 +3,7 @@
 // The folder modules do not need to be public - they are referenced only within this module.
 
 mod src_table_creator;
-mod cxt_table_creator;
+mod lup_table_creator;
 mod smm_table_creator;
 
 mod src_data_importer;
@@ -15,6 +15,7 @@ use log::{info, error};
 use sqlx::{Pool, Postgres};
 use crate::AppError;
 use chrono::NaiveDate;
+use std::path::PathBuf;
 
 pub async fn create_src_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
 {
@@ -33,7 +34,7 @@ pub async fn create_src_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
 
 pub async fn create_lup_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
 {
-    let r = cxt_table_creator::recreate_lup_tables(&pool).await;
+    let r = lup_table_creator::recreate_lup_tables(&pool).await;
     match r {
         Ok(()) => {
             info!("tables created for lup schema"); 
@@ -109,7 +110,7 @@ pub async fn process_data(data_version: &String, data_date: &NaiveDate, pool : &
 }
 
 
-pub async fn report_results(output_folder : &String, output_file_name: &String, pool : &Pool<Postgres>) -> Result<(), AppError>
+pub async fn report_results(output_folder : &PathBuf, output_file_name: &String, pool : &Pool<Postgres>) -> Result<(), AppError>
 {
     // Write out summary data for this dataset into the designated file
 

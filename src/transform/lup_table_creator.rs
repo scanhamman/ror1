@@ -4,6 +4,9 @@ use sqlx::{Pool, Postgres};
 
 pub async fn recreate_lup_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Error> {
 
+    let schema_sql  = r#"create schema if not exists lup"#;
+    sqlx::raw_sql(schema_sql).execute(pool).await?;
+
     let table_sql  = r#"drop table if exists lup.ror_org_types;
         create table lup.ror_org_types (
         id int not null primary key, 

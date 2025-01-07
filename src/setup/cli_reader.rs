@@ -9,10 +9,11 @@
 use clap::{command, Arg, ArgMatches};
 use crate::error_defs::AppError;
 use std::ffi::OsString;
+use std::path::PathBuf;
 
 #[derive(Debug)]
 pub struct CliPars {
-    pub data_folder: String,
+    pub data_folder: PathBuf,
     pub source_file: String,
     pub data_version: String,
     pub data_date: String,
@@ -29,7 +30,9 @@ pub fn fetch_valid_arguments(args: Vec<OsString>) -> Result<CliPars, AppError>
 
     // These parameters guaranteed to unwrap OK as all have a default value of "".
 
-    let data_folder = parse_result.get_one::<String>("data_folder").unwrap();
+    let data_folder_as_string = parse_result.get_one::<String>("data_folder").unwrap();
+    let data_folder = PathBuf::from(data_folder_as_string.replace("\\", "/"));
+
     let source_file = parse_result.get_one::<String>("src_file").unwrap();
     let data_version = parse_result.get_one::<String>("data_version").unwrap();
     let data_date = parse_result.get_one::<String>("data_date").unwrap();
@@ -72,7 +75,7 @@ pub fn fetch_valid_arguments(args: Vec<OsString>) -> Result<CliPars, AppError>
     {
         if i_flag || (c_flag && m_flag) {
             Ok(CliPars {
-                data_folder: "".to_string(),
+                data_folder: PathBuf::new(),
                 source_file: "".to_string(),
                 data_version: "".to_string(),
                 data_date: "".to_string(),
@@ -206,11 +209,11 @@ mod tests {
 
     #[test]
     fn check_cli_no_explicit_params() {
-        let args : Vec<&str> = vec!["target\\debug\\ror1.exe"];
+        let target = &"target\\debug\\ror1.exe".replace("\\", "/");
+        let args : Vec<&str> = vec![target];
         let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
-
         let res = fetch_valid_arguments(test_args).unwrap();
-        assert_eq!(res.data_folder, "");
+        assert_eq!(res.data_folder, PathBuf::new());
         assert_eq!(res.source_file, "");
         assert_eq!(res.import_ror, true);
         assert_eq!(res.process_data, false);
@@ -224,11 +227,12 @@ mod tests {
   
     #[test]
     fn check_cli_with_a_flag() {
-        let args : Vec<&str> = vec!["target\\debug\\ror1.exe", "-A"];
+        let target = &"target\\debug\\ror1.exe".replace("\\", "/");
+        let args : Vec<&str> = vec![target, "-A"];
         let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
 
         let res = fetch_valid_arguments(test_args).unwrap();
-        assert_eq!(res.data_folder, "");
+        assert_eq!(res.data_folder, PathBuf::new());
         assert_eq!(res.source_file, "");
         assert_eq!(res.import_ror, true);
         assert_eq!(res.process_data, true);
@@ -241,11 +245,12 @@ mod tests {
 
     #[test]
     fn check_cli_with_i_flag() {
-        let args : Vec<&str> = vec!["target\\debug\\ror1.exe", "-I"];
+        let target = &"target\\debug\\ror1.exe".replace("\\", "/");
+        let args : Vec<&str> = vec![target, "-I"];
         let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
 
         let res = fetch_valid_arguments(test_args).unwrap();
-        assert_eq!(res.data_folder, "");
+        assert_eq!(res.data_folder, PathBuf::new());
         assert_eq!(res.source_file, "");
         assert_eq!(res.import_ror, false);
         assert_eq!(res.process_data, false);
@@ -258,11 +263,12 @@ mod tests {
 
     #[test]
     fn check_cli_with_c_and_m_flags() {
-        let args : Vec<&str> = vec!["target\\debug\\ror1.exe", "-C", "-M"];
+        let target = &"target\\debug\\ror1.exe".replace("\\", "/");
+        let args : Vec<&str> = vec![target, "-C", "-M"];
         let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
 
         let res = fetch_valid_arguments(test_args).unwrap();
-        assert_eq!(res.data_folder, "");
+        assert_eq!(res.data_folder, PathBuf::new());
         assert_eq!(res.source_file, "");
         assert_eq!(res.import_ror, false);
         assert_eq!(res.process_data, false);
@@ -276,11 +282,12 @@ mod tests {
 
     #[test]
     fn check_cli_with_c_and_p_flag() {
-        let args : Vec<&str> = vec!["target\\debug\\ror1.exe", "-C", "-P"];
+        let target = &"target\\debug\\ror1.exe".replace("\\", "/");
+        let args : Vec<&str> = vec![target, "-C", "-P"];
         let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
 
         let res = fetch_valid_arguments(test_args).unwrap();
-        assert_eq!(res.data_folder, "");
+        assert_eq!(res.data_folder, PathBuf::new());
         assert_eq!(res.source_file, "");
         assert_eq!(res.import_ror, false);
         assert_eq!(res.process_data, true);
@@ -293,12 +300,13 @@ mod tests {
 
     #[test]
     fn check_cli_with_explicit_string_pars() {
-        let args : Vec<&str> = vec!["target\\debug\\ror1.exe", "-f", "E:\\ROR\\some data folder", 
+        let target = &"target\\debug\\ror1.exe".replace("\\", "/");
+        let args : Vec<&str> = vec![target, "-f", "E:\\ROR\\some data folder", 
                                     "-s", "schema2 data.json", "-d", "2025-12-25", "-v", "1.62"];
         let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
 
         let res = fetch_valid_arguments(test_args).unwrap();
-        assert_eq!(res.data_folder, "E:\\ROR\\some data folder");
+        assert_eq!(res.data_folder, PathBuf::from("E:/ROR/some data folder"));
         assert_eq!(res.source_file, "schema2 data.json");
         assert_eq!(res.import_ror, true);
         assert_eq!(res.process_data, false);
@@ -311,12 +319,13 @@ mod tests {
 
     #[test]
     fn check_cli_with_most_params_explicit() {
-        let args : Vec<&str> = vec!["target\\debug\\ror1.exe", "-f", "E:\\ROR\\some other data folder", 
+        let target = &"target\\debug\\ror1.exe".replace("\\", "/");
+        let args : Vec<&str> = vec![target, "-f", "E:\\ROR\\some other data folder", 
         "-s", "schema2.1 data.json", "-d", "2026-12-25", "-v", "1.63", "-R", "-P", "-T", "-C"];
         let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
 
         let res = fetch_valid_arguments(test_args).unwrap();
-        assert_eq!(res.data_folder, "E:\\ROR\\some other data folder");
+        assert_eq!(res.data_folder, PathBuf::from("E:/ROR/some other data folder"));
         assert_eq!(res.source_file, "schema2.1 data.json");
         assert_eq!(res.import_ror, true);
         assert_eq!(res.process_data, true);

@@ -20,12 +20,12 @@ use log4rs::{
     encode::pattern::PatternEncoder,
 };
 
-pub fn setup_log (data_folder: &String, source_file_name : &String) -> Result<log4rs::Handle, AppError> {
+pub fn setup_log (data_folder: &PathBuf, source_file_name : &String) -> Result<log4rs::Handle, AppError> {
     let log_file_path = get_log_file_path(data_folder, source_file_name);
     config_log (&log_file_path)
 }
 
-fn get_log_file_path(data_folder: &String, source_file_name : &String) -> PathBuf {
+fn get_log_file_path(data_folder: &PathBuf, source_file_name : &String) -> PathBuf {
     
     // Derives the log file name, returns the full path
 
@@ -38,8 +38,8 @@ fn get_log_file_path(data_folder: &String, source_file_name : &String) -> PathBu
     else {
         log_file_name = format!("{} initialisation.log", log_file_name);
     }
-    [data_folder, &log_file_name].iter().collect()
-
+    [data_folder, &PathBuf::from(&log_file_name)].iter().collect()
+    
 }
 
 fn config_log (log_file_path: &PathBuf) -> Result<log4rs::Handle, AppError> {
@@ -92,9 +92,9 @@ pub fn log_startup_params (ip : &InitParams) {
     info!("");
     info!("************************************");
     info!("");
-    info!("data_folder: {}", ip.data_folder);
-    info!("log_folder: {}", ip.log_folder);
-    info!("output_folder: {}", ip.output_folder);
+    info!("data_folder: {}", ip.data_folder.display());
+    info!("log_folder: {}", ip.log_folder.display());
+    info!("output_folder: {}", ip.output_folder.display());
     info!("source_file_name: {}", ip.source_file_name);
     info!("output_file_name: {}", ip.output_file_name);
     info!("data_version: {}", ip.data_version);

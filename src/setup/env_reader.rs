@@ -23,6 +23,7 @@
 
 use std::sync::OnceLock;
 use std::env;
+use std::path::PathBuf;
 use dotenv;
 use crate::error_defs::{AppError, CustomError};
 
@@ -86,16 +87,19 @@ pub fn fetch_db_conn_string(db_name: &str) -> Result<String, AppError> {
     }
 }
 
-pub fn fetch_data_folder() -> String {
-    env::var("data_folder_path").unwrap_or("".to_string())
+pub fn fetch_data_folder() -> PathBuf {
+    let path_as_string = env::var("data_folder_path").unwrap_or("".to_string());
+    PathBuf::from(path_as_string.replace("\\", "/"))
 }
 
-pub fn fetch_log_folder() -> String {
-    env::var("log_folder_path").unwrap_or("".to_string())
+pub fn fetch_log_folder() -> PathBuf {
+    let path_as_string = env::var("log_folder_path").unwrap_or("".to_string());
+    PathBuf::from(path_as_string.replace("\\", "/"))
 }
 
-pub fn fetch_output_folder() -> String {
-    env::var("output_folder_path").unwrap_or("".to_string())
+pub fn fetch_output_folder() -> PathBuf {
+    let path_as_string = env::var("output_folder_path").unwrap_or("".to_string());
+    PathBuf::from(path_as_string.replace("\\", "/"))
 }
 
 pub fn fetch_source_file_name() -> String {
