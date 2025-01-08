@@ -2,7 +2,9 @@ use sqlx::{Pool, Postgres};
 
 pub async fn recreate_src_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Error> {
 
-    let schema_sql  = r#"create schema if not exists src"#;
+    let schema_sql  = r#"SET client_min_messages TO WARNING; 
+                               create schema if not exists src;
+                               SET client_min_messages TO NOTICE;"#;
     sqlx::raw_sql(schema_sql).execute(pool).await?;
 
     let table_sql  = r#"drop table if exists src.core_data;

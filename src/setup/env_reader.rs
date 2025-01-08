@@ -76,6 +76,7 @@ pub fn fetch_db_conn_string(db_name: &str) -> Result<String, AppError> {
             return Result::Err(AppError::CsErr(cf_err));
         },
     };
+    
     if db_pars.user == "no user" ||  db_pars.password == "no password"{  
         let msg = "No user or password present in environment file";
         let cf_err = CustomError::new(msg);

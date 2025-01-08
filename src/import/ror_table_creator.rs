@@ -2,9 +2,11 @@ use sqlx::{Pool, Postgres};
 use log::info;
 
 pub async fn recreate_ror_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Error> {
-  
-    let schema_sql  = r#"create schema if not exists ror"#;
-    sqlx::raw_sql(schema_sql).execute(pool).await?;
+    
+    let schema_sql  = r#"SET client_min_messages TO WARNING; 
+                               create schema if not exists ror;
+                               SET client_min_messages TO NOTICE;"#;
+    let _res = sqlx::raw_sql(schema_sql).execute(pool).await?;
         
     let table_sql  = r#"drop table if exists ror.core_data;
     create table ror.core_data

@@ -22,6 +22,7 @@ pub struct CliPars {
     pub report_data: bool,
     pub create_lup: bool,
     pub create_smm: bool,
+    pub test_run: bool,
 }
 
 pub fn fetch_valid_arguments(args: Vec<OsString>) -> Result<CliPars, AppError>
@@ -44,10 +45,10 @@ pub fn fetch_valid_arguments(args: Vec<OsString>) -> Result<CliPars, AppError>
 
     let r_flag = parse_result.get_flag("r_flag");
     let p_flag = parse_result.get_flag("p_flag");
-    let t_flag = parse_result.get_flag("t_flag");
+    let x_flag = parse_result.get_flag("x_flag");
     let c_flag = parse_result.get_flag("c_flag");
     let m_flag = parse_result.get_flag("m_flag");
-
+    let t_flag = parse_result.get_flag("t_flag");
 
     let mut import = true;
     let mut process = false;
@@ -64,10 +65,10 @@ pub fn fetch_valid_arguments(args: Vec<OsString>) -> Result<CliPars, AppError>
         // if none set, use initial default values,
         // otherwise use values as provided
 
-        if !(r_flag == false && p_flag == false && t_flag == false) {
+        if !(r_flag == false && p_flag == false && x_flag == false) {
             import = r_flag;
             process = p_flag;
-            report_data = t_flag;
+            report_data = x_flag;
         }
     }
 
@@ -83,7 +84,8 @@ pub fn fetch_valid_arguments(args: Vec<OsString>) -> Result<CliPars, AppError>
                 process_data: false,
                 report_data: false,
                 create_lup: true,
-                create_smm: true
+                create_smm: true,
+                test_run: false,
             })
         }
     
@@ -97,7 +99,8 @@ pub fn fetch_valid_arguments(args: Vec<OsString>) -> Result<CliPars, AppError>
                 process_data: process,
                 report_data: report_data,
                 create_lup: c_flag,
-                create_smm: m_flag
+                create_smm: m_flag,
+                test_run: t_flag,
             })
         }
     }
@@ -112,6 +115,7 @@ fn parse_args(args: Vec<OsString>) -> Result<ArgMatches, clap::Error> {
             Arg::new("data_folder")
            .short('f')
            .long("folder")
+           .visible_short_aliases(['F'])
            .visible_aliases(["data folder"])
            .help("A string with the data folder path (over-rides environment setting")
            .default_value("")
@@ -120,6 +124,7 @@ fn parse_args(args: Vec<OsString>) -> Result<ArgMatches, clap::Error> {
              Arg::new("src_file")
             .short('s')
             .long("source")
+            .visible_short_aliases(['S'])
             .visible_aliases(["source file"])
             .help("A string with the source file name (over-rides environment setting")
             .default_value("")
@@ -136,64 +141,81 @@ fn parse_args(args: Vec<OsString>) -> Result<ArgMatches, clap::Error> {
             Arg::new("data_date")
            .short('d')
            .long("date")
+           .visible_short_aliases(['D'])
            .required(false)
            .help("A string with a date in ISO format that gives the date of the data")
            .default_value("")
         )
         .arg(
             Arg::new("a_flag")
-           .short('A')
-           .long("A-flag")
+           .short('a')
+           .long("a-flag")
+           .visible_short_aliases(['A'])
            .required(false)
            .help("A flag signifying run the entire program, equivalent to R and P")
            .action(clap::ArgAction::SetTrue)
          )
         .arg(
             Arg::new("r_flag")
-           .short('R')
-           .long("R-flag")
+           .short('r')
+           .long("r-flag")
+           .visible_short_aliases(['R'])
            .required(false)
            .help("A flag signifying import from ror file to ror schema tables only")
            .action(clap::ArgAction::SetTrue)
        )
         .arg(
              Arg::new("p_flag")
-            .short('P')
-            .long("P-flag")
+            .short('p')
+            .long("p-flag")
+            .visible_short_aliases(['P'])
             .required(false)
             .help("A flag signifying process ror data to src data and analyse and store results")
             .action(clap::ArgAction::SetTrue)
         )
         .arg(
-            Arg::new("t_flag")
-           .short('T')
-           .long("T-flag")
+            Arg::new("x_flag")
+           .short('x')
+           .long("x-flag")
+           .visible_short_aliases(['X'])
            .required(false)
            .help("A flag signifying output a summary of the current data into a text file")
            .action(clap::ArgAction::SetTrue)
        )
        .arg(
             Arg::new("i_flag")
-           .short('I')
-           .long("Install")
+           .short('i')
+           .long("install")
+           .visible_short_aliases(['I'])
            .required(false)
            .help("A flag signifying initial run, creates summary and context tables only")
            .action(clap::ArgAction::SetTrue)
        )
        .arg(
             Arg::new("c_flag")
-            .short('C')
-            .long("C-flag")
+            .short('c')
+            .long("c-flag")
+            .visible_short_aliases(['C'])
             .required(false)
             .help("A flag signifying that context tables need to be rebuilt")
             .action(clap::ArgAction::SetTrue)
        )
        .arg(
             Arg::new("m_flag")
-            .short('M')
-            .long("M-flag")
+            .short('m')
+            .long("m-flag")
+            .visible_short_aliases(['M'])
             .required(false)
             .help("A flag signifying that summary tables should be recreated")
+            .action(clap::ArgAction::SetTrue)
+       )
+       .arg(
+            Arg::new("t_flag")
+            .short('t')
+            .long("t-flag")
+            .visible_short_aliases(['T'])
+            .required(false)
+            .help("A flag signifying that this is part of an integration test run")
             .action(clap::ArgAction::SetTrue)
        )
     .try_get_matches_from(args)
@@ -220,9 +242,9 @@ mod tests {
         assert_eq!(res.report_data, false);
         assert_eq!(res.create_lup, false);
         assert_eq!(res.create_smm, false);
+        assert_eq!(res.test_run, false);
         assert_eq!(res.data_date, "");
         assert_eq!(res.data_version, "");
-
     }
   
     #[test]
@@ -239,6 +261,7 @@ mod tests {
         assert_eq!(res.report_data, true);
         assert_eq!(res.create_lup, false);
         assert_eq!(res.create_smm, false);
+        assert_eq!(res.test_run, false);
         assert_eq!(res.data_date, "");
         assert_eq!(res.data_version, "");
     }
@@ -257,6 +280,7 @@ mod tests {
         assert_eq!(res.report_data, false);
         assert_eq!(res.create_lup, true);
         assert_eq!(res.create_smm, true);
+        assert_eq!(res.test_run, false);
         assert_eq!(res.data_date, "");
         assert_eq!(res.data_version, "");
     }
@@ -275,6 +299,7 @@ mod tests {
         assert_eq!(res.report_data, false);
         assert_eq!(res.create_lup, true);
         assert_eq!(res.create_smm, true);
+        assert_eq!(res.test_run, false);
         assert_eq!(res.data_date, "");
         assert_eq!(res.data_version, "");
     }
@@ -294,6 +319,7 @@ mod tests {
         assert_eq!(res.report_data, false);
         assert_eq!(res.create_lup, true);
         assert_eq!(res.create_smm, false);
+        assert_eq!(res.test_run, false);
         assert_eq!(res.data_date, "");
         assert_eq!(res.data_version, "");
     }
@@ -313,6 +339,7 @@ mod tests {
         assert_eq!(res.report_data, false);
         assert_eq!(res.create_lup, false);
         assert_eq!(res.create_smm, false);
+        assert_eq!(res.test_run, false);
         assert_eq!(res.data_date, "2025-12-25");
         assert_eq!(res.data_version, "1.62");
     }
@@ -321,7 +348,7 @@ mod tests {
     fn check_cli_with_most_params_explicit() {
         let target = &"target\\debug\\ror1.exe".replace("\\", "/");
         let args : Vec<&str> = vec![target, "-f", "E:\\ROR\\some other data folder", 
-        "-s", "schema2.1 data.json", "-d", "2026-12-25", "-v", "1.63", "-R", "-P", "-T", "-C"];
+        "-s", "schema2.1 data.json", "-d", "2026-12-25", "-v", "1.63", "-R", "-P", "-X", "-C", "-T"];
         let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
 
         let res = fetch_valid_arguments(test_args).unwrap();
@@ -332,6 +359,7 @@ mod tests {
         assert_eq!(res.report_data, true);
         assert_eq!(res.create_lup, true);
         assert_eq!(res.create_smm, false);
+        assert_eq!(res.test_run, true);
         assert_eq!(res.data_date, "2026-12-25");
         assert_eq!(res.data_version, "1.63");
     }
