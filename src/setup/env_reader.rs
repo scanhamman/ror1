@@ -41,7 +41,7 @@ pub fn populate_env_vars() -> Result< (), AppError> {
 
     // Use the dotenv from_filename function to load the variables into std::env.
 
-    let _env_res  = match dotenv::from_filename("ror.env")
+    let _env_res  = match dotenv::from_filename(".env")
     {
         Ok(pb) => pb,
         Err(err) => return Err(AppError::DeErr(err)),

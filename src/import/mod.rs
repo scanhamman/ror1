@@ -3,7 +3,6 @@
 // The folder modules do not need to be public - they are referenced only within this module.
 
 mod ror_json_models;
-mod ror_table_creator;
 mod ror_data_vectors;
 
 use log::{info, error};
@@ -16,20 +15,12 @@ use crate::AppError;
 use ror_json_models::RorRecord;
 use ror_data_vectors::{CoreDataVecs, RequiredDataVecs, NonRequiredDataVecs, extract_id_from};
 
-
 pub async fn create_ror_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
 {
-    let r = ror_table_creator::recreate_ror_tables(&pool).await;
-    match r {
-        Ok(()) => {
-            info!("tables created for ror schema"); 
-            return Ok(())
-        },
-        Err(e) => {
-            error!("An error occured while creating the ror tables: {}", e);
-            return Err(AppError::SqErr(e))
-            },
-    }
+    let s = fs::read_to_string("./db_scripts/create_ror_tables.sql")?;
+    let _r = sqlx::raw_sql(&s).execute(pool).await?;
+    info!("Tables created for src schema"); 
+    Ok(())
 }
 
 
@@ -121,7 +112,39 @@ pub async fn summarise_import(pool : &Pool<Postgres>) -> Result<(), AppError>
 {
     // Goes through each table and get total record number.
 
-    ror_table_creator::log_record_nums(pool).await?;
+    info!("");
+    info!("************************************");
+    info!("Total record numbers for each table:");
+    info!("************************************");
+    info!("");
+  
+    write_record_num("core_data", pool).await?;
+    write_record_num("admin_data", pool).await?;
+    write_record_num("names", pool).await?;
+    write_record_num("locations", pool).await?;
+    write_record_num("external_ids", pool).await?;
+    write_record_num("links", pool).await?;
+    write_record_num("type", pool).await?;
+    write_record_num("relationships", pool).await?;
+    write_record_num("domains", pool).await?;
+    
+    info!("");
+    info!("************************************");
+    info!("");
+   
     Ok(())
 }
+
+  
+pub async fn write_record_num (table_name: &str, pool: &Pool<Postgres>) -> Result<(), sqlx::Error> {
+    let sql = "SELECT COUNT(*) FROM ror.".to_owned() + table_name;
+    let res: i64 = sqlx::query_scalar(&sql)
+    .fetch_one(pool)
+    .await?;
+    info!("Total records in ror.{}: {}", table_name, res);
+    Ok(())
+}
+  
+  
+  
 

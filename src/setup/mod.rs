@@ -79,11 +79,6 @@ pub async fn get_params(args: Vec<OsString>) -> Result<InitParams, AppError> {
         if data_folder == empty_pb {
             data_folder =  env_reader::fetch_data_folder();
         }
-        //if data_folder == empty_pb {   // Required data is missing - Raise error and exit program.
-        //    let msg = "Data folder name not provided in either command line or environment file";
-        //    let cf_err = CustomError::new(msg);
-        //    return Result::Err(AppError::CsErr(cf_err));
-        // }
              
         // Does this folder exist and is it accessible? - If not and the 
         // 'R' (import ror) option is active, raise error and exit program.
@@ -131,7 +126,12 @@ pub async fn get_params(args: Vec<OsString>) -> Result<InitParams, AppError> {
              }
         }
        
-        // get the version of the data 
+       
+        // If this conforms to the correct pattern data version and data date can be derived!
+        
+
+
+        // otherwise, get the version of the data 
 
         let mut data_version= cli_pars.data_version;
         if data_version == "" {

@@ -1,87 +1,24 @@
-use sqlx::{Pool, Postgres};
-//use log::info;
 
-
-pub async fn recreate_lup_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Error> {
-
-    let schema_sql  = r#"SET client_min_messages TO WARNING; 
-                               create schema if not exists lup;
-                               SET client_min_messages TO NOTICE;"#;
-    sqlx::raw_sql(schema_sql).execute(pool).await?;
-
-    let table_sql  = r#"drop table if exists lup.ror_org_types;
-        create table lup.ror_org_types (
-        id int not null primary key, 
-        name  varchar
-    );"#;
-    sqlx::raw_sql(table_sql).execute(pool).await?;
-
-    let insert_sql  = r#"insert into lup.ror_org_types(id, name) 
+    insert into lup.ror_org_types(id, name) 
        values (100, 'government'), (200, 'education'), (300, 'healthcare'), 
        (400, 'company'), (500, 'nonprofit'), (600, 'funder'),
-       (700, 'facility'), (800, 'archive'),  (900, 'other');"#;
-    sqlx::raw_sql(insert_sql).execute(pool).await?;
-
+       (700, 'facility'), (800, 'archive'),  (900, 'other');
     
-    let table_sql  = r#"drop table if exists lup.ror_name_types;
-    create table lup.ror_name_types (
-        id int not null primary key, 
-        name  varchar
-    )"#;
-    sqlx::raw_sql(table_sql).execute(pool).await?;
+    insert into lup.ror_name_types(id, name) 
+        values (5, 'label'), (7, 'alias'), (10, 'acronym');
     
-    let insert_sql  = r#"insert into lup.ror_name_types(id, name) 
-        values (5, 'label'), (7, 'alias'), (10, 'acronym');"#;
-    sqlx::raw_sql(insert_sql).execute(pool).await?;
-
-
-    let table_sql  = r#"drop table if exists lup.ror_id_types;
-    create table lup.ror_id_types (
-        id int not null primary key, 
-        name  varchar
-    )"#;
-    sqlx::raw_sql(table_sql).execute(pool).await?;
-    
-    let insert_sql  = r#"insert into lup.ror_id_types(id, name) 
+    insert into lup.ror_id_types(id, name) 
        values (11, 'isni'), (12, 'wikidata'),
-       (13, 'grid'), (14, 'fundref');"#;
-    sqlx::raw_sql(insert_sql).execute(pool).await?;
-
-
-    let table_sql  = r#"drop table if exists lup.ror_link_types;
-    create table lup.ror_link_types (
-        id int not null primary key, 
-        name  varchar
-    )"#;
-    sqlx::raw_sql(table_sql).execute(pool).await?;
+       (13, 'grid'), (14, 'fundref');
     
-    let insert_sql  = r#"insert into lup.ror_link_types(id, name) 
-      values (21, 'wikipedia'), (22, 'website');"#;
-    sqlx::raw_sql(insert_sql).execute(pool).await?;
-
-
-
-    let table_sql  = r#"drop table if exists lup.ror_org_rels;
-    create table lup.ror_org_rels (
-        id int not null primary key, 
-        name  varchar
-    )"#;
-    sqlx::raw_sql(table_sql).execute(pool).await?;
+    insert into lup.ror_link_types(id, name) 
+      values (21, 'wikipedia'), (22, 'website');
     
-    let insert_sql  = r#"insert into lup.ror_org_rels(id, name) 
+    insert into lup.ror_org_rels(id, name) 
        values (1, 'parent'), (2, 'child'), (3, 'related'),
-    (4, 'predeceesor'), (5, 'successor');"#;
-    sqlx::raw_sql(insert_sql).execute(pool).await?;
+    (4, 'predecessor'), (5, 'successor');
 
-
-    let table_sql  = r#"drop table if exists lup.countries;
-    create table lup.countries (
-    code varchar primary key,
-    name varchar
-    )"#;
-    sqlx::raw_sql(table_sql).execute(pool).await?;
-
-    let insert_sql  = r#"insert into lup.countries(code, name) values
+    insert into lup.countries(code, name) values
              ('AD', 'Andorra'), ('AE', 'United Arab Emirates'), ('AF', 'Afghanistan'), ('AG', 'Antigua and Barbuda'), ('AI', 'Anguilla'), 
              ('AL', 'Albania'), ('AM', 'Armenia'), ('AN', 'Netherlands Antilles'), ('AO', 'Angola'), ('AQ', 'Antarctica'), 
              ('AR', 'Argentina'), ('AS', 'American Samoa'), ('AT', 'Austria'), ('AU', 'Australia'), ('AW', 'Aruba'), ('AX', 'Aland Islands'), 
@@ -96,10 +33,9 @@ pub async fn recreate_lup_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Err
              ('CY', 'Cyprus'), ('CZ', 'Czechia'), ('DE', 'Germany'), ('DJ', 'Djibouti'), ('DK', 'Denmark'), 
              ('DM', 'Dominica'), ('DO', 'Dominican Republic'), ('DZ', 'Algeria'), ('EC', 'Ecuador'), ('EE', 'Estonia'), 
              ('EG', 'Egypt'), ('EH', 'Western Sahara'), ('ER', 'Eritrea'), ('ES', 'Spain'), ('ET', 'Ethiopia'), 
-             ('FI', 'Finland'), ('FJ', 'Fiji'), ('FK', 'Falkland Islands'), ('FM', 'Micronesia'), ('FO', 'Faroe Islands');"#;
-    sqlx::raw_sql(insert_sql).execute(pool).await?; 
+             ('FI', 'Finland'), ('FJ', 'Fiji'), ('FK', 'Falkland Islands'), ('FM', 'Micronesia'), ('FO', 'Faroe Islands');
 
-    let insert_sql  = r#"insert into lup.countries(code, name) values
+    insert into lup.countries(code, name) values
              ('FR', 'France'), ('GA', 'Gabon'), ('GB', 'United Kingdom'), ('GD', 'Grenada'), ('GE', 'Georgia'), 
              ('GF', 'French Guiana'), ('GG', 'Guernsey'), ('GH', 'Ghana'), ('GI', 'Gibraltar'), ('GL', 'Greenland'), 
              ('GM', 'Gambia'), ('GN', 'Guinea'), ('GP', 'Guadeloupe'), ('GQ', 'Equatorial Guinea'), ('GR', 'Greece'), 
@@ -115,10 +51,9 @@ pub async fn recreate_lup_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Err
              ('LV', 'Latvia'), ('LY', 'Libya'), ('MA', 'Morocco'), ('MC', 'Monaco'), ('MD', 'Moldova'), 
              ('ME', 'Montenegro'), ('MF', 'Saint Martin'), ('MG', 'Madagascar'), ('MH', 'Marshall Islands'), ('MK', 'North Macedonia'), 
              ('ML', 'Mali'), ('MM', 'Myanmar'), ('MN', 'Mongolia'), ('MO', 'Macao'), ('MP', 'Northern Mariana Islands'), 
-             ('MQ', 'Martinique'), ('MR', 'Mauritania'), ('MS', 'Montserrat'), ('MT', 'Malta'), ('MU', 'Mauritius');"#;
-    sqlx::raw_sql(insert_sql).execute(pool).await?; 
+             ('MQ', 'Martinique'), ('MR', 'Mauritania'), ('MS', 'Montserrat'), ('MT', 'Malta'), ('MU', 'Mauritius');
 
-    let insert_sql  = r#"insert into lup.countries(code, name) values
+    insert into lup.countries(code, name) values
              ('MV', 'Maldives'), ('MW', 'Malawi'), ('MX', 'Mexico'), ('MY', 'Malaysia'), ('MZ', 'Mozambique'), ('NA', 'Namibia'), 
              ('NC', 'New Caledonia'), ('NE', 'Niger'), ('NF', 'Norfolk Island'), ('NG', 'Nigeria'), ('NI', 'Nicaragua'), 
              ('NL', 'Netherlands'), ('NO', 'Norway'), ('NP', 'Nepal'), ('NR', 'Nauru'), ('NU', 'Niue'), 
@@ -137,19 +72,9 @@ pub async fn recreate_lup_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Err
              ('UG', 'Uganda'), ('UM', 'United States Minor Outlying Islands'), ('US', 'United States'), ('UY', 'Uruguay'), ('UZ', 'Uzbekistan'), 
              ('VA', 'Vatican'), ('VC', 'Saint Vincent and the Grenadines'), ('VE', 'Venezuela'), ('VG', 'British Virgin Islands'), ('VI', 'U.S. Virgin Islands'), 
              ('VN', 'Vietnam'), ('VU', 'Vanuatu'), ('WF', 'Wallis and Futuna'), ('WS', 'Samoa'), ('XK', 'Kosovo'), ('YE', 'Yemen'), 
-             ('YT', 'Mayotte'), ('ZA', 'South Africa'), ('ZM', 'Zambia'), ('ZW', 'Zimbabwe');"#;
-    sqlx::raw_sql(insert_sql).execute(pool).await?; 
+             ('YT', 'Mayotte'), ('ZA', 'South Africa'), ('ZM', 'Zambia'), ('ZW', 'Zimbabwe');
 
-    let table_sql  = r#"drop table if exists lup.lang_codes;
-    create table lup.lang_codes (
-        code varchar not null primary key, 
-        marc_code varchar,
-        name  varchar,
-        source varchar
-    )"#;
-    sqlx::raw_sql(table_sql).execute(pool).await?;
-
-    let insert_sql  = r#"insert into lup.lang_codes(code, marc_code, name, source) values
+    insert into lup.lang_codes(code, marc_code, name, source) values
            ('af', 'afr', 'Afrikaans', 'ISO 639-1'), ('am', 'amh', 'Amharic', 'ISO 639-1'), ('ar', 'ara', 'Arabic', 'ISO 639-1'),
            ('az', 'aze', 'Azerbaijani', 'ISO 639-1'), ('be', 'bel', 'Belarusian', 'ISO 639-1'), ('bg', 'bul', 'Bulgarian', 'ISO 639-1'),
            ('bn', 'ben', 'Bengali', 'ISO 639-1'), ('bo', 'tib', 'Tibetan', 'ISO 639-1'), ('br', 'bre', 'Breton', 'ISO 639-1'),
@@ -168,10 +93,9 @@ pub async fn recreate_lup_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Err
            ('km', 'khm', 'Central Khmer', 'ISO 639-1'), ('kn', 'kan', 'Kannada', 'ISO 639-1'), ('ko', 'kor', 'Korean', 'ISO 639-1'), 
            ('ks', 'kas', 'Kashmiri', 'ISO 639-1'), ('ku', 'kur', 'Kurdish', 'ISO 639-1'), ('la', 'lat', 'Latin', 'ECRIN'),
            ('lb', 'ltz', 'Luxembourgish', 'ISO 639-1'), ('lo', 'lao', 'Lao', 'ISO 639-1'), ('lt', 'lit', 'Lithuanian', 'ISO 639-1'),
-           ('lv', 'lav', 'Latvian', 'ISO 639-1'), ('mi', 'mao', 'Maori', 'ISO 639-1'), ('mk', 'mac', 'Macedonian', 'ISO 639-1');"#;
-    sqlx::raw_sql(insert_sql).execute(pool).await?; 
+           ('lv', 'lav', 'Latvian', 'ISO 639-1'), ('mi', 'mao', 'Maori', 'ISO 639-1'), ('mk', 'mac', 'Macedonian', 'ISO 639-1');
            
-    let insert_sql  = r#"insert into lup.lang_codes(code, marc_code, name, source) values
+    insert into lup.lang_codes(code, marc_code, name, source) values
            ('ml', 'mal', 'Malayalam', 'ISO 639-1'), ('mn', 'mon', 'Mongolian', 'ISO 639-1'), ('mr', 'mar', 'Marathi', 'ISO 639-1'),
            ('ms', 'may', 'Malay', 'ISO 639-1'), ('mt', 'mlt', 'Maltese', 'ISO 639-1'), ('mu', 'mul', 'Multiple languages', 'PubMed'),
            ('my', 'bur', 'Burmese', 'ISO 639-1'), ('ne', 'nep', 'Nepali', 'ISO 639-1'), ('nl', 'dut', 'Dutch', 'ISO 639-1'),  
@@ -188,27 +112,9 @@ pub async fn recreate_lup_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Err
            ('ty', 'tah', 'Tahitian', 'ISO 639-1'), ('uk', 'ukr', 'Ukrainian', 'ISO 639-1'), ('un', 'und', 'Undetermined', 'PubMed'),
            ('ur', 'urd', 'Urdu', 'ISO 639-1'), ('uz', 'uzb', 'Uzbek', 'ISO 639-1'), ('vi', 'vie', 'Vietnamese', 'ISO 639-1'),
            ('xh', 'xho', 'Xhosa', 'ISO 639-1'), ('yo', 'yor', 'Yoruba', 'ISO 639-1'), ('zh', 'chi', 'Chinese', 'ISO 639-1'),
-           ('zu', 'zul', 'Zulu', 'ISO 639-1');"#;
-    sqlx::raw_sql(insert_sql).execute(pool).await?; 
+           ('zu', 'zul', 'Zulu', 'ISO 639-1');
 
-
-    let table_sql  = r#"drop table if exists lup.lang_scripts;
-    create table lup.lang_scripts (
-        code  varchar not null primary key,
-        unicode_name  varchar,
-        iso_name  varchar,
-        dir  varchar,
-        chars   int,
-        notes   varchar,
-        hex_start   varchar,
-        hex_end   varchar,
-        ascii_start	   int,
-        ascii_end   int,	
-        source   varchar
-    )"#;
-    sqlx::raw_sql(table_sql).execute(pool).await?;     
-    
-    let insert_sql  = r#"insert into lup.lang_scripts(code, unicode_name, iso_name, dir, chars, notes, hex_start, hex_end, ascii_start, ascii_end, source) 
+    insert into lup.lang_scripts(code, unicode_name, iso_name, dir, chars, notes, hex_start, hex_end, ascii_start, ascii_end, source) 
          values 
          ('Adlm', 'Adlam',  'Adlam', 'RtL', 88, 'Used in parts of West and Central Africa', '1E900', '1E95F', 125184, 125279, 'ISO 15924'),
          ('Arab', 'Arabic', 'Arabic', 'RtL', 1365, '', '0600', '06FF', 1536, 1791, 'ISO 15924'), 
@@ -223,10 +129,9 @@ pub async fn recreate_lup_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Err
          ('Cham', 'Cham', 'Cham', 'LtR', 83, 'Used in parts of Vietnam and Cambodia', 'AA00', 'AA5F', 43520, 43615, 'ISO 15924'), 
          ('Zyyy', 'Common', 'Code for undetermined script', 'n/a', 0, '', '', '', 0, 0, 'ISO 15924'), 
          ('Cyrl', 'Cyrillic', 'Cyrillic', 'LtR', 443, '', '0400', '04FF', 1024, 1279, 'ISO 15924'), 
-         ('Deva', 'Devanagari', 'Devanagari (Nagari)', 'LtR', 154, 'Used in parts of India, including for Hindi and Marathi', '0900', '097F', 2304, 2431, 'ISO 15924');"#;
-    sqlx::raw_sql(insert_sql).execute(pool).await?;  
+         ('Deva', 'Devanagari', 'Devanagari (Nagari)', 'LtR', 154, 'Used in parts of India, including for Hindi and Marathi', '0900', '097F', 2304, 2431, 'ISO 15924');
    
-    let insert_sql  = r#"insert into lup.lang_scripts(code, unicode_name, iso_name, dir, chars, notes, hex_start, hex_end, ascii_start, ascii_end, source) 
+    insert into lup.lang_scripts(code, unicode_name, iso_name, dir, chars, notes, hex_start, hex_end, ascii_start, ascii_end, source) 
          values 
          ('Ethi', 'Ethiopic', 'Ethiopic (Geʻez)', 'LtR', 523, 'Used for Amharic and related languages in and around Ethiopa', '1200', '137C', 4608, 4988, 'ISO 15924'), 
          ('Geor', 'Georgian', 'Georgian (Mkhedruli and Mtavruli)', 'LtR', 173, '', '10A0', '10FF', 4256, 4351, 'ISO 15924'), 
@@ -253,10 +158,9 @@ pub async fn recreate_lup_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Err
          ('Limb', 'Limbu', 'Limbu', 'LtR', 68, 'Used in parts of India, Tibet', '1900', '194F', 6400, 6479, 'ISO 15924'), 
          ('Mlym', 'Malayalam', 'Malayalam', 'LtR', 118, 'Used in parts of India (Kerala)', '0D00', '0D7F', 3328, 3455, 'ISO 15924'), 
          ('Mtei', 'Meetei Mayek', 'Meitei Mayek (Meithei, Meetei)', 'LtR', 79, 'Used in parts of India', 'ABC0', 'ABFF', 43968, 44031, 'ISO 15924'), 
-         ('Mend', 'Mende Kikakui', 'Mende Kikakui', 'RtL', 213, 'Used  in Sierra Leone', '1E800', '1E8DF', 124928, 125151, 'ISO 15924');"#;
-    sqlx::raw_sql(insert_sql).execute(pool).await?; 
+         ('Mend', 'Mende Kikakui', 'Mende Kikakui', 'RtL', 213, 'Used  in Sierra Leone', '1E800', '1E8DF', 124928, 125151, 'ISO 15924');
 
-    let insert_sql  = r#"insert into lup.lang_scripts(code, unicode_name, iso_name, dir, chars, notes, hex_start, hex_end, ascii_start, ascii_end, source) 
+    insert into lup.lang_scripts(code, unicode_name, iso_name, dir, chars, notes, hex_start, hex_end, ascii_start, ascii_end, source) 
          values 
          ('Plrd', 'Miao', 'Miao (Pollard)', 'LtR', 149, 'Used in parts of China', '16F00', '16F9F', 93952, 94111, 'ISO 15924'), 
          ('Mong', 'Mongolian', 'Mongolian', 'VLtR, LtR', 168, '', '1800', '18AF', 6144, 6319, 'ISO 15924'), 
@@ -284,8 +188,4 @@ pub async fn recreate_lup_tables (pool: &Pool<Postgres>) -> Result<(), sqlx::Err
          ('Tibt', 'Tibetan', 'Tibetan', 'LtR', 207, '', '0F00', '0FFF', 3840, 4095, 'ISO 15924'), 
          ('Cans', 'Canadian Aboriginal', 'Unified Canadian Aboriginal Syllabics', 'LtR', 726, 'Used in Inuit and related languages', '1400', '167F', 5120, 5759, 'ISO 15924'), 
          ('Wara', 'Warang Citi', 'Warang Citi (Varang Kshiti)', 'LtR', 84, 'Used in parts of India', '118A0', '118FF', 71840, 71935, 'ISO 15924'), 
-         ('Yiii', 'Yi', 'Yi', 'LtR', 1220, 'Used in parts of China', 'A000', 'A48F', 40960, 42127, 'ISO 15924');"#;
-    sqlx::raw_sql(insert_sql).execute(pool).await?; 
-
-    Ok(())
-}
+         ('Yiii', 'Yi', 'Yi', 'LtR', 1220, 'Used in parts of China', 'A000', 'A48F', 40960, 42127, 'ISO 15924');

@@ -9,7 +9,7 @@ use super::record_structs::{RorCoreData, RorRelationship, RorExternalId,
 
 pub async fn fetch_db_pool(db_name: &str) -> Result<Pool<Postgres>, AppError>  {
 
-    let _env_res  = match dotenv::from_filename("ror.env")
+    let _env_res  = match dotenv::from_filename(".env")
     {
         Ok(pb) => pb,
         Err(err) => return Err(AppError::DeErr(err)),
