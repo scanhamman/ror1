@@ -6,6 +6,7 @@ mod src_data_importer;
 mod src_data_processor;
 mod smm_data_reporter;
 mod src_data_storer;
+mod storage_helper;
 
 use log::{info, error};
 use sqlx::{Pool, Postgres};
@@ -34,7 +35,6 @@ pub async fn create_lup_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
 
     Ok(())
 }
-
 
 pub async fn create_smm_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
 {
@@ -78,12 +78,12 @@ pub async fn process_data(data_version: &String, data_date: &NaiveDate, pool : &
     
     match r {
         Ok(()) => {
-            info!("Data summarised and written out"); 
+            info!("Summary data transferred to smm tables"); 
             return Ok(())
         },
         Err(e) => {
-            error!("An error occured while reporting on the the org tables: {}", e);
-            return Err(AppError::SqErr(e))
+            error!("An error occured while transferring summary: {}", e);
+            return Err(e)
             },
     }
 

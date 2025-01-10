@@ -1,8 +1,9 @@
 
+
     SET client_min_messages TO WARNING; 
     create schema if not exists ror;
     SET client_min_messages TO NOTICE;
-           
+        
     drop table if exists ror.core_data;
     create table ror.core_data
     (
@@ -33,6 +34,7 @@
     );
     create index src_names_idx on ror.names(id);
 
+
     drop table if exists ror.locations;
     create table ror.locations
     (  
@@ -60,7 +62,7 @@
     );
     create index src_external_ids_idx on ror.external_ids(id);
 
-     drop table if exists ror.links;
+    drop table if exists ror.links;
     create table ror.links
     (
           id                varchar	    not null
@@ -94,3 +96,4 @@
         , value             varchar     not null
     );
     create index src_domains_idx on ror.domains(id);
+
