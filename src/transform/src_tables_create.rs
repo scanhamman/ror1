@@ -1,4 +1,9 @@
+use sqlx::{Pool, Postgres};
+use crate::AppError;
 
+pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
+
+    let sql = r#"
     SET client_min_messages TO WARNING; 
     create schema if not exists src;
     SET client_min_messages TO NOTICE;
@@ -31,8 +36,10 @@
         , n_grid            int         not null default 0
         , n_fundref         int         not null default 0
         , n_wikidata        int         not null default 0
+        , n_ext_ids         int         not null default 0
         , n_wikipedia       int         not null default 0
         , n_website         int         not null default 0
+        , n_links           int         not null default 0
         , n_types           int         not null default 0
         , n_relrels         int         not null default 0
         , n_parrels         int         not null default 0
@@ -125,3 +132,9 @@
         , domain            varchar     not null
     );
     create index domains_idx on src.domains(id);
+    "#;
+
+    sqlx::raw_sql(sql).execute(pool).await?;
+    Ok(())
+    
+}

@@ -4,49 +4,33 @@
 
 mod src_data_importer;
 mod src_data_processor;
-mod smm_data_reporter;
-mod src_data_storer;
-mod storage_helper;
+mod smm_data_report;
+mod smm_data_storer;
+mod smm_storage_helper;
+mod src_tables_create;
 
 use log::{info, error};
 use sqlx::{Pool, Postgres};
 use crate::AppError;
 use chrono::NaiveDate;
 use std::path::PathBuf;
-use std::fs;
+
 
 pub async fn create_src_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
 {
-    let s = fs::read_to_string("./db_scripts/create_src_tables.sql")?;
-    let _r = sqlx::raw_sql(&s).execute(pool).await?;
-    info!("Tables created for src schema"); 
-    Ok(())
-}
-
-pub async fn create_lup_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
-{
-    let s = fs::read_to_string("./db_scripts/create_lup_tables.sql")?;
-    let _r = sqlx::raw_sql(&s).execute(pool).await?;
-    info!("Tables created for lup schema"); 
-
-    let s = fs::read_to_string("./db_scripts/fill_lup_tables.sql")?;
-    let _r = sqlx::raw_sql(&s).execute(pool).await?;
-    info!("Data added to lup tables"); 
-
-    Ok(())
-}
-
-pub async fn create_smm_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
-{
-    let s = fs::read_to_string("./db_scripts/create_smm_tables.sql")?;
-    let _r = sqlx::raw_sql(&s).execute(pool).await?;
-    info!("Tables created for smm schema"); 
+    match src_tables_create::create_tables(pool).await {
+        Ok(()) => info!("Tables created for src schema"),
+        Err(e) => {
+            error!("An error occured while creating the src schema tables: {}", e);
+            return Err(e)
+            },
+    };
     Ok(())
 }
 
 pub async fn process_data(data_version: &String, data_date: &NaiveDate, pool : &Pool<Postgres>) -> Result<(), AppError>
 {
-    // import the data from ror schema to src schema
+    // Import the data from ror schema to src schema.
 
     let r = src_data_importer::import_data(pool).await;
     match r {
@@ -59,8 +43,7 @@ pub async fn process_data(data_version: &String, data_date: &NaiveDate, pool : &
             },
     }
 
-    // Calculate number of attributes for each org,
-    // and populate the admin data table with results
+    // Calculate number of attributes for each org, and populate the admin data table with results.
 
     let r = src_data_processor::store_org_attribute_numbers(pool).await;
     match r {
@@ -73,8 +56,23 @@ pub async fn process_data(data_version: &String, data_date: &NaiveDate, pool : &
             },
     }
 
+    // Add the script codes to the names.
+
+    let r = src_data_processor::add_script_codes(pool).await;
+    match r {
+        Ok(()) => {
+            info!("Script codes added to organisation names"); 
+        },
+        Err(e) => {
+            error!("An error occured while adding the script codes: {}", e);
+            return Err(AppError::SqErr(e))
+            },
+    }
+
+
+
     // Store data into summ tables
-    let r = src_data_storer::store_summary_data(data_version, data_date, pool).await;
+    let r = smm_data_storer::store_summary_data(data_version, data_date, pool).await;
     
     match r {
         Ok(()) => {
@@ -94,7 +92,7 @@ pub async fn report_results(output_folder : &PathBuf, output_file_name: &String,
 {
     // Write out summary data for this dataset into the designated file
 
-    let r = smm_data_reporter::report_on_data(output_folder, output_file_name, pool).await;
+    let r = smm_data_report::report_on_data(output_folder, output_file_name, pool).await;
     match r {
         Ok(()) => {
             info!("Data summary generated as file"); 

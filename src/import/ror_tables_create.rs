@@ -1,9 +1,11 @@
+use sqlx::{Pool, Postgres};
+use crate::AppError;
 
+pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
 
-    SET client_min_messages TO WARNING; 
+    let sql = r#"SET client_min_messages TO WARNING; 
     create schema if not exists ror;
-    SET client_min_messages TO NOTICE;
-        
+          
     drop table if exists ror.core_data;
     create table ror.core_data
     (
@@ -96,4 +98,12 @@
         , value             varchar     not null
     );
     create index src_domains_idx on ror.domains(id);
+    
+    SET client_min_messages TO NOTICE;"#;
+
+    sqlx::raw_sql(sql).execute(pool).await?;
+    Ok(())
+    
+}
+
 

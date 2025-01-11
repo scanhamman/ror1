@@ -1,4 +1,9 @@
+use sqlx::{Pool, Postgres};
+use crate::AppError;
 
+pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
+
+    let sql = r#"
     SET client_min_messages TO WARNING; 
     create schema if not exists smm;
  
@@ -29,9 +34,11 @@
         , num_label         int         null
         , num_alias         int         null
         , num_acronym       int         null
+        , num_nacro         int         null
         , pc_label          real        null
         , pc_alias          real        null
         , pc_acronym        real        null
+        , pc_nacro          real        null
         , num_label_wolc    int         null
         , num_alias_wolc    int         null
         , num_acro_wolc     int         null
@@ -40,6 +47,10 @@
         , pc_alias_wolc     real        null
         , pc_acro_wolc      real        null
         , pc_nacro_wolc     real        null
+        , num_nacro_ne      int         null
+        , pc_nacro_ne       real        null
+        , num_nltn          int         null
+        , pc_nltn           real        null
     );
 
     drop table if exists smm.name_ror;
@@ -65,8 +76,8 @@
           vcode             varchar     not null
         , vdate             date        not null
         , count             int         null
-        , count_num         int         null
-        , count_pc          real        null
+        , num_of_orgs       int         null
+        , pc_of_orgs        real        null
     );
 
     drop table if exists smm.name_label_distribution;
@@ -75,8 +86,8 @@
           vcode             varchar     not null
         , vdate             date        not null
         , count             int         null
-        , count_num         int         null
-        , count_pc          real        null
+        , num_of_orgs       int         null
+        , pc_of_orgs        real        null
     );
 
     drop table if exists smm.name_alias_distribution;
@@ -85,8 +96,8 @@
           vcode             varchar     not null
         , vdate             date        not null
         , count             int         null
-        , count_num         int         null
-        , count_pc          real        null
+        , num_of_orgs       int         null
+        , pc_of_orgs        real        null
     );
 
     drop table if exists smm.name_acronym_distribution;
@@ -95,16 +106,41 @@
           vcode             varchar     not null
         , vdate             date        not null
         , count             int         null
-        , count_num         int         null
-        , count_pc          real        null
+        , num_of_orgs       int         null
+        , pc_of_orgs        real        null
     );
+
+
+    drop table if exists smm.ne_lang_code_distribution;
+    create table smm.ne_lang_code_distribution
+    (    
+          vcode             varchar     not null
+        , vdate             date        not null
+        , lang              int         null
+        , num_of_names      int         null
+        , pc_of_ne_names    real        null
+        , pc_of_all_names   real        null
+    );
+
+
+    drop table if exists smm.nl_lang_script_distribution;
+    create table smm.nl_lang_script_distribution
+    (    
+          vcode             varchar     not null
+        , vdate             date        not null
+        , script            int         null
+        , num_of_names      int         null
+        , pc_of_nl_names    real        null
+        , pc_of_all_names   real        null
+    );
+
 
     drop table if exists smm.orgs_of_type_summary;
     create table smm.orgs_of_type_summary
     (    
           vcode             varchar     not null primary key
         , vdate             date        not null
-        , total             int         null
+        , num_orgs          int         null
         , government        int         null
         , education         int         null
         , healthcare        int         null
@@ -131,8 +167,8 @@
           vcode             varchar     not null
         , vdate             date        not null
         , count             int         null
-        , count_num         int         null
-        , count_pc          real        null
+        , num_of_orgs       int         null
+        , pc_of_orgs        real        null
     );
 
     drop table if exists smm.type_name_lang_code;
@@ -170,8 +206,8 @@
           vcode             varchar     not null
         , vdate             date        not null
         , count             int         null
-        , count_num         int         null
-        , count_pc          real        null
+        , num_of_orgs       int         null
+        , pc_of_orgs        real        null
     );
 
     drop table if exists smm.links_summary;
@@ -192,8 +228,8 @@
           vcode             varchar     not null
         , vdate             date        not null
         , count             int         null
-        , count_num         int         null
-        , count_pc          real        null
+        , num_of_orgs       int         null
+        , pc_of_orgs        real        null
     );
 
     drop table if exists smm.relationships_summary;
@@ -243,9 +279,9 @@
     (    
           vcode             varchar     not null
         , vdate             date        not null
-        , country           int         null
-        , country_num       int         null
-        , country_pc        real        null
+        , country           varchar     null
+        , num_of_locs       int         null
+        , pc_of_locs        real        null
     );
 
     drop table if exists smm.locs_count_distribution;
@@ -254,11 +290,16 @@
           vcode             varchar     not null
         , vdate             date        not null
         , count             int         null
-        , count_num         int         null
-        , count_pc          real        null
+        , num_of_orgs       int         null
+        , pc_of_orgs        real        null
     );
 
-   SET client_min_messages TO NOTICE;
+   SET client_min_messages TO NOTICE;"#;
+
+    sqlx::raw_sql(sql).execute(pool).await?;
+    Ok(())
+    
+}
 
 
 

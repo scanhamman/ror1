@@ -6,13 +6,16 @@
 
 mod env_reader;
 mod cli_reader;
+mod lup_tables_create;
+mod lup_tables_insert;
+mod smm_tables_create;
 pub mod log_helper;
 
 use crate::error_defs::{AppError, CustomError};
 use chrono::NaiveDate;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Postgres, Pool};
-use log::error;
+use log::{info, error};
 use chrono::Local;
 use std::path::PathBuf;
 use std::ffi::OsString;
@@ -222,6 +225,36 @@ fn folder_exists(folder_name: &PathBuf) -> bool {
     res
 }
 
+pub async fn create_lup_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
+{
+    match lup_tables_create::create_tables(pool).await {
+        Ok(()) => info!("Tables created for lup schema"),
+        Err(e) => {
+            error!("An error occured while creating the lup schema tables: {}", e);
+            return Err(e)
+            },
+    };
+    match lup_tables_insert::fill_tables(pool).await {
+        Ok(()) => info!("Data added to lup tables"),
+        Err(e) => {
+            error!("An error occured while inserting data into the lup schema tables: {}", e);
+            return Err(e)
+            },
+    };
+    Ok(())
+}
+
+pub async fn create_smm_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
+{
+    match smm_tables_create::create_tables(pool).await {
+        Ok(()) => info!("Tables created for smm schema"),
+        Err(e) => {
+            error!("An error occured while creating the smm schema tables: {}", e);
+            return Err(e)
+            },
+    };
+    Ok(())
+}
 
 // Tests
 #[cfg(test)]

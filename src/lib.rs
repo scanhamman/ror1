@@ -45,12 +45,12 @@ pub async fn run(args: Vec<OsString>) -> Result<(), AppError> {
 
     if params.create_context
     {  
-        transform::create_lup_tables(&pool).await?;
+        setup::create_lup_tables(&pool).await?;
     }
 
     if params.create_summary
     {  
-        transform::create_smm_tables(&pool).await?;
+        setup::create_smm_tables(&pool).await?;
     }
     
     // In each of the following stages, the initial step is to recreate 
@@ -75,7 +75,7 @@ pub async fn run(args: Vec<OsString>) -> Result<(), AppError> {
             transform::process_data(&params.data_version, &params.data_date, &pool).await?;
         }
 
-        if params.report_data  // write out summary data from data in src tables
+        if params.report_data  // write out summary data from data in smm tables
         { 
             if !params.test_run {
                 transform::report_results(&params.output_folder, &params.output_file_name, &pool).await?;

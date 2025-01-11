@@ -4,6 +4,7 @@
 
 mod ror_json_models;
 mod ror_data_vectors;
+mod ror_tables_create;
 
 use log::{info, error};
 
@@ -17,9 +18,13 @@ use ror_data_vectors::{CoreDataVecs, RequiredDataVecs, NonRequiredDataVecs, extr
 
 pub async fn create_ror_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
 {
-    let s = fs::read_to_string("./db_scripts/create_ror_tables.sql")?;
-    let _r = sqlx::raw_sql(&s).execute(pool).await?;
-    info!("Tables created for src schema"); 
+    match ror_tables_create::create_tables(pool).await {
+        Ok(()) => info!("Tables created for ror schema"),
+        Err(e) => {
+            error!("An error occured while creating the ror schema tables: {}", e);
+            return Err(e)
+            },
+    };
     Ok(())
 }
 

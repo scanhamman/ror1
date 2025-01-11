@@ -112,7 +112,12 @@ async fn summarise_external_ids (pool: &Pool<Postgres>) -> Result<PgQueryResult,
               where id_type = 12
               group by id) c
           where ad.id = c.id;"#;
-    let qry_res = sqlx::raw_sql(import_sql).execute(pool).await?;
+    sqlx::raw_sql(import_sql).execute(pool).await?;
+
+    let add_sql  = r#"update src.admin_data
+              set n_ext_ids = n_isni + n_grid + n_fundref + n_wikidata"#;
+    let qry_res = sqlx::raw_sql(add_sql).execute(pool).await?;
+
     Ok(qry_res)
 }
 
@@ -136,7 +141,12 @@ async fn summarise_links (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::
               where link_type = 22
               group by id) c
               where ad.id = c.id;"#;
-    let qry_res = sqlx::raw_sql(import_sql).execute(pool).await?;
+    sqlx::raw_sql(import_sql).execute(pool).await?;
+
+    let add_sql  = r#"update src.admin_data
+              set n_links = n_wikipedia + n_website"#;
+    let qry_res = sqlx::raw_sql(add_sql).execute(pool).await?;
+
     Ok(qry_res)
 }
 
@@ -235,3 +245,56 @@ async fn summarise_domains (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx
     let qry_res = sqlx::raw_sql(import_sql).execute(pool).await?;
     Ok(qry_res)
 }
+
+pub async fn add_script_codes (pool: &Pool<Postgres>) -> Result<(), sqlx::Error> {
+
+    // Examines the names and looks at the Unicode value of its first character. Uses that to 
+    // determine the script (but checks for leading bracket - if present use the second character)
+    
+    #[derive(sqlx::FromRow)]
+    struct Script {
+        code: String,
+        ascii_start: i32, 
+        ascii_end: i32,
+    }
+
+    // Get the Unicode scripts with their ascii code boundaries.
+
+    let sql  = r#"select code, ascii_start, ascii_end
+    from lup.lang_scripts
+    where ascii_end <> 0
+    order by ascii_start;"#;
+    let rows: Vec<Script> = sqlx::query_as(sql).fetch_all(pool).await?;
+
+    // Update names records by testing against each unicode entry,
+
+    for r in rows {
+        
+        sqlx::query(r#"update src.names
+        set script_code = $1 
+        where ascii(substr(value, 1, 1)) >= $2
+        and   ascii(substr(value, 1, 1)) <= $3
+        and substr(value, 1, 1) <> '('"#)
+        .bind(r.code.clone())
+        .bind(r.ascii_start)
+        .bind(r.ascii_end)
+        .execute(pool)
+        .await?;
+
+        sqlx::query(r#"update src.names
+        set script_code = $1 
+        where ascii(substr(value, 2, 1)) >= $2
+        and   ascii(substr(value, 2, 1)) <= $3
+        and substr(value, 1, 1) = '('"#)
+        .bind(r.code)
+        .bind(r.ascii_start)
+        .bind(r.ascii_end)
+        .execute(pool)
+        .await?;
+    }
+
+    Ok(())
+ 
+}
+
+        
