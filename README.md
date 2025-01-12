@@ -162,35 +162,35 @@ arguments by a double hyphen. The command is therefore:<br>
 
 The folowing command line arguments are available:
 
-<i><b>-s</b></i>&nbsp;&nbsp;[alternatively -S, -source]. Followed by a double quoted string representing the source file name, 
+<i><b>-s</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -S, -source]. Followed by a double quoted string representing the source file name, 
 including the '.json' extension.
 
-<i><b>-f</b></i>&nbsp;&nbsp;[alternatively -F, -folder]. Followed by a double quoted string representing the full path to the source data folder.
+<i><b>-f</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -F, -folder]. Followed by a double quoted string representing the full path to the source data folder.
 
-<i><b>-v</b</i>&nbsp;&nbsp;[alternatively -data_version]. Followed by a double quoted string representing a version number, e.g. "1.52".
+<i><b>-v</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -data_version]. Followed by a double quoted string representing a version number, e.g. "1.52".
 
-<i><b>-d</b></i>&nbsp;&nbsp;[alternatively -D, -date]. Followed by a double quoted string in ISO YYYY-mm-DD format, representing the date of the data.
+<i><b>-d</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -D, -date]. Followed by a double quoted string in ISO YYYY-mm-DD format, representing the date of the data.
 
-<i><b>-r</b></i>&nbsp;&nbsp;[alternatively -R -import]. A flag that causes import of the specified source data to ror schema tables. The source file, 
+<i><b>-r</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -R, -import]. A flag that causes import of the specified source data to ror schema tables. The source file, 
 data version and data date must be specified. 
 
 <b><i>Note that if the source file name follows a simple convention (described below) it is possible for the system to derive the version and date from 
 the name. The file as named by ROR follows this convention, so in most cases, unless the file is renamed in an entirely different way, it is not necessary 
 to specify the data'a version and date separately.</b></i>
 
-<i><b>-p</b></i>&nbsp;&nbsp;[alternatively, -P -process]. A flag that causes processing and summarising of the data in the ror schema tables to the src and smm schema tables. 
+<i><b>-p</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -P, -process]. A flag that causes processing and summarising of the data in the ror schema tables to the src and smm schema tables. 
 
-<i><b>-x</b></i>&nbsp;&nbsp;[alternatively, -X -export]. A flag that causes production of a text file summarising the main features of the version currently held within the system. The name of the file is normally constructed from the version and the date-time of the run, but can be specified innthe configuration file, e.g. during testing.
+<i><b>-x</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -X, -export]. A flag that causes production of a text file summarising the main features of the version currently held within the system. The name of the file is normally constructed from the version and the date-time of the run, but can be specified innthe configuration file, e.g. during testing.
 
-<i><b>-a</b></i>&nbsp;&nbsp;[alternatively, -A -all]. Equivalent to -r -p -x, i.e. run all main processes, in that order. The source file must be specified.
+<i><b>-a</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -A, -all]. Equivalent to -r -p -x, i.e. run all main processes, in that order. The source file must be specified.
 
-<i><b>-i</b></i>&nbsp;&nbsp;[alternatively, -I -install].  Equivalent to -c -m, i.e. initialise permanent data tables.
+<i><b>-i</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -I, -install].  Equivalent to -c -m, i.e. initialise permanent data tables.
 
-<i><b>-c</b></i>&nbsp;&nbsp;[alternatively, -C -context]. A flag that causes the re-establishment of the lookup tables. Useful after any revision of those tables or the data within them.
+<i><b>-c</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -C -context]. A flag that causes the re-establishment of the lookup tables. Useful after any revision of those tables or the data within them.
 
-<i><b>-m</b></i>&nbsp;&nbsp;[alternatively, -M -summsetup]. A flag that causes the re-establishment of the summary tables in the smm schema. NOTE - ANY EXISTING DATA IN THOSE TABLES WILL BE DESTROYED. It may therefore be necessayr to re-run against different source files if a series of data points over time needs to be re-established.
+<i><b>-m</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -M, -summsetup]. A flag that causes the re-establishment of the summary tables in the smm schema. NOTE - ANY EXISTING DATA IN THOSE TABLES WILL BE DESTROYED. It may therefore be necessayr to re-run against different source files if a series of data points over time needs to be re-established.
 
-<i><b>-t</b></i>&nbsp;&nbsp;[alternatively, -T -test]. A flag that runs the tests in the system. This includes the unit tests (run first) followed by integration tests against the small test data set (of 20 ROR records, included in the source files). The test set will cause the data in the ror and smm schemas to be replaced by test data. Records are also add to the smm tables but after checking these are deleted. 
+<i><b>-t</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or, -T, -test]. A flag that runs the tests in the system. This includes the unit tests (run first) followed by integration tests against the small test data set (of 20 ROR records, included in the source files). The test set will cause the data in the ror and smm schemas to be replaced by test data. Records are also add to the smm tables but after checking these are deleted. 
 
 <h4>File name and deriving version and data</h4>
 
