@@ -116,7 +116,7 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
     (    
           vcode             varchar     not null
         , vdate             date        not null
-        , lang              int         null
+        , lang              varchar     null
         , num_of_names      int         null
         , pc_of_ne_names    real        null
         , pc_of_all_names   real        null
@@ -128,15 +128,40 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
     (    
           vcode             varchar     not null
         , vdate             date        not null
-        , script            int         null
+        , script            varchar     null
         , num_of_names      int         null
         , pc_of_nl_names    real        null
         , pc_of_all_names   real        null
     );
 
+    drop table if exists smm.type_summary;
+    create table smm.type_summary
+    (    
+          vcode             varchar     not null primary key
+        , vdate             date        not null
+        , num_types         int         null
+        , government        int         null
+        , education         int         null
+        , healthcare        int         null
+        , company           int         null
+        , nonprofit         int         null
+        , funder            int         null
+        , facility          int         null
+        , archive           int         null
+        , other             int         null
+        , government_pc     real        null
+        , education_pc      real        null
+        , healthcare_pc     real        null
+        , company_pc        real        null
+        , nonprofit_pc      real        null
+        , funder_pc         real        null
+        , facility_pc       real        null
+        , archive_pc        real        null
+        , other_pc          real        null
+    );
 
-    drop table if exists smm.orgs_of_type_summary;
-    create table smm.orgs_of_type_summary
+    drop table if exists smm.type_by_orgs_summary;
+    create table smm.type_by_orgs_summary
     (    
           vcode             varchar     not null primary key
         , vdate             date        not null
@@ -178,10 +203,11 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
         , vdate             date        not null
         , org_type          varchar     null
         , name_type         varchar     null
-        , count_wlc         int         null
-        , count_wolc        int         null
-        , pc_count_wlc      real        null
-        , pc_count_wolc     real        null
+        , names_num         int         null
+        , names_wlc         int         null
+        , names_wolc        int         null
+        , names_wlc_pc      real        null
+        , names_wolc_pc     real        null
     );
 
     drop table if exists smm.ext_ids_summary;
@@ -189,7 +215,7 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
     (    
           vcode             varchar     not null primary key
         , vdate             date        not null
-        , total             int         null
+        , num_ids           int         null
         , isni              int         null
         , grid              int         null
         , fundref           int         null
@@ -198,6 +224,15 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
         , grid_pc           real        null
         , fundref_pc        real        null
         , wikidata_pc       real        null
+        , num_orgs          int         null
+        , isni_orgs         int         null
+        , grid_orgs         int         null
+        , fundref_orgs      int         null
+        , wikidata_orgs     int         null
+        , isni_pc_orgs      real        null
+        , grid_pc_orgs      real        null
+        , fundref_pc_orgs   real        null
+        , wikidata_pc_orgs  real        null
     );
 
     drop table if exists smm.ext_ids_count_distribution;
@@ -215,11 +250,16 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
     (    
           vcode             varchar     not null primary key
         , vdate             date        not null
-        , total             int         null
+        , num_links         int         null
         , wikipedia         int         null
         , website           int         null
         , website_pc        real        null
         , wikipedia_pc      real        null
+        , num_orgs          int         null
+        , wikipedia_orgs    int         null
+        , website_orgs      int         null
+        , wikipedia_pc_orgs real        null
+        , website_pc_orgs   real        null
     );
 
     drop table if exists smm.links_count_distribution;
@@ -274,8 +314,8 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
         , count_pc          real        null
     );
   
-    drop table if exists smm.country_top_20_distribution;
-    create table smm.country_top_20_distribution
+    drop table if exists smm.country_distribution;
+    create table smm.country_distribution
     (    
           vcode             varchar     not null
         , vdate             date        not null

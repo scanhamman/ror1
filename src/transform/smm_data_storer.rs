@@ -1,14 +1,29 @@
-use crate::transform::smm_storage_helper;
+use super::smm_storage_helper;
 
 use sqlx::{Pool, Postgres};
 use chrono::NaiveDate;
 use crate::AppError;
+use super::smm_structs::RorVersion;
 
 pub async fn store_summary_data (vcode:&String, vdate: &NaiveDate,pool: &Pool<Postgres>) -> Result<(), AppError> {
     
     smm_storage_helper::delete_any_existing_data(vcode, vdate, pool).await?;
 
     let num_orgs = get_record_num("src.core_data", pool).await?;
+
+    // Derive standard first two items in many sql statements and construct RorVersion
+    // struct as an easier means of passing parameters to helper functions
+
+    let dv_dt = "select \'".to_string() + vcode + "\' as vcode, \'" 
+                     +  &vdate.to_string() + "\'::date as vdate, ";
+
+    let v = RorVersion {
+        vcode: vcode.to_string(),
+        vdate: vdate.to_owned(),
+        num_orgs: num_orgs,
+        dvdd: dv_dt.to_string(),
+    };
+
     let num_names = get_record_num("src.names", pool).await?;
     let num_types= get_record_num("src.type", pool).await?;
     let num_links= get_record_num("src.links", pool).await?;
@@ -29,66 +44,45 @@ pub async fn store_summary_data (vcode:&String, vdate: &NaiveDate,pool: &Pool<Po
     .bind(num_locations).bind(num_domains)
     .execute(pool)
     .await?;
-
-    // Standard first two items in many sql statements
-
-    let dv_dt = "select \'".to_string() + vcode + "\' as vcode, \'" 
-                     +  &vdate.to_string() + "\'::date as vdate, ";
-
-    smm_storage_helper::store_name_summary(vcode, vdate, pool, num_names).await?;
-
-    smm_storage_helper::store_name_ror(vcode, vdate, pool, num_orgs).await?;
     
-    smm_storage_helper::store_name_count_distrib(dv_dt.clone(), pool, num_orgs).await?;
 
-    smm_storage_helper::store_label_count_distrib(dv_dt.clone(), pool, num_orgs).await?;
+    smm_storage_helper::store_name_summary(&v, pool, num_names).await?;
 
-    smm_storage_helper::store_alias_count_distrib(dv_dt.clone(), pool, num_orgs).await?;
+    smm_storage_helper::store_name_ror(&v, pool).await?;
+    
+    smm_storage_helper::store_name_count_distrib(&v, pool).await?;
 
-    smm_storage_helper::store_acronym_count_distrib(dv_dt.clone(), pool, num_orgs).await?;
+    smm_storage_helper::store_label_count_distrib(&v, pool).await?;
 
+    smm_storage_helper::store_alias_count_distrib(&v, pool).await?;
 
-    // need name language distribution
+    smm_storage_helper::store_acronym_count_distrib(&v, pool).await?;
 
+    smm_storage_helper::store_lang_code_distrib(&v, pool).await?;
 
-    // need name script distribution
-        
+    smm_storage_helper::store_script_code_distrib(&v, pool).await?;
    
-    smm_storage_helper::store_type_summary(vcode, vdate, pool, num_orgs).await?;
+    smm_storage_helper::store_type_summary(&v, pool, num_types).await?;
 
-    smm_storage_helper::store_type_count_distrib(dv_dt.clone(), pool, num_orgs).await?;
+    smm_storage_helper::store_type_count_distrib(&v, pool).await?;
 
+    smm_storage_helper::store_types_with_lang_code(&v, pool).await?;
 
-    // type_name_lang_code
+    smm_storage_helper::store_ext_ids_summary(&v, pool,num_ext_ids).await?;
 
+    smm_storage_helper::store_ext_ids_count_distrib(&v, pool).await?;
 
+    smm_storage_helper::store_links_summary(&v, pool, num_links).await?;
 
-    // ext_ids_summary
+    smm_storage_helper::store_links_count_distrib(&v, pool).await?;
 
+    smm_storage_helper::store_relationships_summary(&v, pool).await?;
 
+    smm_storage_helper::store_types_and_relationships(&v, pool).await?;
 
-    smm_storage_helper::store_ext_ids_count_distrib(dv_dt.clone(), pool, num_orgs).await?;
+    smm_storage_helper::store_country_top_25_distrib(&v, pool, num_locations).await?;
 
-
-    // links_summary
-
-
-
-    smm_storage_helper::store_links_count_distrib(dv_dt.clone(), pool, num_orgs).await?;
-
-
-
-    // relationships_summary
-
-
-
-    // type_relationship
-
-
-
-    smm_storage_helper::store_country_top_20_distrib(dv_dt.clone(), pool, num_locations).await?;
-
-    smm_storage_helper::store_locs_count_distrib(dv_dt.clone(), pool, num_orgs).await?;
+    smm_storage_helper::store_locs_count_distrib(&v, pool).await?;
 
     Ok(())
 

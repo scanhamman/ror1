@@ -1,1 +1,1 @@
-mod resources;
+mod test_resources;

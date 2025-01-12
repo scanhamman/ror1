@@ -4,10 +4,12 @@
 
 mod src_data_importer;
 mod src_data_processor;
+mod src_tables_create;
+
 mod smm_data_report;
 mod smm_data_storer;
 mod smm_storage_helper;
-mod src_tables_create;
+mod smm_structs;
 
 use log::{info, error};
 use sqlx::{Pool, Postgres};
@@ -69,9 +71,8 @@ pub async fn process_data(data_version: &String, data_date: &NaiveDate, pool : &
             },
     }
 
+    // Store data into smm tables.
 
-
-    // Store data into summ tables
     let r = smm_data_storer::store_summary_data(data_version, data_date, pool).await;
     
     match r {
@@ -99,7 +100,7 @@ pub async fn report_results(output_folder : &PathBuf, output_file_name: &String,
             return Ok(())
         },
         Err(e) => {
-            error!("An error occured while writing out the : {}", e);
+            error!("An error occured while writing out the results: {}", e);
             return Err(e)
             },
     }

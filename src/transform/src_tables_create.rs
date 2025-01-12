@@ -78,7 +78,7 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
         , cont_name         varchar     null
         , country_code      varchar     null
         , country_name      varchar     null
-        , csubdiv_code      varchar     null
+        , csubdiv_code      varchar     null  
         , csubdiv_name      varchar     null	
     );
     create index locations_idx on src.locations(id);

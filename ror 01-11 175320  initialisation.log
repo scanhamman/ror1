@@ -1,0 +1,22 @@
+11/01 17:53:20  INFO           ror1::setup::log_helper.91:  PROGRAM START
+11/01 17:53:20  INFO           ror1::setup::log_helper.92:  
+11/01 17:53:20  INFO           ror1::setup::log_helper.93:  ************************************
+11/01 17:53:20  INFO           ror1::setup::log_helper.94:  
+11/01 17:53:20  INFO           ror1::setup::log_helper.95:  data_folder: 
+11/01 17:53:20  INFO           ror1::setup::log_helper.96:  log_folder: 
+11/01 17:53:20  INFO           ror1::setup::log_helper.97:  output_folder: 
+11/01 17:53:20  INFO           ror1::setup::log_helper.98:  source_file_name: 
+11/01 17:53:20  INFO           ror1::setup::log_helper.99:  output_file_name: 
+11/01 17:53:20  INFO          ror1::setup::log_helper.100:  data_version: 
+11/01 17:53:20  INFO          ror1::setup::log_helper.101:  data_date: 1900-01-01
+11/01 17:53:20  INFO          ror1::setup::log_helper.102:  create look up tables: true
+11/01 17:53:20  INFO          ror1::setup::log_helper.103:  create summary tables: true
+11/01 17:53:20  INFO          ror1::setup::log_helper.104:  import_ror: false
+11/01 17:53:20  INFO          ror1::setup::log_helper.105:  process_data: false
+11/01 17:53:20  INFO          ror1::setup::log_helper.106:  report_data: false
+11/01 17:53:20  INFO          ror1::setup::log_helper.107:  
+11/01 17:53:20  INFO          ror1::setup::log_helper.108:  ************************************
+11/01 17:53:20  INFO          ror1::setup::log_helper.109:  
+11/01 17:53:21  INFO                      ror1::setup.231:  Tables created for lup schema
+11/01 17:53:21  INFO                      ror1::setup.238:  Data added to lup tables
+11/01 17:53:21  INFO                      ror1::setup.250:  Tables created for smm schema
