@@ -45,12 +45,12 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
         , name              varchar     null	
         , lat               real        null
         , lng               real        null
-        , cont_code         varchar     null
-        , cont_name         varchar     null	    
+        , continent_code    varchar     null
+        , continent_name    varchar     null	    
         , country_code      varchar     null
         , country_name      varchar     null	
-        , csubdiv_code      varchar     null
-        , csubdiv_name      varchar     null	
+        , country_subdivision_code      varchar     null
+        , country_subdivision_name      varchar     null	
     );
     create index src_locations_idx on ror.locations(id);
 

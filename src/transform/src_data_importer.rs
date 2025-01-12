@@ -153,8 +153,9 @@ async fn import_locations (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx:
           geonames_name, lat, lng, cont_code, cont_name, 
           country_code, country_name, csubdiv_code, csubdiv_name)
           select a.id, c.ror_name, a.geonames_id, a.name,
-                 a.lat, a.lng, a.cont_code, a.cont_name, 
-                 a.country_code, a.country_name, a.csubdiv_code, a.csubdiv_name
+                 a.lat, a.lng, a.continent_code, a.continent_name, 
+                 a.country_code, a.country_name, 
+                 a.country_subdivision_code, a.country_subdivision_name
           from ror.locations a
           inner join src.core_data c
           on a.id = c.id;"#;

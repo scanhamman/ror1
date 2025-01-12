@@ -201,7 +201,8 @@ impl RequiredDataVecs{
         .await;
 
         // do the location data
-        let _ = sqlx::query(r#"INSERT INTO ror.locations (id, geonames_id, name, lat, lng, cont_code, cont_name, country_code, country_name, csubdiv_code, csubdiv_name ) 
+        let _ = sqlx::query(r#"INSERT INTO ror.locations (id, geonames_id, name, lat, lng, 
+        continent_code, continent_name, country_code, country_name, country_subdivision_code, country_subdivision_name ) 
         SELECT * FROM UNNEST($1::text[], $2::int[], $3::text[], $4::real[], $5::real[], $6::text[], $7::text[], $8::text[], $9::text[], $10::text[], $11::text[])"#)
         .bind(&self.loc_db_ids)
         .bind(&self.gn_ids)

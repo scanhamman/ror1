@@ -1,13 +1,15 @@
 /**********************************************************
  * A small library to import ror data from the ror data 
- * dump, maintained on Zenodo, ...
- * 
- * 
- * 
+ * dump, maintained on Zenodo, process that data (lightly),
+ * and summarise key features of it. The summaries for each 
+ * version are retained, whilst the base data is replaced 
+ * each time the program is run. The system can also output 
+ * a report summarising the key features of the data set. 
+ * See the read.me file for further details.
  **********************************************************/
 
-mod import;
 mod setup;
+mod import;
 mod transform;
 pub mod error_defs;
 
