@@ -17,18 +17,18 @@ to be downloaded from GitHub, and then run within a Rust development environment
 
 The system was developed for three main reasons:
 
-<br>a) To provide a mechanism to quickly download and integrate the ROR data within other 
+a) To provide a mechanism to quickly download and integrate the ROR data within other 
 systems, on a regular basis (e.g. as each new version is published). The ROR data is available
 both in its 'raw' ror state, i.e. with almost no additional processing applied (see 
 'The base ror data schema' below), and in a lightly modified state, with a limited degree 
 of processing applied (see 'The src data schema' below). The latter might be of more immediate
 use in many use cases, or a better basis for additional processing.
 
-<br>b) To allow comparison of the different ROR data versions over time, allowing monitoring of 
+b) To allow comparison of the different ROR data versions over time, allowing monitoring of 
 the development of ROR data, and the easier identification of possible inconsistencies or 
 anomalies in the data (to help with possible feedback to ROR).
 
-<br>c) To become more familiar with Rust, by using the language in a small but realistic development 
+c) To become more familiar with Rust, by using the language in a small but realistic development 
 scenario, implementing features that would be necessary in most similar CLIs. These include 
 extensive systems for data access and manipulation, processing of command line arguments and 
 environmental variables (and interactions between the two), logging, file handling (of both JSON 
@@ -73,18 +73,18 @@ other systems, if required.
 After initial import into the 'ror' schema, the data can be processed to form a new set of tables, 
 within the 'src' schema. The changes are limited but include:
 
-<br>a) Replacement of the strings of categorised values by integers. The integers are as given by
+a) Replacement of the strings of categorised values by integers. The integers are as given by
 lookup tables (set up within the 'lup' or lookup schema) which effectively provide enumerations 
 of these categorised values, e.g. the organisation, name, link, external id and relationship types. 
 This is designed to make any future data processing quicker and more flexible.
 
-<br>b) The expansion of the admin_data table, to include for each organisation the numbers of entities 
+b) The expansion of the admin_data table, to include for each organisation the numbers of entities 
 of each type it is linked with, e.g. how many names (of various types), links and external ids (of 
 various types), relationships (of various types), locations, etc. are included in the ror record.
 This is to make it easier both to use and display the information, to support some of the 
 production of summary data, and to more easily ientify organisations that are missing certain types of data.
 
-<br>c) The addition of script codes to the name data. Though most of the the names listed (apart 
+c) The addition of script codes to the name data. Though most of the the names listed (apart 
 from acronyms) have language codes linked to them there is no explicit indication of the script being 
 used. The great majority of the names are in latin but a substantial number use other script 
 systems, such as Cyrilic, Greek, Arabic, Han, Hebrew or Gujarati. Full details are given by ISO 15924, 
@@ -92,7 +92,7 @@ which also provides the Unicode code pages on which each script can be found. Ex
 the characters in the names allows the script to be readily identified, and this information is added 
 to each name record, as being of potential value when displaying the data.
 
-<br> d) The simplification of a few field names to make them easier to use, e.g. country_subdivision_code 
+d) The simplification of a few field names to make them easier to use, e.g. country_subdivision_code 
 becomes csubdiv_code, and continent_code becomes cont_code.
  
 The src data is designed to be used as the basis for ad hoc SQL queries of the 
@@ -156,38 +156,47 @@ processing can take place. It should therefore first be run with an '-i' command
 tables are created and filled, and the smm tables are created. In normal circumstances this shopuld only need doing once. 
 In the context of a rust development environment, using cargo, the program's arguments must be distinguished from cargo's own 
 arguments by a double hyphen. The command is therefore:<br>
-<b>cargo run -- -i</b>
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>cargo run -- -i</b>
 
 <i>Command line arguments</i>
 
 The folowing command line arguments are available:
 
-<br><b>-s</b>&nbsp;&nbsp;[alternatively -S, -source]. Followed by a double quoted string representing the source file name, 
+<i><b>-s</b></i>&nbsp;&nbsp;[alternatively -S, -source]. Followed by a double quoted string representing the source file name, 
 including the '.json' extension.
 
-<br><b>-f</b>&nbsp;&nbsp;[alternatively -F, -folder]. Followed by a double quoted string representing the full path to the source data folder.
+<i><b>-f</b></i>&nbsp;&nbsp;[alternatively -F, -folder]. Followed by a double quoted string representing the full path to the source data folder.
 
-<br><b>-v</b>&nbsp;&nbsp;[alternatively -data_version]. Followed by a double quoted string representing a version number, e.g. "1.52".
+<i><b>-v</b</i>&nbsp;&nbsp;[alternatively -data_version]. Followed by a double quoted string representing a version number, e.g. "1.52".
 
-<br><b>-d</b>&nbsp;&nbsp;[alternatively -D, -date]. Followed by a double quoted string in ISO YYYY-mm-DD format, representing the date of the data.
+<i><b>-d</b></i>&nbsp;&nbsp;[alternatively -D, -date]. Followed by a double quoted string in ISO YYYY-mm-DD format, representing the date of the data.
 
-<br><b>-r</b>&nbsp;&nbsp;[alternatively -R -import]. A flag that causes import of the specified source data to ror schema tables. The source file, 
-data version and data date must be specified. <b><i>Note that if the source file name follows a convention (described below) it is possible for the 
-system to derive the version and date from it.</b></i>
+<i><b>-r</b></i>&nbsp;&nbsp;[alternatively -R -import]. A flag that causes import of the specified source data to ror schema tables. The source file, 
+data version and data date must be specified. 
 
-<br><b>-p</b>&nbsp;&nbsp;[alternatively, -P -process]. A flag that causes processing and summarising of the data in the ror schema tables to the src and smm schema tables. 
+<b><i>Note that if the source file name follows a simple convention (described below) it is possible for the system to derive the version and date from 
+the name. The file as named by ROR follows this convention, so in most cases, unless the file is renamed in an entirely different way, it is not necessary 
+to specify the data'a version and date separately.</b></i>
 
-<br><b>-x</b>&nbsp;&nbsp;[alternatively, -X -export]. A flag that causes production of a text file summarising the main features of the version currently held within the system. The name of the file is normally constructed from the version and the date-time of the run, but can be specified innthe configuration file, e.g. during testing.
+<i><b>-p</b></i>&nbsp;&nbsp;[alternatively, -P -process]. A flag that causes processing and summarising of the data in the ror schema tables to the src and smm schema tables. 
 
-<br><b>-a</b>&nbsp;&nbsp;[alternatively, -A -all]. Equivalent to -r -p -x, i.e. run all main processes, in that order. The source file must be specified.
+<i><b>-x</b></i>&nbsp;&nbsp;[alternatively, -X -export]. A flag that causes production of a text file summarising the main features of the version currently held within the system. The name of the file is normally constructed from the version and the date-time of the run, but can be specified innthe configuration file, e.g. during testing.
 
-<br><b>-i</b>&nbsp;&nbsp;[alternatively, -I -install].  Equivalent to -c -m, i.e. initialise permanent data tables.
+<i><b>-a</b></i>&nbsp;&nbsp;[alternatively, -A -all]. Equivalent to -r -p -x, i.e. run all main processes, in that order. The source file must be specified.
 
-<br><b>-c</b>&nbsp;&nbsp;[alternatively, -C -context]. A flag that causes the re-establishment of the lookup tables. Useful after any revision of those tables or the data within them.
+<i><b>-i</b></i>&nbsp;&nbsp;[alternatively, -I -install].  Equivalent to -c -m, i.e. initialise permanent data tables.
 
-<br><b>-m</b>&nbsp;&nbsp;[alternatively, -M -summsetup]. A flag that causes the re-establishment of the summary tables in the smm schema. NOTE - ANY EXISTING DATA IN THOSE TABLES WILL BE DESTROYED. It may therefore be necessayr to re-run against different source files if a series of data points over time needs to be re-established.
+<i><b>-c</b></i>&nbsp;&nbsp;[alternatively, -C -context]. A flag that causes the re-establishment of the lookup tables. Useful after any revision of those tables or the data within them.
 
-<br><b>-t</b>&nbsp;&nbsp;[alternatively, -T -test]. A flag that runs the tests in the system. This includes the unit tests (run first) followed by integration tests against the small test data set (of 20 ROR records, included in the source files). The test set will cause the data in the ror and smm schemas to be replaced by test data. Records are also add to the smm tables but after checking these are deleted. 
+<i><b>-m</b></i>&nbsp;&nbsp;[alternatively, -M -summsetup]. A flag that causes the re-establishment of the summary tables in the smm schema. NOTE - ANY EXISTING DATA IN THOSE TABLES WILL BE DESTROYED. It may therefore be necessayr to re-run against different source files if a series of data points over time needs to be re-established.
+
+<i><b>-t</b></i>&nbsp;&nbsp;[alternatively, -T -test]. A flag that runs the tests in the system. This includes the unit tests (run first) followed by integration tests against the small test data set (of 20 ROR records, included in the source files). The test set will cause the data in the ror and smm schemas to be replaced by test data. Records are also add to the smm tables but after checking these are deleted. 
+
+<h4>File name and deriving version and data</h4>
+
+If the file name starts with a 'v' followed by a semantic versioning string, followed by a space or a hyphen and then the date in ISO format, either with spaces or without, then (whatever any following text in the name) the system is able to extract the data date and version from the file name. It is then no longer necessary to provide the data version and date separately. 
+
+File names such as <b>v1.58-2024-12-11-ror-data_schema_v2.json, v1.51-20240821.json, v1.48 20240620.json</b>, and <b>v1.47 2024-05-30.json</b> all follow the required pattern. The first is the form of the name supplied by ROR, so renaming of the file is not necessary (though it can help to simplify it!).
 
 <h4>Development environment</h4>
 
