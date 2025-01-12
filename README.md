@@ -16,15 +16,18 @@ to be downloaded from GitHub, and then run within a Rust development environment
 <h3>Purpose</h3>
 
 The system was developed for three main reasons:
+
 <br>a) To provide a mechanism to quickly download and integrate the ROR data within other 
 systems, on a regular basis (e.g. as each new version is published). The ROR data is available
 both in its 'raw' ror state, i.e. with almost no additional processing applied (see 
 'The base ror data schema' below), and in a lightly modified state, with a limited degree 
 of processing applied (see 'The src data schema' below). The latter might be of more immediate
 use in many use cases, or a better basis for additional processing.
+
 <br>b) To allow comparison of the different ROR data versions over time, allowing monitoring of 
 the development of ROR data, and the easier identification of possible inconsistencies or 
 anomalies in the data (to help with possible feedback to ROR).
+
 <br>c) To become more familiar with Rust, by using the language in a small but realistic development 
 scenario, implementing features that would be necessary in most similar CLIs. These include 
 extensive systems for data access and manipulation, processing of command line arguments and 
@@ -68,16 +71,19 @@ other systems, if required.
 <h3>The src data schema</h3>
 
 After initial import into the 'ror' schema, the data can be processed to form a new set of tables, 
-within the 'src' schema. The changes are limited but include
+within the 'src' schema. The changes are limited but include:
+
 <br>a) Replacement of the strings of categorised values by integers. The integers are as given by
 lookup tables (set up within the 'lup' or lookup schema) which effectively provide enumerations 
 of these categorised values, e.g. the organisation, name, link, external id and relationship types. 
 This is designed to make any future data processing quicker and more flexible.
+
 <br>b) The expansion of the admin_data table, to include for each organisation the numbers of entities 
 of each type it is linked with, e.g. how many names (of various types), links and external ids (of 
 various types), relationships (of various types), locations, etc. are included in the ror record.
 This is to make it easier both to use and display the information, to support some of the 
 production of summary data, and to more easily ientify organisations that are missing certain types of data.
+
 <br>c) The addition of script codes to the name data. Though most of the the names listed (apart 
 from acronyms) have language codes linked to them there is no explicit indication of the script being 
 used. The great majority of the names are in latin but a substantial number use other script 
@@ -85,13 +91,15 @@ systems, such as Cyrilic, Greek, Arabic, Han, Hebrew or Gujarati. Full details a
 which also provides the Unicode code pages on which each script can be found. Examining the Unicodes of 
 the characters in the names allows the script to be readily identified, and this information is added 
 to each name record, as being of potential value when displaying the data.
-<br> d) A few field names are shortened to make them easier to use, e.g. country_subdivision_code becomes
-csubdiv_code, and continent_code becomes cont_code.
+
+<br> d) The simplification of a few field names to make them easier to use, e.g. country_subdivision_code 
+becomes csubdiv_code, and continent_code becomes cont_code.
  
 The src data is designed to be used as the basis for ad hoc SQL queries of the 
 data, and for an organisation data system UI, allowing data display and editing. They are also
 used as the basis of the summary statistics described below, and are designed to be the base data
-when integrating ror data into other systems.
+when integrating ror data into other systems. Only one set of src data exists at any one time - the tables 
+are recreated each time a version's data is transformed into them.
 
 <h3>Summary data and the smm schema</h3>
 
@@ -99,8 +107,8 @@ when integrating ror data into other systems.
 
 <h3>Pre-requisites</h3>
 
-1) The system assumes that any v2 ROR data file required has been downloaded from the Zenodo site and 
-placed on the machine running the program, in a designated 'data folder'. It can be useful to simplify 
+1) The system assumes that any v2 ROR data file required has already been downloaded from the Zenodo site 
+and placed on the machine running the program, in a designated 'data folder'. It can be useful to simplify 
 the name of this file (see Operation and arguments below).<br>
 2) The system requires a postgres database for holding the data. By default, this database is assumed 
 to be named 'ror', but this can be changed in the configuration file (see below). The database must be
@@ -112,12 +120,13 @@ and / or DBeaver (Community edition) are free and very capable systems for this 
 
 <h3>Operation and arguments</h3>
 
-<i>Set-up</i>
+<i>Configuration using Environmental varables</i>
 
 Once the pre-requisites are installed and the source code is downloaded, a .env file must be added to the
 system's source folder, i.e. in the same folder as the cargo.toml file. This .env file, which should not 
 be added to any public source control system, acts as a configuration file for the system (it does not 
-change the system's environmental values). It must contain values against the following settings, though in several cases sensible defaults are provided:
+change the system's environmental values). It must contain values against the following settings, though 
+in several cases sensible defaults are provided:
 <ul>
 <li>The database server name, as 'db_host'. This defaults to 'localhost'</li>
 <li>The database user name, as 'db_user'. No default value.</li>
@@ -135,19 +144,52 @@ During testing and development however, against a fixed source file, it can be m
 <li>The name of the souce JSON file, as 'src_file_name'.</li>
 <li>The name of the output file, as 'output_file_name'. If missing the system will construct a name based on the source file and date-time.</li>
 <li>The version of the file to be imported, as 'data_version'. A string, in a semantic versioning format, e.g. '1.45.1', '1.57'
-<li>The date of the file to'm be imported, as 'data_date='. This should be in YYYY-mm_DD ISO format.
+<li>The date of the file to be imported, as 'data_date='. This should be in YYYY-mm_DD ISO format.
 </ul>
 
 In future versions this configuration file will need to be installed in an OS-specific configuration folder.
 
-<i>Environmental varables</i>
+<i>Set-up and initial run</i>
 
+The system needs to have the lookup (filled with their data) and summary tables (empty) in place before an import and further 
+processing can take place. It should therefore first be run with an '-i' command line argument, which ensures that the lup schema 
+tables are created and filled, and the smm tables are created. In normal circumstances this shopuld only need doing once. 
+In the context of a rust development environment, using cargo, the program's arguments must be distinguished from cargo's own 
+arguments by a double hyphen. The command is therefore:<br>
+<b>cargo run -- -i</b>
 
 <i>Command line arguments</i>
 
+The folowing command line arguments are available:
 
+<br><b>-s</b>&nbsp;&nbsp;[alternatively -S, -source]. Followed by a double quoted string representing the source file name, 
+including the '.json' extension.
 
-<h4>Developoment environment</h4>
+<br><b>-f</b>&nbsp;&nbsp;[alternatively -F, -folder]. Followed by a double quoted string representing the full path to the source data folder.
+
+<br><b>-v</b>&nbsp;&nbsp;[alternatively -data_version]. Followed by a double quoted string representing a version number, e.g. "1.52".
+
+<br><b>-d</b>&nbsp;&nbsp;[alternatively -D, -date]. Followed by a double quoted string in ISO YYYY-mm-DD format, representing the date of the data.
+
+<br><b>-r</b>&nbsp;&nbsp;[alternatively -R -import]. A flag that causes import of the specified source data to ror schema tables. The source file, 
+data version and data date must be specified. <b><i>Note that if the source file name follows a convention (described below) it is possible for the 
+system to derive the version and date from it.</b></i>
+
+<br><b>-p</b>&nbsp;&nbsp;[alternatively, -P -process]. A flag that causes processing and summarising of the data in the ror schema tables to the src and smm schema tables. 
+
+<br><b>-x</b>&nbsp;&nbsp;[alternatively, -X -export]. A flag that causes production of a text file summarising the main features of the version currently held within the system. The name of the file is normally constructed from the version and the date-time of the run, but can be specified innthe configuration file, e.g. during testing.
+
+<br><b>-a</b>&nbsp;&nbsp;[alternatively, -A -all]. Equivalent to -r -p -x, i.e. run all main processes, in that order. The source file must be specified.
+
+<br><b>-i</b>&nbsp;&nbsp;[alternatively, -I -install].  Equivalent to -c -m, i.e. initialise permanent data tables.
+
+<br><b>-c</b>&nbsp;&nbsp;[alternatively, -C -context]. A flag that causes the re-establishment of the lookup tables. Useful after any revision of those tables or the data within them.
+
+<br><b>-m</b>&nbsp;&nbsp;[alternatively, -M -summsetup]. A flag that causes the re-establishment of the summary tables in the smm schema. NOTE - ANY EXISTING DATA IN THOSE TABLES WILL BE DESTROYED. It may therefore be necessayr to re-run against different source files if a series of data points over time needs to be re-established.
+
+<br><b>-t</b>&nbsp;&nbsp;[alternatively, -T -test]. A flag that runs the tests in the system. This includes the unit tests (run first) followed by integration tests against the small test data set (of 20 ROR records, included in the source files). The test set will cause the data in the ror and smm schemas to be replaced by test data. Records are also add to the smm tables but after checking these are deleted. 
+
+<h4>Development environment</h4>
 
 The system was developed on a Windows 11 machine, using Rust 1.80.1, Postgres 17, VS Code and 
 DBeaver. Efforts have been / will be made to keep the system cross-platform, though this has not yet 

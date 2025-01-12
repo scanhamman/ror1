@@ -149,7 +149,7 @@ fn parse_args(args: Vec<OsString>) -> Result<ArgMatches, clap::Error> {
         .arg(
             Arg::new("a_flag")
            .short('a')
-           .long("a-flag")
+           .long("all")
            .visible_short_aliases(['A'])
            .required(false)
            .help("A flag signifying run the entire program, equivalent to R and P")
@@ -158,7 +158,7 @@ fn parse_args(args: Vec<OsString>) -> Result<ArgMatches, clap::Error> {
         .arg(
             Arg::new("r_flag")
            .short('r')
-           .long("r-flag")
+           .long("import")
            .visible_short_aliases(['R'])
            .required(false)
            .help("A flag signifying import from ror file to ror schema tables only")
@@ -167,7 +167,7 @@ fn parse_args(args: Vec<OsString>) -> Result<ArgMatches, clap::Error> {
         .arg(
              Arg::new("p_flag")
             .short('p')
-            .long("p-flag")
+            .long("process")
             .visible_short_aliases(['P'])
             .required(false)
             .help("A flag signifying process ror data to src data and analyse and store results")
@@ -176,7 +176,7 @@ fn parse_args(args: Vec<OsString>) -> Result<ArgMatches, clap::Error> {
         .arg(
             Arg::new("x_flag")
            .short('x')
-           .long("x-flag")
+           .long("export")
            .visible_short_aliases(['X'])
            .required(false)
            .help("A flag signifying output a summary of the current data into a text file")
@@ -194,7 +194,7 @@ fn parse_args(args: Vec<OsString>) -> Result<ArgMatches, clap::Error> {
        .arg(
             Arg::new("c_flag")
             .short('c')
-            .long("c-flag")
+            .long("context")
             .visible_short_aliases(['C'])
             .required(false)
             .help("A flag signifying that context tables need to be rebuilt")
@@ -203,7 +203,7 @@ fn parse_args(args: Vec<OsString>) -> Result<ArgMatches, clap::Error> {
        .arg(
             Arg::new("m_flag")
             .short('m')
-            .long("m-flag")
+            .long("summsetup")
             .visible_short_aliases(['M'])
             .required(false)
             .help("A flag signifying that summary tables should be recreated")
@@ -212,7 +212,7 @@ fn parse_args(args: Vec<OsString>) -> Result<ArgMatches, clap::Error> {
        .arg(
             Arg::new("t_flag")
             .short('t')
-            .long("t-flag")
+            .long("test")
             .visible_short_aliases(['T'])
             .required(false)
             .help("A flag signifying that this is part of an integration test run")
