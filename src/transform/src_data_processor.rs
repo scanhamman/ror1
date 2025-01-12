@@ -2,14 +2,14 @@ use sqlx::{postgres::PgQueryResult, Pool, Postgres};
 
 
 pub async fn store_org_attribute_numbers (pool: &Pool<Postgres>) -> Result<(), sqlx::Error> {
- 
+    
     summarise_names (pool).await?;
     summarise_nametypes (pool).await?;
     summarise_namenulls (pool).await?;
     summarise_links (pool).await?;
     summarise_external_ids (pool).await?;
-	summarise_types (pool).await?;
-	summarise_locations (pool).await?;
+    summarise_types (pool).await?;
+    summarise_locations (pool).await?;
     summarise_relationships (pool).await?;
     summarise_domains (pool).await?;
 
@@ -296,5 +296,3 @@ pub async fn add_script_codes (pool: &Pool<Postgres>) -> Result<(), sqlx::Error>
     Ok(())
  
 }
-
-        

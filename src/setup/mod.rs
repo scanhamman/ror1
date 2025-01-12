@@ -270,14 +270,11 @@ mod tests {
     // in multiple complaints from the compiler. The async block can also
     // be replaced by a separate async function and called explicitly.
  
-
-
     #[tokio::test]
     async fn check_env_vars_overwrite_blank_cli_values() {
 
-        // Note that the folder path given must exist, 
-        // and be accessible, or get_params will panic
-        // and an error will be thrown. 
+        // Note that in most cases the folder path given must exist, and be 
+        // accessible, or get_params will panic and an error will be thrown. 
 
         temp_env::async_with_vars(
         [

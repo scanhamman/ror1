@@ -7,7 +7,6 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
     SET client_min_messages TO WARNING; 
     create schema if not exists smm;
  
-
     drop table if exists smm.version_summary;
     create table smm.version_summary
     (    
@@ -334,7 +333,7 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
         , pc_of_orgs        real        null
     );
 
-   SET client_min_messages TO NOTICE;"#;
+    SET client_min_messages TO NOTICE;"#;
 
     sqlx::raw_sql(sql).execute(pool).await?;
     Ok(())

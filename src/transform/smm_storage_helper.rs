@@ -3,7 +3,6 @@ use crate::AppError;
 use chrono::NaiveDate;
 use super::smm_structs::{RorVersion, DistribRow, CountryRow, LangCodeRow, ScriptCodeRow};
 
-
 pub async fn get_count (sql_string: &str, pool: &Pool<Postgres>) -> Result<i64, AppError> {
     let res = sqlx::query_scalar(sql_string)
     .fetch_one(pool)
@@ -185,11 +184,8 @@ pub async fn store_name_count_distrib(v: &RorVersion, pool: &Pool<Postgres>) -> 
     for r in rows {
         sqlx::query(r#"INSERT INTO smm.name_count_distribution (vcode, vdate, count, num_of_orgs, pc_of_orgs) 
                             values($1, $2, $3, $4, $5)"#)
-        .bind(r.vcode)
-        .bind(r.vdate)
-        .bind(r.count)
-        .bind(r.num_of_orgs)
-        .bind(r.pc_of_orgs)
+        .bind(r.vcode).bind(r.vdate)
+        .bind(r.count).bind(r.num_of_orgs).bind(r.pc_of_orgs)
         .execute(pool)
         .await?;
     }
@@ -210,11 +206,8 @@ pub async fn store_label_count_distrib(v: &RorVersion, pool: &Pool<Postgres>) ->
     for r in rows {
         sqlx::query(r#"INSERT INTO smm.name_label_distribution (vcode, vdate, count, num_of_orgs, pc_of_orgs) 
                             values($1, $2, $3, $4, $5)"#)
-        .bind(r.vcode)
-        .bind(r.vdate)
-        .bind(r.count)
-        .bind(r.num_of_orgs)
-        .bind(r.pc_of_orgs)
+        .bind(r.vcode).bind(r.vdate)
+        .bind(r.count).bind(r.num_of_orgs).bind(r.pc_of_orgs)
         .execute(pool)
         .await?;
     }
@@ -236,11 +229,8 @@ pub async fn store_alias_count_distrib(v: &RorVersion, pool: &Pool<Postgres>) ->
     for r in rows {
         sqlx::query(r#"INSERT INTO smm.name_alias_distribution (vcode, vdate, count, num_of_orgs, pc_of_orgs) 
                             values($1, $2, $3, $4, $5)"#)
-        .bind(r.vcode)
-        .bind(r.vdate)
-        .bind(r.count)
-        .bind(r.num_of_orgs)
-        .bind(r.pc_of_orgs)
+        .bind(r.vcode).bind(r.vdate)
+        .bind(r.count).bind(r.num_of_orgs).bind(r.pc_of_orgs)
         .execute(pool)
         .await?;
     }
@@ -261,11 +251,8 @@ pub async fn store_acronym_count_distrib(v: &RorVersion, pool: &Pool<Postgres>) 
     for r in rows {
         sqlx::query(r#"INSERT INTO smm.name_acronym_distribution (vcode, vdate, count, num_of_orgs, pc_of_orgs) 
                             values($1, $2, $3, $4, $5)"#)
-        .bind(r.vcode)
-        .bind(r.vdate)
-        .bind(r.count)
-        .bind(r.num_of_orgs)
-        .bind(r.pc_of_orgs)
+        .bind(r.vcode).bind(r.vdate)
+        .bind(r.count).bind(r.num_of_orgs).bind(r.pc_of_orgs)
         .execute(pool)
         .await?;
     }
@@ -291,12 +278,8 @@ pub async fn store_lang_code_distrib(v: &RorVersion, pool: &Pool<Postgres>) -> R
         if i < 25 {
             sqlx::query(r#"INSERT INTO smm.ne_lang_code_distribution (vcode, vdate, lang, num_of_names, pc_of_ne_names, pc_of_all_names) 
                                 values($1, $2, $3, $4, $5, $6)"#)
-            .bind(r.vcode)
-            .bind(r.vdate)
-            .bind(r.lang)
-            .bind(r.num_of_names)
-            .bind(r.pc_of_ne_names)
-            .bind(r.pc_of_all_names)
+            .bind(r.vcode).bind(r.vdate)
+            .bind(r.lang).bind(r.num_of_names).bind(r.pc_of_ne_names).bind(r.pc_of_all_names)
             .execute(pool)
             .await?;
         }
@@ -310,8 +293,7 @@ pub async fn store_lang_code_distrib(v: &RorVersion, pool: &Pool<Postgres>) -> R
 
     sqlx::query(r#"INSERT INTO smm.ne_lang_code_distribution (vcode, vdate, lang, num_of_names, pc_of_ne_names, pc_of_all_names) 
     values($1, $2, $3, $4, $5, $6)"#)
-    .bind(v.vcode.clone())
-    .bind(v.vdate)
+    .bind(v.vcode.clone()).bind(v.vdate)
     .bind("Remaining languages")
     .bind(rest_total)
     .bind(rest_ne_pc)
@@ -337,12 +319,8 @@ pub async fn store_script_code_distrib(v: &RorVersion, pool: &Pool<Postgres>) ->
     for r in rows {
         sqlx::query(r#"INSERT INTO smm.nl_lang_script_distribution (vcode, vdate, script, num_of_names, pc_of_nl_names, pc_of_all_names) 
                             values($1, $2, $3, $4, $5, $6)"#)
-        .bind(r.vcode)
-        .bind(r.vdate)
-        .bind(r.script)
-        .bind(r.num_of_names)
-        .bind(r.pc_of_nl_names)
-        .bind(r.pc_of_all_names)
+        .bind(r.vcode).bind(r.vdate)
+        .bind(r.script).bind(r.num_of_names).bind(r.pc_of_nl_names).bind(r.pc_of_all_names)
         .execute(pool)
         .await?;
     }
@@ -429,11 +407,8 @@ pub async fn store_type_count_distrib(v: &RorVersion, pool: &Pool<Postgres>) -> 
     for r in rows {
         sqlx::query(r#"INSERT INTO smm.type_count_distribution (vcode, vdate, count, num_of_orgs, pc_of_orgs) 
                             values($1, $2, $3, $4, $5)"#)
-        .bind(r.vcode)
-        .bind(r.vdate)
-        .bind(r.count)
-        .bind(r.num_of_orgs)
-        .bind(r.pc_of_orgs)
+        .bind(r.vcode).bind(r.vdate)
+        .bind(r.count).bind(r.num_of_orgs).bind(r.pc_of_orgs)
         .execute(pool)
         .await?;
     }
@@ -444,10 +419,8 @@ pub async fn store_type_count_distrib(v: &RorVersion, pool: &Pool<Postgres>) -> 
 
 pub async fn store_types_with_lang_code(v: &RorVersion, pool: &Pool<Postgres>) -> Result<(), AppError> {
 
-    // for each org type, and each of the three name types (therefore 9 x 3 rows)
-    // get total number of names and numbers with / without lang codes
-
-    // get org type codes and names and load into a vector
+    // For each org type, and each of the three name types (therefore 9 x 3 rows),
+    // get total number of names and numbers with / without lang codes.
 
     #[derive(sqlx::FromRow)]
     struct OrgType {
@@ -465,7 +438,7 @@ pub async fn store_types_with_lang_code(v: &RorVersion, pool: &Pool<Postgres>) -
         names_wolc_pc: f64
     }
 
-    // Get the Unicode scripts with their ascii code boundaries.
+    // Get the rganisation type categories.
 
     let sql  = r#"select id, name
     from lup.ror_org_types
@@ -473,6 +446,8 @@ pub async fn store_types_with_lang_code(v: &RorVersion, pool: &Pool<Postgres>) -
     let rows: Vec<OrgType> = sqlx::query_as(sql).fetch_all(pool).await?;
 
     for t in rows {
+
+        // Get the data on the names linkede to these organisations
 
         let lc_sql = r#"select 
                 case name_type
@@ -499,7 +474,8 @@ pub async fn store_types_with_lang_code(v: &RorVersion, pool: &Pool<Postgres>) -
                 order by ns.name_type;"#;
             let rows: Vec<NameLCRow> = sqlx::query_as(&lc_sql).fetch_all(pool).await?;
 
-            // store the individual rows
+            // Store the individual rows.
+
             for r in rows {
             sqlx::query(r#"INSERT INTO smm.type_name_lang_code (vcode, vdate, org_type, name_type, 
                              names_num, names_wlc, names_wolc, names_wlc_pc, names_wolc_pc) 
@@ -568,11 +544,8 @@ pub async fn store_ext_ids_count_distrib(v: &RorVersion, pool: &Pool<Postgres>) 
   for r in rows {
       sqlx::query(r#"INSERT INTO smm.ext_ids_count_distribution (vcode, vdate, count, num_of_orgs, pc_of_orgs) 
                           values($1, $2, $3, $4, $5)"#)
-      .bind(r.vcode)
-      .bind(r.vdate)
-      .bind(r.count)
-      .bind(r.num_of_orgs)
-      .bind(r.pc_of_orgs)
+      .bind(r.vcode).bind(r.vdate)
+      .bind(r.count).bind(r.num_of_orgs).bind(r.pc_of_orgs)
       .execute(pool)
       .await?;
   }
@@ -623,11 +596,8 @@ pub async fn store_links_count_distrib(v: &RorVersion, pool: &Pool<Postgres>) ->
   for r in rows {
       sqlx::query(r#"INSERT INTO smm.links_count_distribution (vcode, vdate, count, num_of_orgs, pc_of_orgs) 
                           values($1, $2, $3, $4, $5)"#)
-      .bind(r.vcode)
-      .bind(r.vdate)
-      .bind(r.count)
-      .bind(r.num_of_orgs)
-      .bind(r.pc_of_orgs)
+      .bind(r.vcode).bind(r.vdate)
+      .bind(r.count).bind(r.num_of_orgs).bind(r.pc_of_orgs)
       .execute(pool)
       .await?;
   }
@@ -635,10 +605,10 @@ pub async fn store_links_count_distrib(v: &RorVersion, pool: &Pool<Postgres>) ->
   Ok(())
 }
 
-// relationships_summary
-pub async fn store_relationships_summary(_v: &RorVersion, _pool: &Pool<Postgres>) -> Result<(), AppError> {
 
+pub async fn store_relationships_summary(_v: &RorVersion, _pool: &Pool<Postgres>) -> Result<(), AppError> {
 /*
+TO DO
 create table smm.relationships_summary
     (    
           vcode             varchar     not null primary key
@@ -667,12 +637,13 @@ create table smm.relationships_summary
         , non_recip_ps      int         null
     ); */
     Ok(())
+
 }
 
-// type_relationship
-pub async fn store_types_and_relationships(_: &RorVersion, _pool: &Pool<Postgres>) -> Result<(), AppError> {
 
+pub async fn store_types_and_relationships(_: &RorVersion, _pool: &Pool<Postgres>) -> Result<(), AppError> {
 /*
+TO DO
 create table smm.type_relationship
     (    
           vcode             varchar     not null
@@ -706,11 +677,8 @@ pub async fn store_country_top_25_distrib(v: &RorVersion, pool: &Pool<Postgres>,
         if i < 25 {
             sqlx::query(r#"INSERT INTO smm.country_distribution (vcode, vdate, country, num_of_locs, pc_of_locs) 
                                 values($1, $2, $3, $4, $5)"#)
-            .bind(r.vcode)
-            .bind(r.vdate)
-            .bind(r.country)
-            .bind(r.num_of_locs)
-            .bind(r.pc_of_locs)
+            .bind(r.vcode).bind(r.vdate)
+            .bind(r.country).bind(r.num_of_locs).bind(r.pc_of_locs)
             .execute(pool)
             .await?;
         }
@@ -723,11 +691,8 @@ pub async fn store_country_top_25_distrib(v: &RorVersion, pool: &Pool<Postgres>,
 
     sqlx::query(r#"INSERT INTO smm.country_distribution (vcode, vdate, country, num_of_locs, pc_of_locs) 
                         values($1, $2, $3, $4, $5)"#)
-    .bind(v.vcode.clone())
-    .bind(v.vdate)
-    .bind("Remaining countries")
-    .bind(rest_total)
-    .bind(rest_total_pc)
+    .bind(v.vcode.clone()).bind(v.vdate)
+    .bind("Remaining countries").bind(rest_total).bind(rest_total_pc)
     .execute(pool)
     .await?;
   
@@ -747,11 +712,8 @@ pub async fn store_locs_count_distrib(v: &RorVersion, pool: &Pool<Postgres>) -> 
   for r in rows {
       sqlx::query(r#"INSERT INTO smm.locs_count_distribution (vcode, vdate, count, num_of_orgs, pc_of_orgs) 
                           values($1, $2, $3, $4, $5)"#)
-      .bind(r.vcode)
-      .bind(r.vdate)
-      .bind(r.count)
-      .bind(r.num_of_orgs)
-      .bind(r.pc_of_orgs)
+      .bind(r.vcode).bind(r.vdate)
+      .bind(r.count).bind(r.num_of_orgs).bind(r.pc_of_orgs)
       .execute(pool)
       .await?;
   }

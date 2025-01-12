@@ -7,10 +7,10 @@ pub async fn import_data (pool: &Pool<Postgres>) -> Result<(), sqlx::Error> {
     import_admin_data_base (pool).await?;
     import_names (pool).await?;
     import_links (pool).await?;
-	import_domains (pool).await?;
+    import_domains (pool).await?;
     import_external_ids (pool).await?;
-	import_types (pool).await?;
-	import_locations (pool).await?;
+    import_types (pool).await?;
+    import_locations (pool).await?;
     import_relationships (pool).await?;
     Ok(())
 }
@@ -106,11 +106,11 @@ async fn import_external_ids (pool: &Pool<Postgres>) -> Result<PgQueryResult, sq
     let import_sql  = r#"insert into src.external_ids(id, ror_name, id_type, id_value, is_preferred)
           select a.id, c.ror_name,
           case 
-	          when id_type = 'isni' then 11
-	          when id_type = 'wikidata' then 12
-	          when id_type = 'grid' then 13
-	          when id_type = 'fundref' then 14
-	          else 0
+              when id_type = 'isni' then 11
+              when id_type = 'wikidata' then 12
+              when id_type = 'grid' then 13
+              when id_type = 'fundref' then 14
+              else 0
           end,
           a.id_value, 
           case
@@ -150,7 +150,7 @@ async fn import_types (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Err
 async fn import_locations (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Error> {
 
     let import_sql  = r#"insert into src.locations(id, ror_name, geonames_id, 
-	      geonames_name, lat, lng, cont_code, cont_name, 
+          geonames_name, lat, lng, cont_code, cont_name, 
           country_code, country_name, csubdiv_code, csubdiv_name)
           select a.id, c.ror_name, a.geonames_id, a.name,
                  a.lat, a.lng, a.cont_code, a.cont_name, 
@@ -167,11 +167,11 @@ async fn import_relationships (pool: &Pool<Postgres>) -> Result<PgQueryResult, s
     let import_sql  = r#"insert into src.relationships(id, ror_name, rel_type, related_id, related_name)
           select a.id, c.ror_name, 
           case 
-	          when a.rel_type = 'parent' then 1
-	          when a.rel_type = 'child' then 2
-	          when a.rel_type = 'related' then 3
+              when a.rel_type = 'parent' then 1
+              when a.rel_type = 'child' then 2
+              when a.rel_type = 'related' then 3
               when a.rel_type = 'predecessor' then 4
-	          when a.rel_type = 'successor' then 5
+              when a.rel_type = 'successor' then 5
               else 0
           end, 
           a.related_id, a.related_label

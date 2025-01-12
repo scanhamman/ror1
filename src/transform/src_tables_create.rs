@@ -6,7 +6,6 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
     let sql = r#"
     SET client_min_messages TO WARNING; 
     create schema if not exists src;
-    SET client_min_messages TO NOTICE;
 
     drop table if exists src.core_data;
     create table src.core_data
@@ -132,7 +131,8 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
         , domain            varchar     not null
     );
     create index domains_idx on src.domains(id);
-    "#;
+
+    SET client_min_messages TO NOTICE;"#;
 
     sqlx::raw_sql(sql).execute(pool).await?;
     Ok(())

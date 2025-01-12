@@ -45,7 +45,6 @@ pub async fn store_summary_data (vcode:&String, vdate: &NaiveDate,pool: &Pool<Po
     .execute(pool)
     .await?;
     
-
     smm_storage_helper::store_name_summary(&v, pool, num_names).await?;
 
     smm_storage_helper::store_name_ror(&v, pool).await?;
@@ -85,7 +84,6 @@ pub async fn store_summary_data (vcode:&String, vdate: &NaiveDate,pool: &Pool<Po
     smm_storage_helper::store_locs_count_distrib(&v, pool).await?;
 
     Ok(())
-
 }
 
 
@@ -96,113 +94,3 @@ pub async fn get_record_num (table_name: &str, pool: &Pool<Postgres>) -> Result<
     .await?;
     Ok(res)
 }
-
-/*
-      
-    ----------------------------------------------------
-    Distribution by country (long list!)
-    
-    select country_code, count(country_code) from src.locations
-    group by country_code
-    order by count(country_code) desc
-
-    // List perhaps top 20 or 25, or above a certain threshold...
-
-    Numbers with multiple locations
-
-    select count(*) from src.admin_data where n_locs = 0;
-    select count(*) from src.admin_data where n_locs = 1; 
-    select count(*) from src.admin_data where n_locs = 2;
-    select count(*) from src.admin_data where n_locs = 3;
-    select count(*) from src.admin_data where n_locs > 3;
-
-    -------------------------
-   
-    Number of orgs with null lang codes for labels and aliases (excluding acronyms and commercial orgs)
-    (difficult to apply a language to a commercial name)
-
-    -----------------------------------
-
-    Names not in local script...
-    for selected countries
-
-    set up script data in import process
-
-    -----------------------------------
-     
-    -----------------------------------
-  
-    Number of orgs with 1, 2, 3, or more parent rel numbers
-
-    select count(*) from src.admin_data where n_parrels = 0;
-    select count(*) from src.admin_data where n_parrels = 1; 
-    select count(*) from src.admin_data where n_parrels = 2;
-    select count(*) from src.admin_data where n_parrels = 3;
-    select count(*) from src.admin_data where n_parrels > 3;
-
-    Number of orgs with 1, 2, 3, or more child rel numbers
-
-    select count(*) from src.admin_data where n_chrels = 0;
-    select count(*) from src.admin_data where n_chrels = 1; 
-    select count(*) from src.admin_data where n_chrels = 2;
-    select count(*) from src.admin_data where n_chrels = 3;
-    select count(*) from src.admin_data where n_chrels > 3;
-
-    Number of orgs with 1, 2, 3, or more rel rel numbers
-
-    select count(*) from src.admin_data where n_relrels = 0;
-    select count(*) from src.admin_data where n_relrels = 1; 
-    select count(*) from src.admin_data where n_relrels = 2;
-    select count(*) from src.admin_data where n_relrels = 3;
-    select count(*) from src.admin_data where n_relrels > 3;
-
-    Number of orgs with 1, 2, 3, or more pred rel numbers
-
-    select count(*) from src.admin_data where n_predrels = 0;
-    select count(*) from src.admin_data where n_predrels = 1; 
-    select count(*) from src.admin_data where n_predrels = 2;
-    select count(*) from src.admin_data where n_predrels = 3;
-    select count(*) from src.admin_data where n_predrels > 3;
-
-    Number of orgs with 1, 2, 3, or more succ rel numbers
-
-    select count(*) from src.admin_data where n_sucrels = 0;
-    select count(*) from src.admin_data where n_sucrels = 1; 
-    select count(*) from src.admin_data where n_sucrels = 2;
-    select count(*) from src.admin_data where n_sucrels = 3;
-    select count(*) from src.admin_data where n_sucrels > 3;
-
-    Any orgs with non-reciprocated relationship?
-
-    look at par-ch rels
-    look at rel-rel rels from both directions
-    look at pred-suc rels
-
-    for par-ch - create a temp table with the inverse relationship
-    check it against the actual data
-    any discrepencies...
-
-    Any parent child rels where all are commercial?
-
-    Can they be made into one org with multiple locations? 
-
-    Any parent child 'chains' of more than one level?
-
-    look at chrel orgs having a parrel as well...
-
-    -----------------------------------
-    
-    // set up some tables...
-
-    // Set up some views??...
-
-    // Use these to produce json
-
-    // Use these to produce a text version
-
-    // Create the res file. If it already exists overwrite it.
-
-    */
-
-
-
