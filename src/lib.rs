@@ -35,7 +35,7 @@ pub async fn run(args: Vec<OsString>) -> Result<(), AppError> {
        log_helper::log_startup_params(&params);
     }
             
-    let pool = setup::get_db_pool("ror").await?;
+    let pool = setup::get_db_pool().await?;
 
     // Processing of the remaining stages depends on the 
     // presence of the relevant CLI flag(s).

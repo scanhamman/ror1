@@ -33,6 +33,7 @@ pub struct DbPars {
     pub user: String,
     pub password: String,
     pub port: String,
+    pub dbname: String,
 }
 
 pub static DB_PARS: OnceLock<DbPars> = OnceLock::new();
@@ -54,12 +55,14 @@ pub fn populate_env_vars() -> Result< (), AppError> {
     let user: String = env::var("db_user").unwrap_or("no user".to_string());
     let password: String = env::var("db_password").unwrap_or("no password".to_string());
     let port: String = env::var("db_port").unwrap_or("5432".to_string());
+    let dbname: String = env::var("db_name").unwrap_or("ror".to_string());
        
     let db_pars = DbPars {
         host, 
         user,
         password,
         port,
+        dbname,
     };
     let _ = DB_PARS.set(db_pars);  // should always work in this environment
 
@@ -67,7 +70,19 @@ pub fn populate_env_vars() -> Result< (), AppError> {
 
 }
  
-pub fn fetch_db_conn_string(db_name: &str) -> Result<String, AppError> {
+pub fn fetch_db_name() -> Result<String, AppError> {
+    let db_pars = match DB_PARS.get() {
+         Some(dbp) => dbp,
+         None => {
+            let msg = "Unable to obtain DB parameters when building connection string";
+            let cf_err = CustomError::new(msg);
+            return Result::Err(AppError::CsErr(cf_err));
+        },
+    };
+    Ok(db_pars.dbname.clone())
+}
+
+pub fn fetch_db_conn_string(db_name: String) -> Result<String, AppError> {
     let db_pars = match DB_PARS.get() {
          Some(dbp) => dbp,
          None => {

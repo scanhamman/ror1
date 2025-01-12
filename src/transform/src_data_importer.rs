@@ -32,7 +32,7 @@ async fn update_core_data_locations (pool: &Pool<Postgres>) -> Result<PgQueryRes
 
     let import_sql  = r#"update src.core_data c
           set location = t.name,
-          csubdiv_code = t.csubdiv_code,
+          csubdiv_code = t.country_subdivision_code,
           country_code = t.country_code
           from ror.locations t
           where c.id = t.id;"#;

@@ -16,16 +16,16 @@ to be downloaded from GitHub, and then run within a Rust development environment
 <h3>Purpose</h3>
 
 The system was developed for three main reasons:
-a) To provide a mechanism to quickly download and integrate the ROR data within other 
+<br>a) To provide a mechanism to quickly download and integrate the ROR data within other 
 systems, on a regular basis (e.g. as each new version is published). The ROR data is available
 both in its 'raw' ror state, i.e. with almost no additional processing applied (see 
 'The base ror data schema' below), and in a lightly modified state, with a limited degree 
 of processing applied (see 'The src data schema' below). The latter might be of more immediate
 use in many use cases, or a better basis for additional processing.
-b) To allow comparison of the different ROR data versions over time, allowing monitoring of 
+<br>b) To allow comparison of the different ROR data versions over time, allowing monitoring of 
 the development of ROR data, and the easier identification of possible inconsistencies or 
 anomalies in the data (to help with possible feedback to ROR).
-c) To become more familiar with Rust, by using the language in a small but realistic development 
+<br>c) To become more familiar with Rust, by using the language in a small but realistic development 
 scenario, implementing features that would be necessary in most similar CLIs. These include 
 extensive systems for data access and manipulation, processing of command line arguments and 
 environmental variables (and interactions between the two), logging, file handling (of both JSON 
@@ -53,22 +53,42 @@ the field names as listed in the ROR documentation.
 The main exception to this is caused by the fact that 'type', whilst used in several places in the 
 ROR definitions, is a reserved word in Rust (and many other languages), while TYPE can cause issues 
 in Postgres in some contexts. For safety and future compatibility the following changes are made:
-'type' in names becomes 'name_type'
-'type' in external ids becomes 'id_type'.
-'type' in links becomes 'link_type'
-'type' in relationships becomes'rel_type'
+<ul>
+<li>'type' in names becomes 'name_type'.</li>
+<li>'type' in types becomes 'org_type'.</li>
+<li>'type' in external ids becomes 'id_type'.</li>
+<li>'type' in links becomes 'link_type'.</li>
+<li>'type' in relationships becomes'rel_type'.</li>
+</ul>
 
 The ror schema data represents the initial import into a staging schema. It is used as the basis of 
 later processes in this system, but is retained so as to be available for other transformations by
-other systems.
+other systems, if required.
 
 <h3>The src data schema</h3>
 
-After initial import into the 'ror' schema, the data can be transformed into 
-he data is processed to form a new set of tables, incorporating additional
-information, e.g. summary records for each organisation, and using integer categories rather 
-than string values for several of the data points. This data is stored in a different
-DB schema, 'src'. This data is designed to be used as the basis for ad hoc SQL queries of the 
+After initial import into the 'ror' schema, the data can be processed to form a new set of tables, 
+within the 'src' schema. The changes are limited but include
+<br>a) Replacement of the strings of categorised values by integers. The integers are as given by
+lookup tables (set up within the 'lup' or lookup schema) which effectively provide enumerations 
+of these categorised values, e.g. the organisation, name, link, external id and relationship types. 
+This is designed to make any future data processing quicker and more flexible.
+<br>b) The expansion of the admin_data table, to include for each organisation the numbers of entities 
+of each type it is linked with, e.g. how many names (of various types), links and external ids (of 
+various types), relationships (of various types), locations, etc. are included in the ror record.
+This is to make it easier both to use and display the information, to support some of the 
+production of summary data, and to more easily ientify organisations that are missing certain types of data.
+<br>c) The addition of script codes to the name data. Though most of the the names listed (apart 
+from acronyms) have language codes linked to them there is no explicit indication of the script being 
+used. The great majority of the names are in latin but a substantial number use other script 
+systems, such as Cyrilic, Greek, Arabic, Han, Hebrew or Gujarati. Full details are given by ISO 15924, 
+which also provides the Unicode code pages on which each script can be found. Examining the Unicodes of 
+the characters in the names allows the script to be readily identified, and this information is added 
+to each name record, as being of potential value when displaying the data.
+<br> d) A few field names are shortened to make them easier to use, e.g. country_subdivision_code becomes
+csubdiv_code, and continent_code becomes cont_code.
+ 
+The src data is designed to be used as the basis for ad hoc SQL queries of the 
 data, and for an organisation data system UI, allowing data display and editing. They are also
 used as the basis of the summary statistics described below, and are designed to be the base data
 when integrating ror data into other systems.
@@ -81,19 +101,44 @@ when integrating ror data into other systems.
 
 1) The system assumes that any v2 ROR data file required has been downloaded from the Zenodo site and 
 placed on the machine running the program, in a designated 'data folder'. It can be useful to simplify 
-the name of this file (see Operation and arguments below).
+the name of this file (see Operation and arguments below).<br>
 2) The system requires a postgres database for holding the data. By default, this database is assumed 
-to be named 'ror', but this can be changed in the configuration file (see below). 
+to be named 'ror', but this can be changed in the configuration file (see below). The database must be
+created prior to the intial run of the system. <br> 
 3) <i>At the moment</i> - a Rust development environment is also required, as the system is most easily 
 run from that environment. This means installing Rust and an IDE. VS Code is recommended as - like Rust 
-itself - it is free of charge. A means of inspecting the Postgres database is also necessary - PgAdmin and / or DBeaver (Community edition) are free and very capable systems for this purpose.</i>
+itself - it is free of charge. A means of inspecting the Postgres database is also necessary - PgAdmin 
+and / or DBeaver (Community edition) are free and very capable systems for this purpose.</i>
 
 <h3>Operation and arguments</h3>
 
 <i>Set-up</i>
 
-environmental and command line variables are read, and database access
-established.
+Once the pre-requisites are installed and the source code is downloaded, a .env file must be added to the
+system's source folder, i.e. in the same folder as the cargo.toml file. This .env file, which should not 
+be added to any public source control system, acts as a configuration file for the system (it does not 
+change the system's environmental values). It must contain values against the following settings, though in several cases sensible defaults are provided:
+<ul>
+<li>The database server name, as 'db_host'. This defaults to 'localhost'</li>
+<li>The database user name, as 'db_user'. No default value.</li>
+<li>The password for that user, as 'db_password'. No default value.</li>
+<li>The database port, as 'db_port'. This defaults to '5432', the standard Postgres port.</li>
+<li>The database name, as 'db_name'. This defaults to 'ror'.</li>
+<li>The full path of the folder in which the souce JSON file can be found, as 'data_folder_path'.</li>
+<li>The full path of the folder where logs should be written, as 'log_folder_path'. If missing the data_folder_path is used.</li>
+<li>The full path of the folder where output text files should be written, as 'output_folder_path'. If missing the data_folder_path is used.</li>
+</ul>
+
+The following are normally supplied by command line arguments, which will always over-write values in the configuration file. 
+During testing and development however, against a fixed source file, it can be much easier to include them in the .env file instead.
+<ul>
+<li>The name of the souce JSON file, as 'src_file_name'.</li>
+<li>The name of the output file, as 'output_file_name'. If missing the system will construct a name based on the source file and date-time.</li>
+<li>The version of the file to be imported, as 'data_version'. A string, in a semantic versioning format, e.g. '1.45.1', '1.57'
+<li>The date of the file to'm be imported, as 'data_date='. This should be in YYYY-mm_DD ISO format.
+</ul>
+
+In future versions this configuration file will need to be installed in an OS-specific configuration folder.
 
 <i>Environmental varables</i>
 

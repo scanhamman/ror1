@@ -199,8 +199,9 @@ pub async fn get_params(args: Vec<OsString>) -> Result<InitParams, AppError> {
 }
 
 
-pub async fn get_db_pool(db_name :&str) -> Result<Pool<Postgres>, AppError> {  
-    
+pub async fn get_db_pool() -> Result<Pool<Postgres>, AppError> {  
+
+    let db_name = env_reader::fetch_db_name().unwrap();  // default value of ror
     let db_conn_string = env_reader::fetch_db_conn_string(db_name)?;  
     let try_pool = PgPoolOptions::new()
               .max_connections(5).connect(&db_conn_string).await;
