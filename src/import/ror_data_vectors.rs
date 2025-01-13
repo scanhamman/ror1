@@ -70,6 +70,7 @@ impl CoreDataVecs{
         .bind(&self.lastmod_vs)
         .execute(pool)
         .await;
+
     }
 
 }

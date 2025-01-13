@@ -47,12 +47,12 @@ pub struct RorLocation {
     pub name: String,
     pub lat: Option<f32>,
     pub lng: Option<f32>,
-    pub cont_code: Option<String>,
-    pub cont_name: Option<String>,
+    pub continent_code: Option<String>,
+    pub continent_name: Option<String>,
     pub country_code: String,
     pub country_name: String,
-    pub csubdiv_code: Option<String>,
-    pub csubdiv_name: Option<String>,
+    pub country_subdivision_code: Option<String>,
+    pub country_subdivision_name: Option<String>,
 }
 
 #[derive(Debug, Clone, FromRow, PartialEq)]

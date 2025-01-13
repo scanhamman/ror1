@@ -215,7 +215,7 @@ fn parse_args(args: Vec<OsString>) -> Result<ArgMatches, clap::Error> {
             .long("test")
             .visible_short_aliases(['T'])
             .required(false)
-            .help("A flag signifying that this is part of an integration test run")
+            .help("A flag signifying that this is part of an integration test run - suppresses logs")
             .action(clap::ArgAction::SetTrue)
        )
     .try_get_matches_from(args)
@@ -363,5 +363,6 @@ mod tests {
         assert_eq!(res.data_date, "2026-12-25");
         assert_eq!(res.data_version, "1.63");
     }
+
 }
 

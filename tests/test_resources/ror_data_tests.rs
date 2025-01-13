@@ -3,11 +3,6 @@
 // Test samples should exist for each version of the v2 schema 
 // to test that all file types can be correctly processed.
 
-// `tokio::test` is the testing equivalent of `tokio::main`. 
-// It also spares you from having to specify the `#[test]` attribute. 
-// You can inspect what code gets generated using 
-// `cargo expand --test health_check` (<- name of the test file) 
-
 use ror1::run;
 use std::env;
 use std::ffi::OsString;
@@ -26,18 +21,19 @@ async fn import_v2_0_data_to_ror_and_check_org_numbers() {
 
     // Arrange     
     // Get database pool to allow interrogation of the DB
-    let pool = data_access::fetch_db_pool("ror").await.unwrap();
+    let pool = data_access::fetch_db_pool().await.unwrap();
     // Establish the arguments for running the database
 
     // Act 
     // Run the program with v2.0 test data
     let cd_path = env::current_dir().unwrap();
-    println!("The current directory is {}", cd_path.display());
-    let target_path : PathBuf = [cd_path, PathBuf::from("tests/test_data/")].iter().collect();
+
+    let target_path : PathBuf = [cd_path, PathBuf::from("tests\\test_data\\")].iter().collect();
     let target_folder = target_path.to_str().unwrap();
     let target_file = "v2_test_data.json";
     let tdate = "2026-01-01";
     let args : Vec<&str> = vec!["target/debug/ror1.exe", "-f", target_folder, "-s", target_file, "-v", "v2", "-d", tdate, "-r", "-t"];
+
     let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
     run(test_args).await.unwrap();
 
@@ -52,7 +48,7 @@ async fn import_v2_0_data_to_ror_and_check_org_numbers() {
 async fn check_numbers_in_each_ror_table() {
 
     thread::sleep(Duration::from_secs(1));
-    let pool = data_access::fetch_db_pool("ror").await.unwrap();
+    let pool = data_access::fetch_db_pool().await.unwrap();
 
     let rec_number = data_access::fetch_record_num("names", &pool).await;
     assert_eq!(rec_number, 56);
@@ -71,7 +67,7 @@ async fn check_numbers_in_each_ror_table() {
 async fn check_ror_first_and_last_ids() {
 
     thread::sleep(Duration::from_secs(1));
-    let pool = data_access::fetch_db_pool("ror").await.unwrap();
+    let pool = data_access::fetch_db_pool().await.unwrap();
 
     // Check first and last record Ids
     let first_id = data_access::fetch_first_record_id(&pool).await;
@@ -86,7 +82,7 @@ async fn check_ror_first_and_last_ids() {
 async fn check_ror_core_data() {
 
     thread::sleep(Duration::from_secs(1));
-    let pool = data_access::fetch_db_pool("ror").await.unwrap();
+    let pool = data_access::fetch_db_pool().await.unwrap();
 
     let id = "006jxzx88";
 
@@ -122,7 +118,7 @@ async fn check_ror_core_data() {
 async fn check_ror_relationship_data() {
 
     thread::sleep(Duration::from_secs(2));
-    let pool = data_access::fetch_db_pool("ror").await.unwrap();
+    let pool = data_access::fetch_db_pool().await.unwrap();
 
     let id = "03rd8mf35";
     let rels:Vec<RorRelationship> = data_access::fetch_relationship_records(id, &pool).await;
@@ -147,7 +143,7 @@ async fn check_ror_relationship_data() {
 async fn check_ror_external_id_data() {
 
     thread::sleep(Duration::from_secs(2));
-    let pool = data_access::fetch_db_pool("ror").await.unwrap();
+    let pool = data_access::fetch_db_pool().await.unwrap();
 
     let id = "04ttjf776";
     let extids:Vec<RorExternalId> = data_access::fetch_external_id_records(id, &pool).await;
@@ -175,7 +171,7 @@ async fn check_ror_external_id_data() {
 async fn check_ror_location_data() {
 
     thread::sleep(Duration::from_secs(2));
-    let pool = data_access::fetch_db_pool("ror").await.unwrap();
+    let pool = data_access::fetch_db_pool().await.unwrap();
 
     let id = "006jxzx88";
     let locs:Vec<RorLocation> = data_access::fetch_location_records(id, &pool).await;
@@ -183,9 +179,9 @@ async fn check_ror_location_data() {
     assert_eq!(locs[0], RorLocation{
         geonames_id: 2165087, name: "Gold Coast".to_string(), 
         lat: Some(-28.073982), lng: Some(153.41649), 
-        cont_code: None, cont_name: None, 
+        continent_code: None, continent_name: None, 
         country_code: "AU".to_string(), country_name:"Australia".to_string(), 
-        csubdiv_code: None, csubdiv_name: None,});
+        country_subdivision_code: None, country_subdivision_name: None,});
 
     let id = "05s6t3255";
     let locs:Vec<RorLocation> = data_access::fetch_location_records(id, &pool).await;
@@ -193,9 +189,9 @@ async fn check_ror_location_data() {
     assert_eq!(locs[0], RorLocation{
         geonames_id: 2657896, name: "Zurich".to_string(), 
         lat: Some(47.36667), lng: Some(8.55), 
-        cont_code: Some("EU".to_string()), cont_name: Some("Europe".to_string()), 
+        continent_code: Some("EU".to_string()), continent_name: Some("Europe".to_string()), 
         country_code: "CH".to_string(), country_name:"Switzerland".to_string(), 
-        csubdiv_code: Some("ZH".to_string()), csubdiv_name: Some("Zurich".to_string()),});
+        country_subdivision_code: Some("ZH".to_string()), country_subdivision_name: Some("Zurich".to_string()),});
 
 }
 
@@ -203,7 +199,7 @@ async fn check_ror_location_data() {
 async fn check_ror_link_data() {
 
     thread::sleep(Duration::from_secs(2));
-    let pool = data_access::fetch_db_pool("ror").await.unwrap();
+    let pool = data_access::fetch_db_pool().await.unwrap();
 
     let id = "006jxzx88";
     let links:Vec<RorLink> = data_access::fetch_link_records(id, &pool).await;
@@ -227,7 +223,7 @@ async fn check_ror_link_data() {
 async fn check_ror_type_data() {
 
     thread::sleep(Duration::from_secs(2));
-    let pool = data_access::fetch_db_pool("ror").await.unwrap();
+    let pool = data_access::fetch_db_pool().await.unwrap();
 
     let id = "006jxzx88";
     let types:Vec<RorType> = data_access::fetch_type_records(id, &pool).await;
@@ -246,7 +242,7 @@ async fn check_ror_type_data() {
 async fn check_ror_name_data() {
 
     thread::sleep(Duration::from_secs(2));
-    let pool = data_access::fetch_db_pool("ror").await.unwrap();
+    let pool = data_access::fetch_db_pool().await.unwrap();
 
     let id = "0198t0w55";
     let names:Vec<RorName> = data_access::fetch_name_records(id, &pool).await;

@@ -20,6 +20,7 @@ use chrono::Local;
 use std::path::PathBuf;
 use std::ffi::OsString;
 use std::fs;
+use regex::Regex;
 
 pub struct InitParams {
     pub import_ror: bool,
@@ -128,54 +129,88 @@ pub async fn get_params(args: Vec<OsString>) -> Result<InitParams, AppError> {
                 return Result::Err(AppError::CsErr(cf_err));
              }
         }
-       
-       
-        // If this conforms to the correct pattern data version and data date can be derived!
+
         
+        let mut data_version = "".to_string();
+        let mut data_date = base_date;
+       
+        // If file name conforms to the correct pattern data version and data date can be derived!
+        
+        if is_valid_file_name(&source_file_name) {
+            
+            let version_pattern = r#"^v[0-9]+(\.[0-9]+){0,2}(-| )"#;
+            let re = Regex::new(version_pattern).unwrap();
+            if re.is_match(&source_file_name) {
+                let caps = re.captures(&source_file_name).unwrap();
+                data_version = caps[0].trim().to_string();
+            }
 
+            let date_pattern = r#"(-| )[0-9]{4}-?[01][0-9]-?[0-3][0-9]"#;
+            let re = Regex::new(date_pattern).unwrap();
+            if re.is_match(&source_file_name) {
+                let caps = re.captures(&source_file_name).unwrap();
+                let putative_date = caps[0].trim();
+                if putative_date.len() == 8 {
+                    data_date = match NaiveDate::parse_from_str(putative_date, "%Y%m%d")
+                    {
+                        Ok(d) => d,
+                        Err(_e) => base_date,
+                    }
+                } 
+                else {
+                    data_date = match NaiveDate::parse_from_str(putative_date, "%Y-%m-%d")
+                    {
+                        Ok(d) => d,
+                        Err(_e) => base_date,
+                    }
+                }
+            }
+        }
+        else {
 
-        // otherwise, get the version of the data 
+            // Otherwise, get the version of the data from the CLI, or failing that the config file
+            data_version= cli_pars.data_version;
+            if data_version == "" {
+                data_version =  env_reader::fetch_data_version();
+                if data_version == "" {   // Required data is missing - Raise error and exit program.
+                    let msg = "Data version not provided in either command line or environment file";
+                    let cf_err = CustomError::new(msg);
+                    return Result::Err(AppError::CsErr(cf_err));
+                }
+            }
 
-        let mut data_version= cli_pars.data_version;
-        if data_version == "" {
-            data_version =  env_reader::fetch_data_version();
-            if data_version == "" {   // Required data is missing - Raise error and exit program.
-                let msg = "Data version not provided in either command line or environment file";
-                let cf_err = CustomError::new(msg);
-                return Result::Err(AppError::CsErr(cf_err));
-             }
+            // Get the date of the data. First check cli date, then .env date.  
+            // Use the default base date to indicate missing data or an error somewhere.
+        
+            data_date = match NaiveDate::parse_from_str(&cli_pars.data_date, "%Y-%m-%d")
+            {
+                Ok(d) => d,
+                Err(_e) => base_date,
+            };
+            if data_date == base_date {  
+                    data_date = match NaiveDate::parse_from_str(&env_reader::fetch_data_date(), 
+                                            "%Y-%m-%d") {
+                    Ok(d) => d,
+                    Err(_e) => base_date,
+                };
+                if data_date == base_date {   // Raise an AppError...required data is missing.
+                    let msg = "Data date not provided in either command line or environment file";
+                    let cf_err = CustomError::new(msg);
+                    return Result::Err(AppError::CsErr(cf_err));
+                }
+            }
         }
 
         // get the output file name - if anywhere it is in the .env variables
         
         let mut output_file_name =  env_reader::fetch_output_file_name();
         if output_file_name == "" {
-            output_file_name = format!("v{} summary", data_version).to_string()
+            output_file_name = format!("{} summary", data_version).to_string()
         }
         let datetime_string = Local::now().format("%m-%d %H%M%S").to_string();
         output_file_name = format!("{} at {}.txt", output_file_name, datetime_string);
 
 
-        // get the date of the data
-        // first check cli date, then .env date ..  start with a default base date.
-    
-        let mut data_date = match NaiveDate::parse_from_str(&cli_pars.data_date, "%Y-%m-%d")
-        {
-            Ok(d) => d,
-            Err(_e) => base_date,
-        };
-        if data_date == base_date {  
-                data_date = match NaiveDate::parse_from_str(&env_reader::fetch_data_date(), 
-                                        "%Y-%m-%d") {
-                Ok(d) => d,
-                Err(_e) => base_date,
-            };
-            if data_date == base_date {   // Raise an AppError...required data is missing.
-                let msg = "Data date not provided in either command line or environment file";
-                let cf_err = CustomError::new(msg);
-                return Result::Err(AppError::CsErr(cf_err));
-            }
-        }
   
         // For execution flags read from the environment variables
        
@@ -194,6 +229,7 @@ pub async fn get_params(args: Vec<OsString>) -> Result<InitParams, AppError> {
             data_version,
             data_date,
         })
+
     }
 
 }
@@ -257,11 +293,52 @@ pub async fn create_smm_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
     Ok(())
 }
 
+fn is_valid_file_name(input: &str) -> bool {
+    let file_name_pattern = r#"^v[0-9]+(\.[0-9]+){0,2}(-| )[0-9]{4}-?[01][0-9]-?[0-3][0-9]"#;
+    let re = Regex::new(file_name_pattern).unwrap();
+    re.is_match(input)
+}
+
 // Tests
 #[cfg(test)]
+
 mod tests {
     use super::*;
    
+   // regex tests
+   #[test]
+   fn check_pattern_matching_works_1 () {
+      let test_file_name = "v1.50 2024-12-11.json".to_string();
+      assert_eq!(is_valid_file_name(&test_file_name), true);
+
+      let test_file_name = "v1.50-2024-12-11.json".to_string();
+      assert_eq!(is_valid_file_name(&test_file_name), true);
+
+      let test_file_name = "v1.50 20241211.json".to_string();
+      assert_eq!(is_valid_file_name(&test_file_name), true);
+
+      let test_file_name = "v1.50-20241211.json".to_string();
+      assert_eq!(is_valid_file_name(&test_file_name), true);
+
+      let test_file_name = "v1.50-2024-1211.json".to_string();
+      assert_eq!(is_valid_file_name(&test_file_name), true);
+   }
+
+   #[test]
+    fn check_pattern_matching_works_2 () {
+        let test_file_name = "1.50 2024-12-11.json".to_string();
+        assert_eq!(is_valid_file_name(&test_file_name), false);
+
+        let test_file_name = "v1.50--2024-12-11.json".to_string();
+        assert_eq!(is_valid_file_name(&test_file_name), false);
+
+        let test_file_name = "v1.50  20241211.json".to_string();
+        assert_eq!(is_valid_file_name(&test_file_name), false);
+
+        let test_file_name = "v1.50 20242211.json".to_string();
+        assert_eq!(is_valid_file_name(&test_file_name), false);
+    }
+
     // Ensure the parameters are being correctly extracted from the CLI arguments
     // The testing functions need to be async because of the call to get_params.
     // the test therefore uses the async version of the temp_env::with_vars function.
@@ -282,7 +359,7 @@ mod tests {
             ("data_folder_path", Some("E:/ROR/data")),
             ("src_file_name", Some("v1.58 20241211.json")),
             ("output_file_name", Some("results 25.json")),
-            ("data_version", Some("1.60")),
+            ("data_version", Some("v1.60")),
             ("data_date", Some("2025-12-11")),
 
         ],
@@ -302,8 +379,8 @@ mod tests {
             assert_eq!(res.source_file_name, "v1.58 20241211.json");
             let lt = Local::now().format("%m-%d %H%M%S").to_string();
             assert_eq!(res.output_file_name, format!("results 25.json at {}.txt", lt));
-            assert_eq!(res.data_version, "1.60");
-            let nd = NaiveDate::parse_from_str("2025-12-11", "%Y-%m-%d").unwrap();
+            assert_eq!(res.data_version, "v1.58");
+            let nd = NaiveDate::parse_from_str("2024-12-11", "%Y-%m-%d").unwrap();
             assert_eq!(res.data_date, nd);
         }
        ).await;
@@ -322,13 +399,13 @@ mod tests {
         [
             ("data_folder_path", Some("E:/ROR/20241211 1.58 data")),
             ("src_file_name", Some("v1.58 20241211.json")),
-            ("data_version", Some("1.59")),
+            ("data_version", Some("v1.59")),
             ("data_date", Some("2025-12-11")),
             ("output_file_name", Some("results 27.json")),
         ],
         async { 
             let args : Vec<&str> = vec!["target/debug/ror1.exe", "-R", "-P", "-X", 
-                                     "-f", "E:/ROR/data", "-d", "2026-12-25", "-s", "schema2 data.json", "-v", "1.60"];
+                                     "-f", "E:/ROR/data", "-d", "2026-12-25", "-s", "schema2 data.json", "-v", "v1.60"];
             let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
             let res = get_params(test_args).await.unwrap();
     
@@ -343,7 +420,7 @@ mod tests {
             assert_eq!(res.source_file_name, "schema2 data.json");
             let lt = Local::now().format("%m-%d %H%M%S").to_string();
             assert_eq!(res.output_file_name, format!("results 27.json at {}.txt", lt));
-            assert_eq!(res.data_version, "1.60");
+            assert_eq!(res.data_version, "v1.60");
             let nd = NaiveDate::parse_from_str("2026-12-25", "%Y-%m-%d").unwrap();
             assert_eq!(res.data_date, nd);
         }
@@ -408,7 +485,7 @@ mod tests {
         ],
         async { 
             let args : Vec<&str> = vec!["target/debug/ror1.exe", "-A", "-f", "E:\\ROR\\data", 
-                                       "-d", "2026-12-25", "-s", "schema2 data.json", "-v", "1.60"];
+                                       "-d", "2026-12-25", "-s", "schema2 data.json", "-v", "v1.60"];
             let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
             let res = get_params(test_args).await.unwrap();
     
@@ -423,7 +500,7 @@ mod tests {
             assert_eq!(res.source_file_name, "schema2 data.json");
             let lt = Local::now().format("%m-%d %H%M%S").to_string();
             assert_eq!(res.output_file_name, format!("results 28.json at {}.txt", lt));
-            assert_eq!(res.data_version, "1.60");
+            assert_eq!(res.data_version, "v1.60");
             let nd = NaiveDate::parse_from_str("2026-12-25", "%Y-%m-%d").unwrap();
             assert_eq!(res.data_date, nd);
         }
@@ -449,7 +526,7 @@ mod tests {
         ],
         async { 
             let args : Vec<&str> = vec!["target/debug/ror1.exe", "-A", "-f", "E:/ROR/data", 
-                                       "-d", "2026-12-25", "-s", "schema2 data.json", "-v", "1.60"];
+                                       "-d", "2026-12-25", "-s", "schema2 data.json", "-v", "v1.60"];
             let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
             let res = get_params(test_args).await.unwrap();
     
@@ -464,7 +541,7 @@ mod tests {
             assert_eq!(res.source_file_name, "schema2 data.json");
             let lt = Local::now().format("%m-%d %H%M%S").to_string();
             assert_eq!(res.output_file_name, format!("results 28.json at {}.txt", lt));
-            assert_eq!(res.data_version, "1.60");
+            assert_eq!(res.data_version, "v1.60");
             let nd = NaiveDate::parse_from_str("2026-12-25", "%Y-%m-%d").unwrap();
             assert_eq!(res.data_date, nd);
         }
@@ -488,7 +565,7 @@ mod tests {
     ],
     async { 
         let args : Vec<&str> = vec!["target/debug/ror1.exe", "-A", "-f", "E:/silly folder name", 
-                                    "-d", "2026-12-25", "-s", "schema2 data.json", "-v", "1.60"];
+                                    "-d", "2026-12-25", "-s", "schema2 data.json", "-v", "v1.60"];
         let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
         let _res = get_params(test_args).await.unwrap();
         }
@@ -509,7 +586,7 @@ mod tests {
         ],
         async { 
             let args : Vec<&str> = vec!["target/debug/ror1.exe", "-P", "-f", "E:/ROR/silly folder name", 
-                                        "-d", "2026-12-25", "-s", "schema2 data.json", "-v", "1.60"];
+                                        "-d", "2026-12-25", "-s", "schema2 data.json", "-v", "v1.60"];
             let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
             let res = get_params(test_args).await.unwrap();
             assert_eq!(res.import_ror, false);
@@ -523,7 +600,7 @@ mod tests {
             assert_eq!(res.source_file_name, "schema2 data.json");
             let lt = Local::now().format("%m-%d %H%M%S").to_string();
             assert_eq!(res.output_file_name, format!("results 28.json at {}.txt", lt));
-            assert_eq!(res.data_version, "1.60");
+            assert_eq!(res.data_version, "v1.60");
             let nd = NaiveDate::parse_from_str("2026-12-25", "%Y-%m-%d").unwrap();
             assert_eq!(res.data_date, nd);
 

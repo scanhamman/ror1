@@ -105,6 +105,8 @@ are recreated each time a version's data is transformed into them.
 
 
 
+
+
 <h3>Pre-requisites</h3>
 
 1) The system assumes that any v2 ROR data file required has already been downloaded from the Zenodo site 
@@ -186,17 +188,21 @@ to specify the data'a version and date separately.</b></i>
 
 <i><b>-i</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -I, -install].  Equivalent to -c -m, i.e. initialise permanent data tables.
 
-<i><b>-c</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -C -context]. A flag that causes the re-establishment of the lookup tables. Useful after any revision of those tables or the data within them.
+<i><b>-c</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -C, -context]. A flag that causes the re-establishment of the lookup tables. Useful after any revision of those tables or the data within them.
 
 <i><b>-m</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -M, -summsetup]. A flag that causes the re-establishment of the summary tables in the smm schema. NOTE - ANY EXISTING DATA IN THOSE TABLES WILL BE DESTROYED. It may therefore be necessayr to re-run against different source files if a series of data points over time needs to be re-established.
 
-<i><b>-t</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or, -T, -test]. A flag that runs the tests in the system. This includes the unit tests (run first) followed by integration tests against the small test data set (of 20 ROR records, included in the source files). The test set will cause the data in the ror and smm schemas to be replaced by test data. Records are also add to the smm tables but after checking these are deleted. 
+<i><b>-t</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -T, -test]. A flag applied from within integration tests in the system, to suppress log creation and restrict spurious activity. It is not available to users.
 
-<h4>File name and deriving version and data</h4>
+<h4>File name convention and deriving version and data</h4>
 
 If the file name starts with a 'v' followed by a semantic versioning string, followed by a space or a hyphen and then the date in ISO format, either with spaces or without, then (whatever any following text in the name) the system is able to extract the data date and version from the file name. It is then no longer necessary to provide the data version and date separately. 
 
 File names such as <b>v1.58-2024-12-11-ror-data_schema_v2.json, v1.51-20240821.json, v1.48 20240620.json</b>, and <b>v1.47 2024-05-30.json</b> all follow the required pattern. The first is the form of the name supplied by ROR, so renaming of the file is not necessary (though it can help to simplify it!).
+
+<h4>Routine use</h4>
+
+
 
 <h4>Development environment</h4>
 

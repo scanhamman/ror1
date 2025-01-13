@@ -7,7 +7,7 @@ use log::error;
 use super::record_structs::{RorCoreData, RorRelationship, RorExternalId, 
                             RorName, RorLocation, RorLink, RorType, RorAdminData};
 
-pub async fn fetch_db_pool(db_name: &str) -> Result<Pool<Postgres>, AppError>  {
+pub async fn fetch_db_pool() -> Result<Pool<Postgres>, AppError>  {
 
     let _env_res  = match dotenv::from_filename(".env")
     {
@@ -19,8 +19,9 @@ pub async fn fetch_db_pool(db_name: &str) -> Result<Pool<Postgres>, AppError>  {
     let user: String = env::var("db_user").unwrap_or("no user".to_string());
     let password: String = env::var("db_password").unwrap_or("no password".to_string());
     let port: String = env::var("db_port").unwrap_or("5432".to_string());
+    let dbname: String = env::var("db_name").unwrap_or("ror".to_string());
 
-    let db_conn_string = format!("postgres://{}:{}@{}:{}/{}", user, password, host, port, db_name);
+    let db_conn_string = format!("postgres://{}:{}@{}:{}/{}", user, password, host, port, dbname);
     
      let try_pool = PgPoolOptions::new()
                   .max_connections(5).connect(&db_conn_string).await;
