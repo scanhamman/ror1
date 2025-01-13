@@ -8,7 +8,7 @@
  * See the read.me file for further details.
  **********************************************************/
 
-mod setup;
+pub mod setup;
 mod import;
 mod transform;
 pub mod error_defs;

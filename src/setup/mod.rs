@@ -1,15 +1,28 @@
-// The setup module. Referenced in main by 'mod setup'.
-// It makes use of the other modules in the folder, each corresponding to a file of the same name.
-// The folder modules do not need to be public - they are referenced only within this module.
-// The log established by log_helper, however, seems to be available throughout the program
-// via a suitable 'use' statement.
+/**********************************************************************************
+* The setup module. Referenced in main by 'mod setup'.
+* The two public modules allow integration tests to call into them, to give those
+* tests the same DB conection pool and logging capability as the main library.
+* The log established by log_helper seems to be available throughout the program
+* via a suitable 'use' statement.
+***********************************************************************************/
 
-mod env_reader;
+pub mod env_reader;
+pub mod log_helper;
 mod cli_reader;
 mod lup_tables_create;
 mod lup_tables_insert;
 mod smm_tables_create;
-pub mod log_helper;
+
+/**********************************************************************************
+* This over-arching 'mod' setup module 
+* a) establishes the final collection of parameters, taking into account both 
+* environmental and CLI values. 
+* b) Unpacks the file name to obtain data version and date, if possible, 
+* c) Obtains a database connection pool 
+* d) Orchestrates the creation of the lookup and summary schemas.
+* It has a collection of unit tests ensuring that the parameter generatiuon process 
+* is correct as well as some tests on the regex expression used on the source file.
+***********************************************************************************/
 
 use crate::error_defs::{AppError, CustomError};
 use chrono::NaiveDate;
@@ -41,7 +54,7 @@ pub struct InitParams {
 pub async fn get_params(args: Vec<OsString>) -> Result<InitParams, AppError> {
 
     // Called from main as the initial task of the program.
-    // Returns a struct that conbtains the program's parameters.
+    // Returns a struct that contains the program's parameters.
     // Start by obtaining CLI arguments and reading parameters from .env file.
     
     let cli_pars = cli_reader::fetch_valid_arguments(args)?;
@@ -209,8 +222,6 @@ pub async fn get_params(args: Vec<OsString>) -> Result<InitParams, AppError> {
         }
         let datetime_string = Local::now().format("%m-%d %H%M%S").to_string();
         output_file_name = format!("{} at {}.txt", output_file_name, datetime_string);
-
-
   
         // For execution flags read from the environment variables
        

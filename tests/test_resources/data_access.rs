@@ -1,39 +1,21 @@
-use sqlx::postgres::PgPoolOptions;
+//use sqlx::postgres::PgPoolOptions;
 use sqlx::{Postgres, Pool};
-use std::env;
+//use std::env;
 use ror1::error_defs::AppError;
-use log::error;
+use ror1::setup::get_db_pool;
+use ror1::setup::env_reader;
+//use log::error;
 
 use super::record_structs::{RorCoreData, RorRelationship, RorExternalId, 
                             RorName, RorLocation, RorLink, RorType, RorAdminData};
 
 pub async fn fetch_db_pool() -> Result<Pool<Postgres>, AppError>  {
-
-    let _env_res  = match dotenv::from_filename(".env")
-    {
-        Ok(pb) => pb,
-        Err(err) => return Err(AppError::DeErr(err)),
-    };
-
-    let host: String = env::var("db_host").unwrap_or("localhost".to_string());
-    let user: String = env::var("db_user").unwrap_or("no user".to_string());
-    let password: String = env::var("db_password").unwrap_or("no password".to_string());
-    let port: String = env::var("db_port").unwrap_or("5432".to_string());
-    let dbname: String = env::var("db_name").unwrap_or("ror".to_string());
-
-    let db_conn_string = format!("postgres://{}:{}@{}:{}/{}", user, password, host, port, dbname);
     
-     let try_pool = PgPoolOptions::new()
-                  .max_connections(5).connect(&db_conn_string).await;
-     let pool = match try_pool {
-        Ok(p) => Ok(p),
-        Err(e) => {
-            error!("An error occured while creating the DB pool: {}", e);
-            error!("Check the DB credentials and confirm the database is available");
-            return Err(AppError::SqErr(e))
-        }, 
-    };
-    pool
+    // Use the process set up in the library under test
+    // Helps to ensure exactly the same database connections are used
+
+    env_reader::populate_env_vars()?; 
+    get_db_pool().await
 }
 
 pub async fn fetch_record_num (table_name: &str, pool: &Pool<Postgres>) -> i64 {
