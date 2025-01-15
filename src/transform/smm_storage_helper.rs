@@ -3,48 +3,37 @@ use crate::AppError;
 use chrono::NaiveDate;
 use super::smm_structs::{RorVersion, DistribRow, CountryRow, LangCodeRow, ScriptCodeRow};
 
-pub async fn get_count (sql_string: &str, pool: &Pool<Postgres>) -> Result<i64, AppError> {
-    let res = sqlx::query_scalar(sql_string)
-    .fetch_one(pool)
-    .await?;
-    Ok(res)
-}
-
-fn get_pc (top:i64, bottom:i64) -> f32 {
-    if bottom == 0
-    { 0.0 }
-    else {
-        let res = ((top as f32) * 100.0) / bottom as f32;
-        (res * 100.0).round() / 100.0  // return number to 2 decimal places
-    }
-}
 
 pub async fn delete_any_existing_data(data_version:&String, data_date: &NaiveDate,pool: &Pool<Postgres>) -> Result<(), AppError> {
    
-    let where_clause = " WHERE vcode = \'".to_string() + data_version 
+    // format!() macro does not seem to recognise apostrrophes, even when escaped (???)
+
+    let wc = " WHERE vcode = \'".to_string() + data_version 
                                  + "\' AND vdate = \'" + &data_date.to_string() + "\'::date;";
-    
-    let del_sql = "DELETE from smm.version_summary ".to_string() + &where_clause
-              + "DELETE from smm.name_summary "+ &where_clause
-              + "DELETE from smm.name_ror " + &where_clause
-              + "DELETE from smm.name_count_distribution " + &where_clause
-              + "DELETE from smm.name_label_distribution " + &where_clause
-              + "DELETE from smm.name_alias_distribution " + &where_clause
-              + "DELETE from smm.name_acronym_distribution " + &where_clause
-              + "DELETE from smm.ne_lang_code_distribution " + &where_clause
-              + "DELETE from smm.nl_lang_script_distribution " + &where_clause
-              + "DELETE from smm.type_summary " + &where_clause
-              + "DELETE from smm.type_by_orgs_summary " + &where_clause
-              + "DELETE from smm.type_count_distribution " + &where_clause
-              + "DELETE from smm.type_name_lang_code " + &where_clause
-              + "DELETE from smm.ext_ids_summary " + &where_clause
-              + "DELETE from smm.ext_ids_count_distribution " + &where_clause
-              + "DELETE from smm.links_summary " + &where_clause
-              + "DELETE from smm.links_count_distribution " + &where_clause
-              + "DELETE from smm.relationships_summary " + &where_clause
-              + "DELETE from smm.type_relationship " + &where_clause
-              + "DELETE from smm.country_distribution " + &where_clause
-              + "DELETE from smm.locs_count_distribution " + &where_clause;
+        
+    let del_sql = format!(r#"DELETE from smm.version_summary {}
+                DELETE from smm.name_summary {}
+                DELETE from smm.name_ror {}
+                DELETE from smm.name_count_distribution {}
+                DELETE from smm.name_label_distribution {}
+                DELETE from smm.name_alias_distribution {}
+                DELETE from smm.name_acronym_distribution {}
+                DELETE from smm.ne_lang_code_distribution {}
+                DELETE from smm.nl_lang_script_distribution {}
+                DELETE from smm.type_summary {}
+                DELETE from smm.type_by_orgs_summary {}
+                DELETE from smm.type_count_distribution {}
+                DELETE from smm.type_name_lang_code {}
+                DELETE from smm.ext_ids_summary {}
+                DELETE from smm.ext_ids_count_distribution {}
+                DELETE from smm.links_summary {}
+                DELETE from smm.links_count_distribution {}
+                DELETE from smm.relationships_summary {}
+                DELETE from smm.type_relationship {}
+                DELETE from smm.country_distribution {}
+                DELETE from smm.locs_count_distribution {}"#
+                , wc, wc, wc, wc, wc, wc, wc, wc, wc, wc, wc
+                , wc, wc, wc, wc, wc, wc, wc, wc, wc, wc);
 
    sqlx::raw_sql(&del_sql).execute(pool).await?;
 
@@ -180,17 +169,7 @@ pub async fn store_name_count_distrib(v: &RorVersion, pool: &Pool<Postgres>) -> 
                         group by n_names
                         order by n_names;"#;
     let rows: Vec<DistribRow> = sqlx::query_as(&sql).fetch_all(pool).await?;
-
-    for r in rows {
-        sqlx::query(r#"INSERT INTO smm.name_count_distribution (vcode, vdate, count, num_of_orgs, pc_of_orgs) 
-                            values($1, $2, $3, $4, $5)"#)
-        .bind(r.vcode).bind(r.vdate)
-        .bind(r.count).bind(r.num_of_orgs).bind(r.pc_of_orgs)
-        .execute(pool)
-        .await?;
-    }
-    
-    Ok(())
+    store_distrib(rows, "name_count_distribution", pool).await
 }
 
 
@@ -202,18 +181,7 @@ pub async fn store_label_count_distrib(v: &RorVersion, pool: &Pool<Postgres>) ->
                         group by n_labels
                         order by n_labels;"#;
     let rows: Vec<DistribRow> = sqlx::query_as(&sql).fetch_all(pool).await?;
-
-    for r in rows {
-        sqlx::query(r#"INSERT INTO smm.name_label_distribution (vcode, vdate, count, num_of_orgs, pc_of_orgs) 
-                            values($1, $2, $3, $4, $5)"#)
-        .bind(r.vcode).bind(r.vdate)
-        .bind(r.count).bind(r.num_of_orgs).bind(r.pc_of_orgs)
-        .execute(pool)
-        .await?;
-    }
-    
-    Ok(())
-
+    store_distrib(rows, "name_label_distribution", pool).await
 }
 
 
@@ -225,17 +193,7 @@ pub async fn store_alias_count_distrib(v: &RorVersion, pool: &Pool<Postgres>) ->
                         group by n_aliases
                         order by n_aliases;"#;
     let rows: Vec<DistribRow> = sqlx::query_as(&sql).fetch_all(pool).await?;
-
-    for r in rows {
-        sqlx::query(r#"INSERT INTO smm.name_alias_distribution (vcode, vdate, count, num_of_orgs, pc_of_orgs) 
-                            values($1, $2, $3, $4, $5)"#)
-        .bind(r.vcode).bind(r.vdate)
-        .bind(r.count).bind(r.num_of_orgs).bind(r.pc_of_orgs)
-        .execute(pool)
-        .await?;
-    }
-    Ok(())
-
+    store_distrib(rows, "name_alias_distribution", pool).await
 }
 
 
@@ -247,17 +205,7 @@ pub async fn store_acronym_count_distrib(v: &RorVersion, pool: &Pool<Postgres>) 
                         group by n_acronyms
                         order by n_acronyms;"#;
     let rows: Vec<DistribRow> = sqlx::query_as(&sql).fetch_all(pool).await?;
-
-    for r in rows {
-        sqlx::query(r#"INSERT INTO smm.name_acronym_distribution (vcode, vdate, count, num_of_orgs, pc_of_orgs) 
-                            values($1, $2, $3, $4, $5)"#)
-        .bind(r.vcode).bind(r.vdate)
-        .bind(r.count).bind(r.num_of_orgs).bind(r.pc_of_orgs)
-        .execute(pool)
-        .await?;
-    }
-    
-    Ok(())
+    store_distrib(rows, "name_acronym_distribution", pool).await
 }
 
 
@@ -403,17 +351,7 @@ pub async fn store_type_count_distrib(v: &RorVersion, pool: &Pool<Postgres>) -> 
                       group by n_types
                       order by n_types;"#;
     let rows: Vec<DistribRow> = sqlx::query_as(&sql).fetch_all(pool).await?;
-
-    for r in rows {
-        sqlx::query(r#"INSERT INTO smm.type_count_distribution (vcode, vdate, count, num_of_orgs, pc_of_orgs) 
-                            values($1, $2, $3, $4, $5)"#)
-        .bind(r.vcode).bind(r.vdate)
-        .bind(r.count).bind(r.num_of_orgs).bind(r.pc_of_orgs)
-        .execute(pool)
-        .await?;
-    }
-
-    Ok(())
+    store_distrib(rows, "type_count_distribution", pool).await
 }
 
 
@@ -438,7 +376,7 @@ pub async fn store_types_with_lang_code(v: &RorVersion, pool: &Pool<Postgres>) -
         names_wolc_pc: f64
     }
 
-    // Get the rganisation type categories.
+    // Get the organisation type categories.
 
     let sql  = r#"select id, name
     from lup.ror_org_types
@@ -540,17 +478,7 @@ pub async fn store_ext_ids_count_distrib(v: &RorVersion, pool: &Pool<Postgres>) 
                     group by n_ext_ids
                     order by n_ext_ids;"#;
   let rows: Vec<DistribRow> = sqlx::query_as(&sql).fetch_all(pool).await?;
-
-  for r in rows {
-      sqlx::query(r#"INSERT INTO smm.ext_ids_count_distribution (vcode, vdate, count, num_of_orgs, pc_of_orgs) 
-                          values($1, $2, $3, $4, $5)"#)
-      .bind(r.vcode).bind(r.vdate)
-      .bind(r.count).bind(r.num_of_orgs).bind(r.pc_of_orgs)
-      .execute(pool)
-      .await?;
-  }
-  
-  Ok(())
+  store_distrib(rows, "ext_ids_count_distribution", pool).await
 }
 
 
@@ -592,73 +520,147 @@ pub async fn store_links_count_distrib(v: &RorVersion, pool: &Pool<Postgres>) ->
                     group by n_links
                     order by n_links;"#;
   let rows: Vec<DistribRow> = sqlx::query_as(&sql).fetch_all(pool).await?;
-
-  for r in rows {
-      sqlx::query(r#"INSERT INTO smm.links_count_distribution (vcode, vdate, count, num_of_orgs, pc_of_orgs) 
-                          values($1, $2, $3, $4, $5)"#)
-      .bind(r.vcode).bind(r.vdate)
-      .bind(r.count).bind(r.num_of_orgs).bind(r.pc_of_orgs)
-      .execute(pool)
-      .await?;
-  }
-  
-  Ok(())
+  store_distrib(rows, "links_count_distribution", pool).await
 }
 
 
-pub async fn store_relationships_summary(_v: &RorVersion, _pool: &Pool<Postgres>) -> Result<(), AppError> {
-/*
-TO DO
-create table smm.relationships_summary
-    (    
-          vcode             varchar     not null primary key
-        , vdate             date        not null
-        , total_lnks        int         null
-        , parent_lnks       int         null
-        , child_lnks        int         null
-        , related_lnks      int         null
-        , predecessor_lnks  int         null
-        , successor_lnks    int         null
-        , total             int         null
-        , parent            int         null
-        , child             int         null
-        , par_and_ch        int         null
-        , related           int         null
-        , predecessor       int         null
-        , successor         int         null
-        , parent_pc         real        null
-        , child_pc          real        null
-        , par_and_ch_pc     real        null
-        , related_pc        real        null
-        , predecessor_pc    real        null
-        , successor_pc      real        null
-        , non_recip_pc      int         null
-        , non_recip_rr      int         null
-        , non_recip_ps      int         null
-    ); */
+pub async fn store_relationships_summary(v: &RorVersion, pool: &Pool<Postgres>, total_links: i64) -> Result<(), AppError> {
+
+    let parent_lnks =  get_count("select count(*) from src.relationships where rel_type = 1", pool).await?;   
+    let child_lnks =  get_count("select count(*) from src.relationships where rel_type = 2", pool).await?;      
+    let rel_lnks =  get_count("select count(*) from src.relationships where rel_type = 3", pool).await?;   
+    let pred_lnks =  get_count("select count(*) from src.relationships where rel_type = 4", pool).await?;      
+    let succ_lnks =  get_count("select count(*) from src.relationships where rel_type = 5", pool).await?;   
+ 
+    let parent_lnks_pc =  get_pc(parent_lnks, total_links);    
+    let child_lnks_pc =  get_pc(child_lnks, total_links);    
+    let rel_lnks_pc =  get_pc(rel_lnks, total_links);      
+    let pred_lnks_pc =  get_pc(pred_lnks, total_links);       
+    let succ_lnks_pc =  get_pc(succ_lnks, total_links);     
+    
+    let parent_orgs =  get_count("select count(*) from src.admin_data where n_parrels > 0", pool).await?;   
+    let child_orgs =  get_count("select count(*) from src.admin_data where n_chrels > 0", pool).await?;
+    let parch_orgs =  get_count("select count(*) from src.admin_data where n_chrels > 0 and n_parrels > 0", pool).await?;
+    let rel_orgs  =  get_count("select count(*) from src.admin_data where n_relrels > 0", pool).await?;   
+    let pred_orgs =  get_count("select count(*) from src.admin_data where n_predrels > 0", pool).await?;    
+    let succ_orgs =  get_count("select count(*) from src.admin_data where n_sucrels > 0", pool).await?;  
+
+    let parent_orgs_pc =  get_pc(parent_orgs, v.num_orgs);   
+    let child_orgs_pc =  get_pc(child_orgs, v.num_orgs);   
+    let parch_orgs_pc =  get_pc(parch_orgs, v.num_orgs);   
+    let rel_orgs_pc  =  get_pc(rel_orgs, v.num_orgs);      
+    let pred_orgs_pc =  get_pc(pred_orgs, v.num_orgs);      
+    let succ_orgs_pc =  get_pc(succ_orgs, v.num_orgs);   
+
+    let par_no_child = get_rel_imbalance(1, 2, pool).await.unwrap();
+    let par_no_parent = get_rel_imbalance(2, 1, pool).await.unwrap();
+    let non_recip_pc = par_no_child + par_no_parent;
+    let non_recip_rr = get_rel_imbalance(3, 3, pool).await.unwrap();
+    let pred_no_succ = get_rel_imbalance(4, 5, pool).await.unwrap();
+    let succ_no_pred = get_rel_imbalance(5, 4, pool).await.unwrap();
+    let non_recip_ps = pred_no_succ + succ_no_pred;
+     
+    let sql = r#"INSERT into smm.relationships_summary (vcode, vdate, total_lnks, 
+    parent_lnks, child_lnks, rel_lnks, pred_lnks, succ_lnks,
+    parent_lnks_pc, child_lnks_pc, rel_lnks_pc, pred_lnks_pc, succ_lnks_pc,
+    total_orgs, parent_orgs, child_orgs, parch_orgs, rel_orgs, pred_orgs, succ_orgs,
+    parent_orgs_pc, child_orgs_pc, parch_orgs_pc, rel_orgs_pc, pred_orgs_pc, succ_orgs_pc,
+    non_recip_pc, non_recip_rr, non_recip_ps)
+    values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
+            $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29)"#;
+
+    sqlx::query(sql)
+    .bind(v.vcode.clone()).bind(v.vdate).bind(total_links)
+    .bind(parent_lnks).bind(child_lnks).bind(rel_lnks).bind(pred_lnks).bind(succ_lnks)
+    .bind(parent_lnks_pc).bind(child_lnks_pc).bind(rel_lnks_pc).bind(pred_lnks_pc).bind(succ_lnks_pc)
+    .bind(v.num_orgs).bind(parent_orgs).bind(child_orgs).bind(parch_orgs)
+    .bind(rel_orgs).bind(pred_orgs).bind(succ_orgs)
+    .bind(parent_orgs_pc).bind(child_orgs_pc).bind(parch_orgs_pc)
+    .bind(rel_orgs_pc).bind(pred_orgs_pc).bind(succ_orgs_pc)
+    .bind(non_recip_pc).bind(non_recip_rr).bind(non_recip_ps)
+    .execute(pool)
+    .await?;
+    
     Ok(())
 
 }
 
 
-pub async fn store_types_and_relationships(_: &RorVersion, _pool: &Pool<Postgres>) -> Result<(), AppError> {
-/*
-TO DO
-create table smm.type_relationship
-    (    
-          vcode             varchar     not null
-        , vdate             date        not null
-        , org_type          varchar     null
-        , org_type_total    int         null
-        , rel_type          varchar     null
-        , count             int         null
-        , count_distinct    int         null
-        , count_pc          real        null
-    );
-*/
+pub async fn store_types_and_relationships(v: &RorVersion, pool: &Pool<Postgres>) -> Result<(), AppError> {
+
+    // For each org type, and each of the 5 relationship types (therefore up to 9 x 5 rows),
+    // get number of orgs having one or more relationships of each type, and the total number of orgs involved.
+
+    #[derive(sqlx::FromRow)]
+    struct OrgType {
+        type_id: i32, 
+        name: String,
+        org_num: i64, 
+    }
+
+    #[derive(sqlx::FromRow)]
+    struct TypeRelRow {
+        rtype: String,
+        num_rels: i64,
+        num_orgs: i64,
+        num_orgs_pc: f64,
+    }
+
+    // Get the organisation type categories and total numbers.
+
+    let sql  = r#"select org_type as type_id, p.name, 
+    count(distinct t.id) as org_num
+    from src.type t
+    inner join lup.ror_org_types p
+    on t.org_type = p.id
+    group by org_type, p.name
+    order by org_type;"#;
+    let rows: Vec<OrgType> = sqlx::query_as(sql).fetch_all(pool).await?;
+
+    for t in rows {
+
+        // Get the data on the names linked to these organisations
+
+        let tr_sql = r#"select case rs.rel_type
+            when 1 then 'parent'  
+            when 2 then 'child' 
+            when 3 then 'related' 
+            when 4 then 'predecessor' 
+            when 5 then 'successor' 
+            end as rtype, 
+            count(rs.id) as num_rels,
+            count(distinct rs.id) as num_orgs,
+            round((count(distinct rs.id) * 10000::float /"#.to_string() 
+                           + &(t.org_num.to_string()) + r#"::float)) /100::float as num_orgs_pc
+            from
+                (select r.id, r.rel_type
+                from src.relationships r 
+                inner join src.type t
+                on r.id = t.id
+                where t.org_type ="# + &(t.type_id.to_string()) + r#") rs 
+            group by rs.rel_type 
+            order by rs.rel_type;"#;
+
+            let rows: Vec<TypeRelRow> = sqlx::query_as(&tr_sql).fetch_all(pool).await?;
+
+            // Store the individual rows.
+ 
+             for r in rows {
+            sqlx::query(r#"INSERT INTO smm.type_relationship (vcode, vdate, org_type, org_type_total, 
+                             rel_type, num_links, num_orgs, num_orgs_total, num_orgs_pc) 
+                             values($1, $2, $3, $4, $5, $6, $7, $8, $9)"#)
+            .bind(v.vcode.clone()).bind(v.vdate)
+            .bind(t.name.clone()).bind(t.org_num)
+            .bind(r.rtype).bind(r.num_rels).bind(r.num_orgs)
+            .bind(t.org_num).bind(r.num_orgs_pc)
+            .execute(pool)
+            .await?;
+        }
+    }
 
     Ok(())
 }
+
 
 pub async fn store_country_top_25_distrib(v: &RorVersion, pool: &Pool<Postgres>, num_locs: i64) -> Result<(), AppError> {
 
@@ -708,15 +710,53 @@ pub async fn store_locs_count_distrib(v: &RorVersion, pool: &Pool<Postgres>) -> 
                      group by n_locs
                      order by n_locs;"#;
   let rows: Vec<DistribRow> = sqlx::query_as(&sql).fetch_all(pool).await?;
-
-  for r in rows {
-      sqlx::query(r#"INSERT INTO smm.locs_count_distribution (vcode, vdate, count, num_of_orgs, pc_of_orgs) 
-                          values($1, $2, $3, $4, $5)"#)
-      .bind(r.vcode).bind(r.vdate)
-      .bind(r.count).bind(r.num_of_orgs).bind(r.pc_of_orgs)
-      .execute(pool)
-      .await?;
-  }
-  
-  Ok(())
+  store_distrib(rows, "locs_count_distribution", pool).await
 }
+
+
+pub async fn get_count (sql_string: &str, pool: &Pool<Postgres>) -> Result<i64, AppError> {
+    let res = sqlx::query_scalar(sql_string)
+    .fetch_one(pool)
+    .await?;
+    Ok(res)
+}
+
+fn get_pc (top:i64, bottom:i64) -> f32 {
+    if bottom == 0
+    { 0.0 }
+    else {
+        let res = ((top as f32) * 100.0) / bottom as f32;
+        (res * 100.0).round() / 100.0  // return number to 2 decimal places
+    }
+}
+
+async fn store_distrib(rows: Vec<DistribRow>, table_name: &str, pool: &Pool<Postgres>)-> Result<(), AppError> {
+
+    let sql = format!(r#"INSERT INTO smm.{} (vcode, vdate, count, num_of_orgs, pc_of_orgs) 
+                                values($1, $2, $3, $4, $5)"#, table_name);
+    for r in rows {
+        sqlx::query(&sql)
+        .bind(r.vcode).bind(r.vdate)
+        .bind(r.count).bind(r.num_of_orgs).bind(r.pc_of_orgs)
+        .execute(pool)
+        .await?;
+    }
+    Ok(())
+}
+
+async fn get_rel_imbalance(f1_type: u8, f2_type: u8, pool: &Pool<Postgres>) -> Result<i64, AppError> {
+ 
+    let sql = format!(r"select count(f1.id) from
+          (select id, related_id from src.relationships where rel_type = {}) as f1
+          left join
+          (select id, related_id from src.relationships where rel_type = {}) as f2
+          on f1.id = f2.related_id 
+          and f1.related_id = f2.id
+          where f2.id is null;", f1_type, f2_type);
+           
+    let res = sqlx::query_scalar(&sql)
+    .fetch_one(pool)
+    .await?;
+
+    Ok(res)
+  }

@@ -65,7 +65,8 @@ pub async fn run(args: Vec<OsString>) -> Result<(), AppError> {
         if params.import_ror    // import ror from json file and store in ror schema tables
         {
             import::create_ror_tables(&pool).await?;
-            import::import_data(&params.data_folder, &params.source_file_name, &pool).await?;
+            import::import_data(&params.data_folder, &params.source_file_name, 
+                                &params.data_version, &params.data_date, &pool).await?;
             if !params.test_run {
                 import::summarise_import(&pool).await?;
             }

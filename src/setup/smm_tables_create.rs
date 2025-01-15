@@ -279,22 +279,27 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
         , total_lnks        int         null
         , parent_lnks       int         null
         , child_lnks        int         null
-        , related_lnks      int         null
-        , predecessor_lnks  int         null
-        , successor_lnks    int         null
-        , total             int         null
-        , parent            int         null
-        , child             int         null
-        , par_and_ch        int         null
-        , related           int         null
-        , predecessor       int         null
-        , successor         int         null
-        , parent_pc         real        null
-        , child_pc          real        null
-        , par_and_ch_pc     real        null
-        , related_pc        real        null
-        , predecessor_pc    real        null
-        , successor_pc      real        null
+        , rel_lnks          int         null
+        , pred_lnks         int         null
+        , succ_lnks         int         null
+        , parent_lnks_pc    real        null
+        , child_lnks_pc     real        null
+        , rel_lnks_pc       real        null
+        , pred_lnks_pc      real        null
+        , succ_lnks_pc      real        null
+        , total_orgs        int         null
+        , parent_orgs       int         null
+        , child_orgs        int         null
+        , parch_orgs        int         null
+        , rel_orgs          int         null
+        , pred_orgs         int         null
+        , succ_orgs         int         null
+        , parent_orgs_pc    real        null
+        , child_orgs_pc     real        null
+        , parch_orgs_pc     real        null
+        , rel_orgs_pc       real        null
+        , pred_orgs_pc      real        null
+        , succ_orgs_pc      real        null
         , non_recip_pc      int         null
         , non_recip_rr      int         null
         , non_recip_ps      int         null
@@ -308,9 +313,10 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
         , org_type          varchar     null
         , org_type_total    int         null
         , rel_type          varchar     null
-        , count             int         null
-        , count_distinct    int         null
-        , count_pc          real        null
+        , num_links         int         null
+        , num_orgs          int         null
+        , num_orgs_total    int         null
+        , num_orgs_pc       real        null
     );
   
     drop table if exists smm.country_distribution;

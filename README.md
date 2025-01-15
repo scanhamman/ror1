@@ -134,7 +134,7 @@ The following are normally supplied by command line arguments, which will always
 <ul>
 <li>The name of the souce JSON file, as 'src_file_name'.</li>
 <li>The name of the output file, as 'output_file_name'. If missing the system will construct a name based on the source file and date-time.</li>
-<li>The version of the file to be imported, as 'data_version'. A string, with a 'v' followed by a set of numbers in a semantic versioning format, e.g. 'v1.45.1', 'v1.57'
+<li>The version of the file to be imported, as 'data_version'. A string, with a 'v' followed by a set of numbers in a semantic versioning format, e.g. 'v1.45.1', 'v1.57'.
 <li>The date of the file to be imported, as 'data_date'. This should be in the YYYY-mm-DD ISO format.
 </ul>
 
@@ -160,8 +160,7 @@ The folowing command line arguments are available:
 
 <i><b>-r</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -R, -import]. A flag that causes import of the specified source data to ror schema tables. The source file, data version and data date must be specified.  
 
-<b><i>Note that if the source file name follows a simple convention (described below) it is possible for the system to derive the version and date from the name. The file as named by ROR follows this convention, so in most cases, unless the file is renamed in an entirely different way, it is not necessary 
-to specify the data'a version and date separately.</b></i>
+<b><i>Note that if the source file name follows a simple convention (described below) it is possible for the system to derive the version and date from the name. The file as named by ROR follows this convention, so in most cases, unless the file is renamed in an entirely different way, it is not necessary to specify the data'a version and date separately.</b></i>
 
 <i><b>-p</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -P, -process]. A flag that causes processing and summarising of the data in the ror schema tables to the src and smm schema tables. 
 

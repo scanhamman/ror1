@@ -7,7 +7,7 @@ mod ror_data_vectors;
 mod ror_tables_create;
 
 use log::{info, error};
-
+use chrono::NaiveDate;
 use std::path::PathBuf;
 use std::fs;
 use sqlx::{Pool, Postgres};
@@ -29,8 +29,17 @@ pub async fn create_ror_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
 }
 
 
-pub async fn import_data(data_folder : &PathBuf, source_file_name: &String, pool : &Pool<Postgres>) -> Result<(), AppError>
+pub async fn import_data(data_folder : &PathBuf, source_file_name: &String, 
+                        data_version: &String, data_date: &NaiveDate, 
+                        pool : &Pool<Postgres>) -> Result<(), AppError>
 {
+    // Record data verrsion and date in single record table.
+
+    let sql = r#"INSERT into ror.version_details (version, data_date)
+                    values ($1, $2);"#;
+    sqlx::query(&sql).bind(data_version).bind(data_date)
+    .execute(pool).await?;
+
     // Import data into matching tables. First obtain the raw data as text
     // This also checks the file exists...by opening it and checking no error
 
@@ -66,7 +75,7 @@ pub async fn import_data(data_folder : &PathBuf, source_file_name: &String, pool
     // Set up vector variables.
     // Vectors are grouped into structs for ease of reference.
 
-    let vector_size = 200;
+    let vector_size = 250;
     let mut cdv: CoreDataVecs = CoreDataVecs::new(vector_size);
     let mut rdv: RequiredDataVecs = RequiredDataVecs::new(vector_size);
     let mut ndv: NonRequiredDataVecs = NonRequiredDataVecs::new(vector_size);
@@ -74,6 +83,7 @@ pub async fn import_data(data_folder : &PathBuf, source_file_name: &String, pool
     // Run through each record and store contents in relevant vectors.
     // After every (vector_size) records store vector contents to database
     // and clear vectors, but continue looping through records.
+    
     let mut n = 0;
     for (i, r) in res.iter().enumerate() {
     
@@ -83,12 +93,14 @@ pub async fn import_data(data_folder : &PathBuf, source_file_name: &String, pool
         rdv.add_required_data(r, &db_id); 
         ndv.add_non_required_data(r, &db_id); 
         
-        if i > 1505 { break;  }
+        if i > 15005 { break;  }
 
         if (i + 1) % vector_size == 0 {  
-
-            n = i+1;
-            info!("{} records processed", n);
+            
+            n += vector_size;
+            if n % 5000 == 0 { 
+                info!("{} records processed", n);
+            }
             
             // store records to DB and clear vectors
             cdv.store_data(&pool).await;

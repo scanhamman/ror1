@@ -7,9 +7,17 @@ use super::smm_structs::RorVersion;
 
 pub async fn store_summary_data (vcode:&String, vdate: &NaiveDate,pool: &Pool<Postgres>) -> Result<(), AppError> {
     
+    /*
+        async fn ensure_version_details_known() -> () {
+
+            // Ensure that dataversion and date are known, taking them
+            // from the relevant table and padding them to the params struct
+        }
+     */
+
     smm_storage_helper::delete_any_existing_data(vcode, vdate, pool).await?;
 
-    let num_orgs = get_record_num("src.core_data", pool).await?;
+    let num_orgs = get_record_num("core_data", pool).await?;
 
     // Derive standard first two items in many sql statements and construct RorVersion
     // struct as an easier means of passing parameters to helper functions
@@ -24,13 +32,13 @@ pub async fn store_summary_data (vcode:&String, vdate: &NaiveDate,pool: &Pool<Po
         dvdd: dv_dt.to_string(),
     };
 
-    let num_names = get_record_num("src.names", pool).await?;
-    let num_types= get_record_num("src.type", pool).await?;
-    let num_links= get_record_num("src.links", pool).await?;
-    let num_ext_ids= get_record_num("src.external_ids", pool).await?;
-    let num_rels= get_record_num("src.relationships", pool).await?;
-    let num_locations= get_record_num("src.locations", pool).await?;
-    let num_domains= get_record_num("src.domains", pool).await?;
+    let num_names = get_record_num("names", pool).await?;
+    let num_types= get_record_num("type", pool).await?;
+    let num_links= get_record_num("links", pool).await?;
+    let num_ext_ids= get_record_num("external_ids", pool).await?;
+    let num_rels= get_record_num("relationships", pool).await?;
+    let num_locations= get_record_num("locations", pool).await?;
+    let num_domains= get_record_num("domains", pool).await?;
     
     let sql = r#"INSERT into smm.version_summary (vcode, vdate, num_orgs, num_names,
                       num_types, num_links, num_ext_ids, num_rels, num_locations , num_domains)
@@ -75,7 +83,7 @@ pub async fn store_summary_data (vcode:&String, vdate: &NaiveDate,pool: &Pool<Po
 
     smm_storage_helper::store_links_count_distrib(&v, pool).await?;
 
-    smm_storage_helper::store_relationships_summary(&v, pool).await?;
+    smm_storage_helper::store_relationships_summary(&v, pool, num_rels).await?;
 
     smm_storage_helper::store_types_and_relationships(&v, pool).await?;
 
@@ -88,7 +96,7 @@ pub async fn store_summary_data (vcode:&String, vdate: &NaiveDate,pool: &Pool<Po
 
 
 pub async fn get_record_num (table_name: &str, pool: &Pool<Postgres>) -> Result<i64, AppError> {
-    let sql = "SELECT COUNT(*) FROM ror.".to_owned() + table_name;
+    let sql = "SELECT COUNT(*) FROM src.".to_string() + table_name;
     let res = sqlx::query_scalar(&sql)
     .fetch_one(pool)
     .await?;

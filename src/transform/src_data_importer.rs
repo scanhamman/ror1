@@ -2,6 +2,7 @@ use sqlx::{postgres::PgQueryResult, Pool, Postgres};
 
 pub async fn import_data (pool: &Pool<Postgres>) -> Result<(), sqlx::Error> {
 
+    import_version_details(pool).await?;
     import_to_core_data (pool).await?;
     update_core_data_locations (pool).await?;
     import_admin_data_base (pool).await?;
@@ -13,6 +14,15 @@ pub async fn import_data (pool: &Pool<Postgres>) -> Result<(), sqlx::Error> {
     import_locations (pool).await?;
     import_relationships (pool).await?;
     Ok(())
+}
+
+async fn import_version_details (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Error> {
+
+    let sql = r#"insert into src.version_details (version, data_date)
+                    select version, data_date from ror.version_details;"#;
+    let qry_res = sqlx::query(&sql)
+    .execute(pool).await?;
+    Ok(qry_res)
 }
 
 async fn import_to_core_data (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Error> {

@@ -51,12 +51,20 @@ pub fn populate_env_vars() -> Result< (), AppError> {
     // Extract the DB connection variables - N.B. user (name) and password have 
     // no meaningful defaults
     
-    let host: String = env::var("db_host").unwrap_or("localhost".to_string());
+    let mut host: String = env::var("db_host").unwrap_or("localhost".to_string());
     let user: String = env::var("db_user").unwrap_or("no user".to_string());
     let password: String = env::var("db_password").unwrap_or("no password".to_string());
-    let port: String = env::var("db_port").unwrap_or("5432".to_string());
-    let dbname: String = env::var("db_name").unwrap_or("ror".to_string());
-       
+    let mut port: String = env::var("db_port").unwrap_or("5432".to_string());
+    let mut dbname: String = env::var("db_name").unwrap_or("ror".to_string());
+    
+
+    // The defaults above work if there is no setting
+    // If there isd a setting but no value (e.g. 'db_name=') then defaults must be included manually
+
+    if host.trim().len() == 0 { host = "localhost".to_string(); }   
+    if port.trim().len() == 0 { port = "5432".to_string(); }
+    if dbname.trim().len() == 0 { dbname = "ror".to_string(); }
+    
     let db_pars = DbPars {
         host, 
         user,
@@ -74,7 +82,7 @@ pub fn fetch_db_name() -> Result<String, AppError> {
     let db_pars = match DB_PARS.get() {
          Some(dbp) => dbp,
          None => {
-            let msg = "Unable to obtain DB parameters when building connection string";
+            let msg = "Unable to obtain DB name when building connection string";
             let cf_err = CustomError::new(msg);
             return Result::Err(AppError::CsErr(cf_err));
         },

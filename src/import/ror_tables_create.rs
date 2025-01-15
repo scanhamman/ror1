@@ -5,7 +5,15 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
 
     let sql = r#"SET client_min_messages TO WARNING; 
     create schema if not exists ror;
-          
+
+    drop table if exists ror.version_details;
+    create table ror.version_details
+    (
+          version           varchar     not null
+        , data_date         date        not null
+        , import_datetime   timestamp   not null  default current_timestamp
+    );
+
     drop table if exists ror.core_data;
     create table ror.core_data
     (

@@ -57,9 +57,9 @@ pub async fn get_params(args: Vec<OsString>) -> Result<InitParams, AppError> {
     // Returns a struct that contains the program's parameters.
     // Start by obtaining CLI arguments and reading parameters from .env file.
     
-    let cli_pars = cli_reader::fetch_valid_arguments(args)?;
     env_reader::populate_env_vars()?; 
-    
+    let cli_pars = cli_reader::fetch_valid_arguments(args)?;
+       
     let base_date = NaiveDate::from_ymd_opt(1900,1,1).unwrap();
 
     if cli_pars.create_lup && cli_pars.create_smm {
@@ -136,7 +136,7 @@ pub async fn get_params(args: Vec<OsString>) -> Result<InitParams, AppError> {
         let mut source_file_name= cli_pars.source_file;
         if source_file_name == "" {
             source_file_name =  env_reader::fetch_source_file_name();
-            if source_file_name == "" {   // Required data is missing - Raise error and exit program.
+            if source_file_name == "" && cli_pars.import_ror {   // Required data is missing - Raise error and exit program.
                 let msg = "Source file name not provided in either command line or environment file";
                 let cf_err = CustomError::new(msg);
                 return Result::Err(AppError::CsErr(cf_err));
@@ -147,53 +147,27 @@ pub async fn get_params(args: Vec<OsString>) -> Result<InitParams, AppError> {
         let mut data_version = "".to_string();
         let mut data_date = base_date;
        
-        // If file name conforms to the correct pattern data version and data date can be derived!
+        // If file name conforms to the correct pattern data version and data date can be derived.
         
-        if is_valid_file_name(&source_file_name) {
-            
-            let version_pattern = r#"^v[0-9]+(\.[0-9]+){0,2}(-| )"#;
-            let re = Regex::new(version_pattern).unwrap();
-            if re.is_match(&source_file_name) {
-                let caps = re.captures(&source_file_name).unwrap();
-                data_version = caps[0].trim().to_string();
-            }
-
-            let date_pattern = r#"(-| )[0-9]{4}-?[01][0-9]-?[0-3][0-9]"#;
-            let re = Regex::new(date_pattern).unwrap();
-            if re.is_match(&source_file_name) {
-                let caps = re.captures(&source_file_name).unwrap();
-                let putative_date = caps[0].trim();
-                if putative_date.len() == 8 {
-                    data_date = match NaiveDate::parse_from_str(putative_date, "%Y%m%d")
-                    {
-                        Ok(d) => d,
-                        Err(_e) => base_date,
-                    }
-                } 
-                else {
-                    data_date = match NaiveDate::parse_from_str(putative_date, "%Y-%m-%d")
-                    {
-                        Ok(d) => d,
-                        Err(_e) => base_date,
-                    }
-                }
-            }
+        if is_compliant_file_name(&source_file_name) {
+            data_version = get_data_version(&source_file_name);
+            data_date = get_data_date(&source_file_name, base_date);
         }
-        else {
 
-            // Otherwise, get the version of the data from the CLI, or failing that the config file
+        if data_version == "".to_string() ||  data_date == base_date     
+        {
+            // Parsing of file name has not been completely successful, so get the version and date 
+            // of the data from the CLI, or failing that the config file.
+
             data_version= cli_pars.data_version;
             if data_version == "" {
                 data_version =  env_reader::fetch_data_version();
-                if data_version == "" {   // Required data is missing - Raise error and exit program.
+                if data_version == "" && cli_pars.import_ror {   // Required data is missing - Raise error and exit program.
                     let msg = "Data version not provided in either command line or environment file";
                     let cf_err = CustomError::new(msg);
                     return Result::Err(AppError::CsErr(cf_err));
                 }
             }
-
-            // Get the date of the data. First check cli date, then .env date.  
-            // Use the default base date to indicate missing data or an error somewhere.
         
             data_date = match NaiveDate::parse_from_str(&cli_pars.data_date, "%Y-%m-%d")
             {
@@ -206,7 +180,7 @@ pub async fn get_params(args: Vec<OsString>) -> Result<InitParams, AppError> {
                     Ok(d) => d,
                     Err(_e) => base_date,
                 };
-                if data_date == base_date {   // Raise an AppError...required data is missing.
+                if data_date == base_date && cli_pars.import_ror {   // Raise an AppError...required data is missing.
                     let msg = "Data date not provided in either command line or environment file";
                     let cf_err = CustomError::new(msg);
                     return Result::Err(AppError::CsErr(cf_err));
@@ -263,6 +237,7 @@ pub async fn get_db_pool() -> Result<Pool<Postgres>, AppError> {
     pool
 }
 
+
 fn folder_exists(folder_name: &PathBuf) -> bool {
     let xres = folder_name.try_exists();
     let res = match xres {
@@ -272,6 +247,7 @@ fn folder_exists(folder_name: &PathBuf) -> bool {
     };
     res
 }
+
 
 pub async fn create_lup_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
 {
@@ -304,11 +280,47 @@ pub async fn create_smm_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
     Ok(())
 }
 
-fn is_valid_file_name(input: &str) -> bool {
-    let file_name_pattern = r#"^v[0-9]+(\.[0-9]+){0,2}(-| )[0-9]{4}-?[01][0-9]-?[0-3][0-9]"#;
+
+fn is_compliant_file_name(input: &str) -> bool {
+    let file_name_pattern = r#"^v[0-9]+(\.[0-9]+){0,2}(-| )20[0-9]{2}-?[01][0-9]-?[0-3][0-9]"#;
     let re = Regex::new(file_name_pattern).unwrap();
     re.is_match(input)
 }
+
+fn get_data_version(input: &str) -> String {
+
+    let version_pattern = r#"^v[0-9]+(\.[0-9]+){0,2}"#;
+    let re = Regex::new(version_pattern).unwrap();
+    if re.is_match(&input) {
+        let caps = re.captures(&input).unwrap();
+        caps[0].trim().to_string()
+    }
+    else {
+        "".to_string()
+    }
+}
+
+fn get_data_date(input: &str, base_date: NaiveDate) -> NaiveDate {        
+    
+    let date_pattern = r#"20[0-9]{2}-?[01][0-9]-?[0-3][0-9]"#;
+    let re = Regex::new(date_pattern).unwrap();
+    if re.is_match(&input) {
+        let caps = re.captures(&input).unwrap();
+        let putative_date = caps[0].replace("-", ""); // remove any hyphens
+        
+        match NaiveDate::parse_from_str(&putative_date, "%Y%m%d")
+        {
+            Ok(d) => d,
+            Err(_e) => base_date,
+        }
+    } 
+    else {
+        base_date
+    }
+}
+
+
+
 
 // Tests
 #[cfg(test)]
@@ -318,36 +330,73 @@ mod tests {
    
    // regex tests
    #[test]
-   fn check_pattern_matching_works_1 () {
+   fn check_file_name_regex_works_1 () {
+      let base_date = NaiveDate::from_ymd_opt(1900,1,1).unwrap();
+
       let test_file_name = "v1.50 2024-12-11.json".to_string();
-      assert_eq!(is_valid_file_name(&test_file_name), true);
-
-      let test_file_name = "v1.50-2024-12-11.json".to_string();
-      assert_eq!(is_valid_file_name(&test_file_name), true);
-
-      let test_file_name = "v1.50 20241211.json".to_string();
-      assert_eq!(is_valid_file_name(&test_file_name), true);
-
-      let test_file_name = "v1.50-20241211.json".to_string();
-      assert_eq!(is_valid_file_name(&test_file_name), true);
-
-      let test_file_name = "v1.50-2024-1211.json".to_string();
-      assert_eq!(is_valid_file_name(&test_file_name), true);
+      assert_eq!(is_compliant_file_name(&test_file_name), true);
+      assert_eq!(get_data_version(&test_file_name), "v1.50");
+      assert_eq!(get_data_date(&test_file_name, base_date), 
+                               NaiveDate::from_ymd_opt(2024,12,11).unwrap());
    }
 
    #[test]
-    fn check_pattern_matching_works_2 () {
+   fn check_file_name_regex_works_2 () {
+      let base_date = NaiveDate::from_ymd_opt(1900,1,1).unwrap();
+      let test_file_name = "v1.50-2024-12-11.json".to_string();
+      assert_eq!(is_compliant_file_name(&test_file_name), true);
+      assert_eq!(get_data_version(&test_file_name), "v1.50");
+      assert_eq!(get_data_date(&test_file_name, base_date), 
+                               NaiveDate::from_ymd_opt(2024,12,11).unwrap());
+   }  
+
+   #[test]
+   fn check_file_name_regex_works_3 () {
+      let base_date = NaiveDate::from_ymd_opt(1900,1,1).unwrap();                         
+      let test_file_name = "v1.50 20241211.json".to_string();
+      assert_eq!(is_compliant_file_name(&test_file_name), true);
+      assert_eq!(get_data_version(&test_file_name), "v1.50");
+      assert_eq!(get_data_date(&test_file_name, base_date), 
+                               NaiveDate::from_ymd_opt(2024,12,11).unwrap());
+   }
+
+   #[test]
+   fn check_file_name_regex_works_4 () {
+      let base_date = NaiveDate::from_ymd_opt(1900,1,1).unwrap();                         
+      let test_file_name = "v1.50-20241211.json".to_string();
+      assert_eq!(is_compliant_file_name(&test_file_name), true);
+      assert_eq!(get_data_version(&test_file_name), "v1.50");
+      assert_eq!(get_data_date(&test_file_name, base_date), 
+                               NaiveDate::from_ymd_opt(2024,12,11).unwrap());
+   }
+
+   #[test]
+   fn check_file_name_regex_works_5 () {
+      let base_date = NaiveDate::from_ymd_opt(1900,1,1).unwrap(); 
+      let test_file_name = "v1.50-2024-1211.json".to_string();
+      assert_eq!(is_compliant_file_name(&test_file_name), true);
+      assert_eq!(get_data_version(&test_file_name), "v1.50");
+      assert_eq!(get_data_date(&test_file_name, base_date), 
+                               NaiveDate::from_ymd_opt(2024,12,11).unwrap());
+   }
+
+
+   #[test]
+    fn check_file_name_regex_works_6 () {
         let test_file_name = "1.50 2024-12-11.json".to_string();
-        assert_eq!(is_valid_file_name(&test_file_name), false);
+        assert_eq!(is_compliant_file_name(&test_file_name), false);
 
         let test_file_name = "v1.50--2024-12-11.json".to_string();
-        assert_eq!(is_valid_file_name(&test_file_name), false);
+        assert_eq!(is_compliant_file_name(&test_file_name), false);
 
         let test_file_name = "v1.50  20241211.json".to_string();
-        assert_eq!(is_valid_file_name(&test_file_name), false);
+        assert_eq!(is_compliant_file_name(&test_file_name), false);
 
         let test_file_name = "v1.50 20242211.json".to_string();
-        assert_eq!(is_valid_file_name(&test_file_name), false);
+        assert_eq!(is_compliant_file_name(&test_file_name), false);
+
+        let test_file_name = "v1.50.20241211.json".to_string();
+        assert_eq!(is_compliant_file_name(&test_file_name), false);
     }
 
     // Ensure the parameters are being correctly extracted from the CLI arguments
