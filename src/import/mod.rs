@@ -27,7 +27,6 @@ pub async fn create_ror_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
     Ok(())
 }
 
-
 pub async fn import_data(data_folder : &PathBuf, source_file_name: &String, 
                         data_version: &String, data_date: &String, 
                         pool : &Pool<Postgres>) -> Result<(), AppError>
