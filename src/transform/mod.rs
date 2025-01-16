@@ -14,7 +14,6 @@ mod smm_structs;
 use log::{info, error};
 use sqlx::{Pool, Postgres};
 use crate::AppError;
-use chrono::NaiveDate;
 use std::path::PathBuf;
 
 
@@ -30,7 +29,7 @@ pub async fn create_src_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
     Ok(())
 }
 
-pub async fn process_data(data_version: &String, data_date: &NaiveDate, pool : &Pool<Postgres>) -> Result<(), AppError>
+pub async fn process_data(pool : &Pool<Postgres>) -> Result<(), AppError>
 {
     // Import the data from ror schema to src schema.
 
@@ -71,9 +70,15 @@ pub async fn process_data(data_version: &String, data_date: &NaiveDate, pool : &
             },
     }
 
+    Ok(())
+}
+
+
+pub async fn summarise_data(pool : &Pool<Postgres>) -> Result<(), AppError>
+{
     // Store data into smm tables.
 
-    let r = smm_data_storer::store_summary_data(data_version, data_date, pool).await;
+    let r = smm_data_storer::store_summary_data(pool).await;
     
     match r {
         Ok(()) => {
@@ -85,7 +90,6 @@ pub async fn process_data(data_version: &String, data_date: &NaiveDate, pool : &
             return Err(e)
             },
     }
-
 }
 
 

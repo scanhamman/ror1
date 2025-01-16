@@ -1,15 +1,14 @@
 use sqlx::{Pool, Postgres};
 use crate::AppError;
-use chrono::NaiveDate;
 use super::smm_structs::{RorVersion, DistribRow, CountryRow, LangCodeRow, ScriptCodeRow};
 
 
-pub async fn delete_any_existing_data(data_version:&String, data_date: &NaiveDate,pool: &Pool<Postgres>) -> Result<(), AppError> {
+pub async fn delete_any_existing_data(v: &RorVersion,pool: &Pool<Postgres>) -> Result<(), AppError> {
    
     // format!() macro does not seem to recognise apostrrophes, even when escaped (???)
 
-    let wc = " WHERE vcode = \'".to_string() + data_version 
-                                 + "\' AND vdate = \'" + &data_date.to_string() + "\'::date;";
+    let wc = " WHERE vcode = \'".to_string() + &v.vcode
+                                 + "\' AND vdate = \'" + &v.vdate.to_string() + "\'::date;";
         
     let del_sql = format!(r#"DELETE from smm.version_summary {}
                 DELETE from smm.name_summary {}

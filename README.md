@@ -63,9 +63,11 @@ in Postgres in some contexts. For safety and future compatibility the following 
 <li>'type' in relationships becomes'rel_type'.</li>
 </ul>
 
-The ror schema data represents the initial import into a staging schema. It is used as the basis of 
-later processes in this system, but is retained so as to be available for other transformations by
-other systems, if required.
+The ror schema data also includes a timy single-row table ('version details') that holds the version and 
+date of the data within the system. This means that these parameters need only be input once. 
+
+The ror schema is used as the basis of later processes in this system, but is retained so as to be available 
+for other transformations by other systems, if required.
 
 <h3>The src data schema</h3>
 
@@ -75,7 +77,7 @@ within the 'src' schema. The changes are limited but include:
 a) Replacement of the strings of categorised values by integers. The integers are as given by
 lookup tables (set up within the 'lup' or lookup schema) which effectively provide enumerations 
 of these categorised values, e.g. the organisation, name, link, external id and relationship types. 
-This is designed to make any future data processing quicker and future display more flexible.
+This is intended to make any future data processing quicker and future display more flexible.
 
 b) The expansion of the admin_data table, to include for each organisation the numbers of entities 
 of each type it is linked with, e.g. how many names (of various types), links and external ids (of 
@@ -85,19 +87,52 @@ production of summary data, and to more easily identify organisations that are m
 types of data.
 
 c) The addition of script codes to the name data. Though most of the the names listed (apart 
-from acronyms) have language codes linked to them there is no explicit indication of the script being 
-used. The great majority of the names use latin characters, but a substantial number use other script 
-systems, such as Cyrilic, Greek, Arabic, Han, Hebrew or Gujarati. Full details are given by ISO 15924, 
-which also provides the Unicode code pages on which each script can be found. Examining the Unicodes of the characters in the names allows the script to be readily identified, and this information is added to each name record, as being of potential value when selecting names for display.
+from acronyms and company names) have language codes linked to them there is no explicit indication of 
+the script being used. The great majority of the names use latin characters, but a substantial number 
+use other script systems, such as Cyrilic, Greek, Arabic, Han, Hebrew or Gujarati. Details on scripts are 
+provided by ISO 15924, which also provides the Unicode code pages on which each script can be found. 
+Examining the Unicodes of the characters in the names allows the script to be readily identified, and this 
+information is added to each name record, as being of potential value when selecting names for display.
 
 d) The simplification of a few field names to make them easier to use, e.g. country_subdivision_code 
 becomes csubdiv_code, and continent_code becomes cont_code.
  
-The src data is designed to be used as the basis for ad hoc SQL queries of the data. They are also used as the basis of the summary statistics described below, and are designed to provide a more useful set of base data when integrating ror data into other systems. Only one set of src data exists at any one time - the tables are recreated each time a version's data is transformed into them.
+The src data is designed to be used as the basis for ad hoc SQL queries of the data. They are also used as 
+the basis of the summary statistics described below, and are designed to provide a more useful set of base 
+data when integrating ror data into other systems. Only one set of src data exists at any one time - the 
+tables are recreated each time a version's data is transformed into them.
 
 <h3>Summary data and the smm schema</h3>
 
-TO DO
+The Summary (smm) schema includes a set of persistent tables that summarise various aspects of the ROR dataset. It includes records for all versions of the ROR data that have been imported (within each table the initial two fields are the data version and date, allowing easy selection of the summary data for any particular version). The summary tables are:
+
+<ul>
+<li>version_summary - Gives the number of organisations, and the numbers of records in each of the tables in the ror/src schemas.</li>
+<li>name_summary - Gives the numbers of total names and of different name types, of different types as a percentage of the whole, and of the numbers and percentage of each type that do not have a language code attached, plus the numbers and percentages of non-acronym and / or non comnpany names without a language code. </li>
+<li>name_count_distribution - The numbers and percentage of organisations that have different numbers of names linked to them (multiple rows per ROR version).</li>
+<li>name_label_distribution - The numbers and percentage of organisations that have different numbers of labels linked to them (multiple rows per ROR version).</li>
+<li>name_alias_distribution - The numbers and percentage of organisations that have different numbers of aliases linked to them (multiple rows per ROR version).</li>
+<li>name_acronym_distribution - The numbers and percentage of organisations that have different numbers of acronyms linked to them (multiple rows per ROR version).</li>
+<li>name_ror - The numbers of: labels that are designated as the ROR name, labels not so designated, any non-labels designated as the ROR name, the numbers and percentages of English and non English ror names, and the ROR names without language codes, including and excluding company names. </li>
+<li>ne_lang_code_distribution - The numbers and percentages of the 25 most frequently used non-English language codes - the others are grouped together as 'Remaining languages' (multiple rows per ROR version).</li>
+<li>nl_lang_script_distribution - The numbers and percentages of the 25 most frequently used non-Latin script codes - the others are grouped together as 'Remaining scripts' (multiple rows per ROR version).</li></li>
+<li>country_distribution - The numbers and percentages of the 25 most frequently specified countries - the others are grouped together as 'Remaining countries' (multiple rows per ROR version).</li>
+<li>locs_count_distribution - The numbers and percentage of organisations that have different numbers of locations linked to them (multiple rows per ROR version, though very few organisations will ever have more than one location).</li>
+<li>ext_ids_summary - Numbers and percentages of the different external id types, plus numbers and percentages of the organisations that are linked to those types.</li>
+<li>ext_ids_count_distribution - The numbers and percentage of organisations that have different numbers of external ids linked to them (multiple rows per ROR version).</li>
+<li>links_summary - Numbers and percentages of the different link types, plus numbers and percentages of the organisations that posess those link types.</li></li>
+<li>links_count_distribution - The numbers and percentage of organisations that have different numbers of links (multiple rows per ROR version).</li>
+<li>type_summary - The numbers and percentages of each of the different organisational type indicators within the system.</li>
+<li>type_by_orgs_summary - The numbers and percentages of organisations with each of the different organisational type indicators.</li>
+<li>type_count_distribution - The numbers and percentage of organisations that have different numbers of organisational types linked to them (multiple rows per ROR version).</li>
+<li>type_name_lang_code - For each combination of organisational type and name type, the numbers and percentages of names with and without language codes (multiple rows per ROR version).</li>
+<li>relationships_summary -  The numbers and percentages of each of the different relationship indicators within the system, plus the numbers and percentages of organisations with each of the different relationship types. Also includes the numbers and percentage of organisations that have both parents <i>and</i> child links, plus the numbers of any non-reciprocated relationship records. </li>
+<li>type_relationship - For each combination of organisational type and relationship type, the numbers and percentages (of that organisational type) which include that relationship. (multiple rows per ROR version)</li>
+
+The data in the smm schema is also used as the basis of the output text file for any version.
+
+</ul>
+
 
 
 

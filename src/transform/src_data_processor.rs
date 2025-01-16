@@ -266,20 +266,21 @@ pub async fn add_script_codes (pool: &Pool<Postgres>) -> Result<(), sqlx::Error>
     order by ascii_start;"#;
     let rows: Vec<Script> = sqlx::query_as(sql).fetch_all(pool).await?;
 
-    // Update names records by testing against each unicode entry,
+    // Update names records by testing against each unicode entry.
 
     for r in rows {
         
         sqlx::query(r#"update src.names
         set script_code = $1 
         where ascii(substr(value, 1, 1)) >= $2
-        and   ascii(substr(value, 1, 1)) <= $3
-        and substr(value, 1, 1) <> '('"#)
+        and   ascii(substr(value, 1, 1)) <= $3"#)
         .bind(r.code.clone())
         .bind(r.ascii_start)
         .bind(r.ascii_end)
         .execute(pool)
         .await?;
+        
+        // Correct for any bracketed names
 
         sqlx::query(r#"update src.names
         set script_code = $1 

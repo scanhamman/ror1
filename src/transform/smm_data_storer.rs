@@ -3,34 +3,33 @@ use super::smm_storage_helper;
 use sqlx::{Pool, Postgres};
 use chrono::NaiveDate;
 use crate::AppError;
-use super::smm_structs::RorVersion;
+use super::smm_structs::{FileParams, RorVersion};
 
-pub async fn store_summary_data (vcode:&String, vdate: &NaiveDate,pool: &Pool<Postgres>) -> Result<(), AppError> {
+pub async fn store_summary_data (pool: &Pool<Postgres>) -> Result<(), AppError> {
     
-    /*
-        async fn ensure_version_details_known() -> () {
+    // Obtain the data version and date (as previously stored in table during import process)
 
-            // Ensure that dataversion and date are known, taking them
-            // from the relevant table and padding them to the params struct
-        }
-     */
+    let sql = "SELECT version as vcode, data_date as vdate_as_string from src.version_details;";
+    let fp: FileParams = sqlx::query_as(&sql).fetch_one(pool).await?;
 
-    smm_storage_helper::delete_any_existing_data(vcode, vdate, pool).await?;
+    let vdate = NaiveDate::parse_from_str(&fp.vdate_as_string, "%Y-%m-%d").unwrap();
 
     let num_orgs = get_record_num("core_data", pool).await?;
 
     // Derive standard first two items in many sql statements and construct RorVersion
     // struct as an easier means of passing parameters to helper functions
 
-    let dv_dt = "select \'".to_string() + vcode + "\' as vcode, \'" 
+    let dv_dt = "select \'".to_string() + &fp.vcode + "\' as vcode, \'" 
                      +  &vdate.to_string() + "\'::date as vdate, ";
 
     let v = RorVersion {
-        vcode: vcode.to_string(),
+        vcode: fp.vcode.to_string(),
         vdate: vdate.to_owned(),
         num_orgs: num_orgs,
         dvdd: dv_dt.to_string(),
     };
+
+    smm_storage_helper::delete_any_existing_data(&v, pool).await?;
 
     let num_names = get_record_num("names", pool).await?;
     let num_types= get_record_num("type", pool).await?;
@@ -45,7 +44,7 @@ pub async fn store_summary_data (vcode:&String, vdate: &NaiveDate,pool: &Pool<Po
                       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"#;
 
     sqlx::query(sql)
-    .bind(vcode).bind(vdate)
+    .bind(fp.vcode).bind(vdate)
     .bind(num_orgs).bind(num_names)
     .bind(num_types).bind(num_links)
     .bind(num_ext_ids).bind(num_rels)

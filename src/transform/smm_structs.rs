@@ -1,5 +1,11 @@
 use chrono::NaiveDate;
 
+#[derive(sqlx::FromRow)]
+pub struct FileParams {
+    pub vcode: String,
+    pub vdate_as_string: String,
+}
+
 pub struct RorVersion {
   pub vcode: String,
   pub vdate: NaiveDate,

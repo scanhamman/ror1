@@ -75,7 +75,8 @@ pub async fn run(args: Vec<OsString>) -> Result<(), AppError> {
         if params.process_data  // transfer data to src tables, and summarise in smm tables
         {
             transform::create_src_tables(&pool).await?;
-            transform::process_data(&params.data_version, &params.data_date, &pool).await?;
+            transform::process_data(&pool).await?;
+            transform::summarise_data(&pool).await?;
         }
 
         if params.report_data  // write out summary data from data in smm tables

@@ -7,7 +7,6 @@ mod ror_data_vectors;
 mod ror_tables_create;
 
 use log::{info, error};
-use chrono::NaiveDate;
 use std::path::PathBuf;
 use std::fs;
 use sqlx::{Pool, Postgres};
@@ -30,7 +29,7 @@ pub async fn create_ror_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
 
 
 pub async fn import_data(data_folder : &PathBuf, source_file_name: &String, 
-                        data_version: &String, data_date: &NaiveDate, 
+                        data_version: &String, data_date: &String, 
                         pool : &Pool<Postgres>) -> Result<(), AppError>
 {
     // Record data verrsion and date in single record table.

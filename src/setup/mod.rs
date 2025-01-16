@@ -48,7 +48,7 @@ pub struct InitParams {
     pub source_file_name : String,
     pub output_file_name : String,
     pub data_version: String,
-    pub data_date : NaiveDate,
+    pub data_date : String,
 }
 
 pub async fn get_params(args: Vec<OsString>) -> Result<InitParams, AppError> {
@@ -59,8 +59,6 @@ pub async fn get_params(args: Vec<OsString>) -> Result<InitParams, AppError> {
     
     env_reader::populate_env_vars()?; 
     let cli_pars = cli_reader::fetch_valid_arguments(args)?;
-       
-    let base_date = NaiveDate::from_ymd_opt(1900,1,1).unwrap();
 
     if cli_pars.create_lup && cli_pars.create_smm {
 
@@ -81,7 +79,7 @@ pub async fn get_params(args: Vec<OsString>) -> Result<InitParams, AppError> {
             source_file_name: "".to_string(),
             output_file_name: "".to_string(),
             data_version: "".to_string(),
-            data_date : base_date,
+            data_date : "".to_string(),
         })
     }
     else {
@@ -145,16 +143,16 @@ pub async fn get_params(args: Vec<OsString>) -> Result<InitParams, AppError> {
 
         
         let mut data_version = "".to_string();
-        let mut data_date = base_date;
+        let mut data_date = "".to_string();
        
         // If file name conforms to the correct pattern data version and data date can be derived.
         
         if is_compliant_file_name(&source_file_name) {
             data_version = get_data_version(&source_file_name);
-            data_date = get_data_date(&source_file_name, base_date);
+            data_date = get_data_date(&source_file_name);
         }
 
-        if data_version == "".to_string() ||  data_date == base_date     
+        if data_version == "".to_string() ||  data_date == "".to_string()     
         {
             // Parsing of file name has not been completely successful, so get the version and date 
             // of the data from the CLI, or failing that the config file.
@@ -169,19 +167,20 @@ pub async fn get_params(args: Vec<OsString>) -> Result<InitParams, AppError> {
                 }
             }
         
-            data_date = match NaiveDate::parse_from_str(&cli_pars.data_date, "%Y-%m-%d")
-            {
-                Ok(d) => d,
-                Err(_e) => base_date,
+            data_date = match NaiveDate::parse_from_str(&cli_pars.data_date, "%Y-%m-%d") {
+                Ok(_) => cli_pars.data_date,
+                Err(_) => "".to_string(),
             };
-            if data_date == base_date {  
-                    data_date = match NaiveDate::parse_from_str(&env_reader::fetch_data_date(), 
-                                            "%Y-%m-%d") {
-                    Ok(d) => d,
-                    Err(_e) => base_date,
+
+            if data_date == "" {  
+                    let env_date = &env_reader::fetch_data_date();
+                    data_date = match NaiveDate::parse_from_str(env_date, "%Y-%m-%d") {
+                    Ok(_) => env_date.to_string(),
+                    Err(_) => "".to_string(),
                 };
-                if data_date == base_date && cli_pars.import_ror {   // Raise an AppError...required data is missing.
-                    let msg = "Data date not provided in either command line or environment file";
+
+                if data_date == "" && cli_pars.import_ror {   // Raise an AppError...required data is missing.
+                    let msg = "Data date not provided";
                     let cf_err = CustomError::new(msg);
                     return Result::Err(AppError::CsErr(cf_err));
                 }
@@ -300,22 +299,21 @@ fn get_data_version(input: &str) -> String {
     }
 }
 
-fn get_data_date(input: &str, base_date: NaiveDate) -> NaiveDate {        
+fn get_data_date(input: &str) -> String {            
     
     let date_pattern = r#"20[0-9]{2}-?[01][0-9]-?[0-3][0-9]"#;
     let re = Regex::new(date_pattern).unwrap();
     if re.is_match(&input) {
         let caps = re.captures(&input).unwrap();
         let putative_date = caps[0].replace("-", ""); // remove any hyphens
-        
         match NaiveDate::parse_from_str(&putative_date, "%Y%m%d")
         {
-            Ok(d) => d,
-            Err(_e) => base_date,
+            Ok(nd) => nd.to_string(),  // returns as YYY-mm-DD
+            Err(_) => "".to_string(),
         }
     } 
     else {
-        base_date
+        "".to_string()
     }
 }
 
@@ -331,53 +329,42 @@ mod tests {
    // regex tests
    #[test]
    fn check_file_name_regex_works_1 () {
-      let base_date = NaiveDate::from_ymd_opt(1900,1,1).unwrap();
-
       let test_file_name = "v1.50 2024-12-11.json".to_string();
       assert_eq!(is_compliant_file_name(&test_file_name), true);
       assert_eq!(get_data_version(&test_file_name), "v1.50");
-      assert_eq!(get_data_date(&test_file_name, base_date), 
-                               NaiveDate::from_ymd_opt(2024,12,11).unwrap());
+      assert_eq!(get_data_date(&test_file_name), "2024-12-11");
    }
 
    #[test]
    fn check_file_name_regex_works_2 () {
-      let base_date = NaiveDate::from_ymd_opt(1900,1,1).unwrap();
       let test_file_name = "v1.50-2024-12-11.json".to_string();
       assert_eq!(is_compliant_file_name(&test_file_name), true);
       assert_eq!(get_data_version(&test_file_name), "v1.50");
-      assert_eq!(get_data_date(&test_file_name, base_date), 
-                               NaiveDate::from_ymd_opt(2024,12,11).unwrap());
+      assert_eq!(get_data_date(&test_file_name), "2024-12-11");
    }  
 
    #[test]
    fn check_file_name_regex_works_3 () {
-      let base_date = NaiveDate::from_ymd_opt(1900,1,1).unwrap();                         
       let test_file_name = "v1.50 20241211.json".to_string();
       assert_eq!(is_compliant_file_name(&test_file_name), true);
       assert_eq!(get_data_version(&test_file_name), "v1.50");
-      assert_eq!(get_data_date(&test_file_name, base_date), 
-                               NaiveDate::from_ymd_opt(2024,12,11).unwrap());
+      assert_eq!(get_data_date(&test_file_name), "2024-12-11");
    }
 
    #[test]
    fn check_file_name_regex_works_4 () {
-      let base_date = NaiveDate::from_ymd_opt(1900,1,1).unwrap();                         
       let test_file_name = "v1.50-20241211.json".to_string();
       assert_eq!(is_compliant_file_name(&test_file_name), true);
       assert_eq!(get_data_version(&test_file_name), "v1.50");
-      assert_eq!(get_data_date(&test_file_name, base_date), 
-                               NaiveDate::from_ymd_opt(2024,12,11).unwrap());
+      assert_eq!(get_data_date(&test_file_name), "2024-12-11");
    }
 
    #[test]
    fn check_file_name_regex_works_5 () {
-      let base_date = NaiveDate::from_ymd_opt(1900,1,1).unwrap(); 
       let test_file_name = "v1.50-2024-1211.json".to_string();
       assert_eq!(is_compliant_file_name(&test_file_name), true);
       assert_eq!(get_data_version(&test_file_name), "v1.50");
-      assert_eq!(get_data_date(&test_file_name, base_date), 
-                               NaiveDate::from_ymd_opt(2024,12,11).unwrap());
+      assert_eq!(get_data_date(&test_file_name), "2024-12-11");
    }
 
 
@@ -440,8 +427,7 @@ mod tests {
             let lt = Local::now().format("%m-%d %H%M%S").to_string();
             assert_eq!(res.output_file_name, format!("results 25.json at {}.txt", lt));
             assert_eq!(res.data_version, "v1.58");
-            let nd = NaiveDate::parse_from_str("2024-12-11", "%Y-%m-%d").unwrap();
-            assert_eq!(res.data_date, nd);
+            assert_eq!(res.data_date, "2024-12-11");
         }
        ).await;
 
@@ -481,8 +467,7 @@ mod tests {
             let lt = Local::now().format("%m-%d %H%M%S").to_string();
             assert_eq!(res.output_file_name, format!("results 27.json at {}.txt", lt));
             assert_eq!(res.data_version, "v1.60");
-            let nd = NaiveDate::parse_from_str("2026-12-25", "%Y-%m-%d").unwrap();
-            assert_eq!(res.data_date, nd);
+            assert_eq!(res.data_date, "2026-12-25");
         }
        ).await;
 
@@ -519,8 +504,7 @@ mod tests {
             assert_eq!(res.source_file_name, "".to_string());
             assert_eq!(res.output_file_name, "".to_string());
             assert_eq!(res.data_version, "".to_string());
-            let base_date = NaiveDate::parse_from_str("1900-01-01", "%Y-%m-%d").unwrap();
-            assert_eq!(res.data_date, base_date);
+            assert_eq!(res.data_date, "".to_string());
         }
        ).await;
 
@@ -561,8 +545,7 @@ mod tests {
             let lt = Local::now().format("%m-%d %H%M%S").to_string();
             assert_eq!(res.output_file_name, format!("results 28.json at {}.txt", lt));
             assert_eq!(res.data_version, "v1.60");
-            let nd = NaiveDate::parse_from_str("2026-12-25", "%Y-%m-%d").unwrap();
-            assert_eq!(res.data_date, nd);
+            assert_eq!(res.data_date, "2026-12-25");
         }
       ).await;
 
@@ -602,8 +585,7 @@ mod tests {
             let lt = Local::now().format("%m-%d %H%M%S").to_string();
             assert_eq!(res.output_file_name, format!("results 28.json at {}.txt", lt));
             assert_eq!(res.data_version, "v1.60");
-            let nd = NaiveDate::parse_from_str("2026-12-25", "%Y-%m-%d").unwrap();
-            assert_eq!(res.data_date, nd);
+            assert_eq!(res.data_date, "2026-12-25");
         }
       ).await;
 
@@ -661,8 +643,7 @@ mod tests {
             let lt = Local::now().format("%m-%d %H%M%S").to_string();
             assert_eq!(res.output_file_name, format!("results 28.json at {}.txt", lt));
             assert_eq!(res.data_version, "v1.60");
-            let nd = NaiveDate::parse_from_str("2026-12-25", "%Y-%m-%d").unwrap();
-            assert_eq!(res.data_date, nd);
+            assert_eq!(res.data_date, "2026-12-25");
 
             }
         ).await;
