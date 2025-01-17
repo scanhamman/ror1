@@ -3,7 +3,7 @@ use crate::AppError;
 
 pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
 
-    let sql = r#"
+    let sql = r"
     SET client_min_messages TO WARNING; 
     create schema if not exists smm;
  
@@ -28,29 +28,41 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
           vcode             varchar     not null primary key
         , vdate             date        not null
         , total             int         null 
-        , total_wolc        int         null
-        , pc_wolc           real        null
         , num_label         int         null
         , num_alias         int         null
-        , num_acronym       int         null
         , num_nacro         int         null
+        , num_acronym       int         null
         , pc_label          real        null
         , pc_alias          real        null
-        , pc_acronym        real        null
         , pc_nacro          real        null
-        , num_label_wolc    int         null
-        , num_alias_wolc    int         null
-        , num_acro_wolc     int         null
-        , num_nacro_wolc    int         null
-        , pc_label_wolc     real        null
-        , pc_alias_wolc     real        null
-        , pc_acro_wolc      real        null
-        , pc_nacro_wolc     real        null
+        , pc_acronym        real        null
         , num_nacro_ne      int         null
         , pc_nacro_ne       real        null
         , num_nltn          int         null
         , pc_nltn           real        null
     );
+
+
+    drop table if exists smm.name_lang_code;
+    create table smm.name_lang_code
+    (    
+          vcode             varchar     not null primary key
+        , vdate             date        not null
+        , total             int         null 
+        , total_wolc        int         null
+        , label_wolc        int         null
+        , alias_wolc        int         null
+        , acro_wolc         int         null
+        , nacro_wolc        int         null
+        , ncmpacr_wolc      int         null
+        , pc_total_wolc     real        null
+        , pc_label_wolc     real        null
+        , pc_alias_wolc     real        null
+        , pc_acro_wolc      real        null
+        , pc_nacro_wolc     real        null
+        , pc_ncmpacr_wolc   real        null
+    );
+
 
     drop table if exists smm.name_ror;
     create table smm.name_ror
@@ -64,10 +76,13 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
         , num_en_ror        int         null
         , num_nen_ror       int         null
         , num_wolc_ror      int         null
+        , num_ncmp_wolc_ror int         null
         , pc_en_ror         real        null
         , pc_nen_ror        real        null
         , pc_wolc_ror       real        null
+        , pc_ncmp_wolc_ror  real        null
     );
+
 
     drop table if exists smm.name_count_distribution;
     create table smm.name_count_distribution
@@ -339,7 +354,7 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
         , pc_of_orgs        real        null
     );
 
-    SET client_min_messages TO NOTICE;"#;
+    SET client_min_messages TO NOTICE;";
 
     sqlx::raw_sql(sql).execute(pool).await?;
     Ok(())

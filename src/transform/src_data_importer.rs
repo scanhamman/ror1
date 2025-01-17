@@ -29,7 +29,13 @@ async fn import_to_core_data (pool: &Pool<Postgres>) -> Result<PgQueryResult, sq
 
     let import_sql  = r#"insert into src.core_data (id, ror_full_id, 
           ror_name, status, established)
-          select c.id, c.ror_full_id, m.value, c.status, c.established 
+          select c.id, c.ror_full_id, m.value, 
+          case 
+             when c.status = 'active' then 1
+             when c.status = 'inactive' then 2
+             when c.status = 'withdrawn' then 3
+          end, 
+          c.established 
           from ror.core_data c
           inner join
               (select id, value from ror.names where is_ror_name = true) m
@@ -64,9 +70,9 @@ async fn import_admin_data_base (pool: &Pool<Postgres>) -> Result<PgQueryResult,
 
 async fn import_names (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Error> {
 
-    let import_sql  = r#"insert into src.names(id, value, name_type, 
+    let import_sql  = r#"insert into src.names(id, ror_name, value, name_type, 
           is_ror_name, lang_code)
-          select id, value, 
+          select a.id, c.ror_name, value, 
           case 
               when name_type = 'alias' then 7
               when name_type = 'acronym' then 10
@@ -78,7 +84,9 @@ async fn import_names (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Err
               else false
           end, 
           lang
-          from ror.names a;"#;
+          from ror.names a
+          inner join src.core_data c
+          on a.id = c.id;"#;
     let qry_res = sqlx::raw_sql(import_sql).execute(pool).await?;
     Ok(qry_res)
 }
@@ -160,7 +168,7 @@ async fn import_types (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Err
 async fn import_locations (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Error> {
 
     let import_sql  = r#"insert into src.locations(id, ror_name, geonames_id, 
-          geonames_name, lat, lng, cont_code, cont_name, 
+          location, lat, lng, cont_code, cont_name, 
           country_code, country_name, csubdiv_code, csubdiv_name)
           select a.id, c.ror_name, a.geonames_id, a.name,
                  a.lat, a.lng, a.continent_code, a.continent_name, 

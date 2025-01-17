@@ -4,6 +4,10 @@ use crate::AppError;
 pub async fn fill_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
 
     let sql = r#"
+
+    insert into lup.ror_status_types(id, name) 
+    values (1, 'active'), (2, 'inactive'), (3, 'withdrawn');
+
     insert into lup.ror_org_types(id, name) 
        values (100, 'government'), (200, 'education'), (300, 'healthcare'), 
        (400, 'company'), (500, 'nonprofit'), (600, 'funder'),

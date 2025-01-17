@@ -21,7 +21,7 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
           id                varchar     not null primary key
         , ror_full_id       varchar     not null
         , ror_name          varchar     not null	
-        , status            varchar     not null default 1
+        , status            int         not null default 1
         , established       int         null
         , location          varchar     null
         , csubdiv_code      varchar     null
@@ -64,6 +64,7 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
     create table src.names
     (
           id                varchar     not null
+        , ror_name          varchar     not null
         , value             varchar     not null  
         , name_type         int         not null 
         , is_ror_name       bool        not null default false
@@ -78,7 +79,7 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
           id                varchar     not null
         , ror_name          varchar     not null
         , geonames_id       int         null
-        , geonames_name     varchar     null	
+        , location          varchar     null	
         , lat               real        null
         , lng               real        null
         , cont_code         varchar     null

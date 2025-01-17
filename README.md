@@ -109,11 +109,12 @@ The Summary (smm) schema includes a set of persistent tables that summarise vari
 <ul>
 <li>version_summary - Gives the number of organisations, and the numbers of records in each of the tables in the ror/src schemas.</li>
 <li>name_summary - Gives the numbers of total names and of different name types, of different types as a percentage of the whole, and of the numbers and percentage of each type that do not have a language code attached, plus the numbers and percentages of non-acronym and / or non comnpany names without a language code. </li>
+<li>name_lang_code - Gives the numbers and percentage of each type that do not have a language code attached, plus the numbers and percentages of non-acronym and non-acronym-non-comnpany names without a language code. </li>
 <li>name_count_distribution - The numbers and percentage of organisations that have different numbers of names linked to them (multiple rows per ROR version).</li>
 <li>name_label_distribution - The numbers and percentage of organisations that have different numbers of labels linked to them (multiple rows per ROR version).</li>
 <li>name_alias_distribution - The numbers and percentage of organisations that have different numbers of aliases linked to them (multiple rows per ROR version).</li>
 <li>name_acronym_distribution - The numbers and percentage of organisations that have different numbers of acronyms linked to them (multiple rows per ROR version).</li>
-<li>name_ror - The numbers of: labels that are designated as the ROR name, labels not so designated, any non-labels designated as the ROR name, the numbers and percentages of English and non English ror names, and the ROR names without language codes, including and excluding company names. </li>
+<li>name_ror - The numbers of labels that are designated as the ROR name, labels not so designated, any non-labels designated as the ROR name, the numbers and percentages of English and non English ror names, and the ROR names without language codes, including and excluding company names. </li>
 <li>ne_lang_code_distribution - The numbers and percentages of the 25 most frequently used non-English language codes - the others are grouped together as 'Remaining languages' (multiple rows per ROR version).</li>
 <li>nl_lang_script_distribution - The numbers and percentages of the 25 most frequently used non-Latin script codes - the others are grouped together as 'Remaining scripts' (multiple rows per ROR version).</li></li>
 <li>country_distribution - The numbers and percentages of the 25 most frequently specified countries - the others are grouped together as 'Remaining countries' (multiple rows per ROR version).</li>

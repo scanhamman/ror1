@@ -6,6 +6,12 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
     let sql = r#"SET client_min_messages TO WARNING; 
     create schema if not exists lup;
 
+    drop table if exists lup.ror_status_types;
+    create table lup.ror_status_types (
+        id                int         not null primary key 
+        , name            varchar
+    );
+
     drop table if exists lup.ror_org_types;
     create table lup.ror_org_types (
         id                int         not null primary key 

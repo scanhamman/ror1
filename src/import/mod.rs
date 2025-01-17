@@ -91,7 +91,7 @@ pub async fn import_data(data_folder : &PathBuf, source_file_name: &String,
         rdv.add_required_data(r, &db_id); 
         ndv.add_non_required_data(r, &db_id); 
         
-        if i > 15005 { break;  }
+        if i > 35005 { break;  }
 
         if (i + 1) % vector_size == 0 {  
             

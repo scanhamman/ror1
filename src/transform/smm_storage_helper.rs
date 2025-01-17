@@ -12,6 +12,7 @@ pub async fn delete_any_existing_data(v: &RorVersion,pool: &Pool<Postgres>) -> R
         
     let del_sql = format!(r#"DELETE from smm.version_summary {}
                 DELETE from smm.name_summary {}
+                DELETE from smm.name_lang_code {}
                 DELETE from smm.name_ror {}
                 DELETE from smm.name_count_distribution {}
                 DELETE from smm.name_label_distribution {}
@@ -32,7 +33,7 @@ pub async fn delete_any_existing_data(v: &RorVersion,pool: &Pool<Postgres>) -> R
                 DELETE from smm.country_distribution {}
                 DELETE from smm.locs_count_distribution {}"#
                 , wc, wc, wc, wc, wc, wc, wc, wc, wc, wc, wc
-                , wc, wc, wc, wc, wc, wc, wc, wc, wc, wc);
+                , wc, wc, wc, wc, wc, wc, wc, wc, wc, wc, wc);
 
    sqlx::raw_sql(&del_sql).execute(pool).await?;
 
@@ -43,34 +44,40 @@ pub async fn delete_any_existing_data(v: &RorVersion,pool: &Pool<Postgres>) -> R
 
 pub async fn store_name_summary(v: &RorVersion, pool: &Pool<Postgres>, num_names: i64) -> Result<(), AppError> {
 
-    // let total_wolc = number of names without lang code
-    // let pc_wolc = percentage of names without lang code
-    // let num_label = number of labels 
-    // let num_alias = number of aliases
-    // let num_acronym = number of acronyms
-    // let pc_label = labels as percentage of total
-    // let pc_alias = aliases as percentage of total
-    // let pc_acronym = acronyms as percentage of total
-
-    // let num_label_wolc = number of labels without lang code
-    // let num_alias_wolc = number of aliases without lang code
-    // let num_acro_wolc = number of acronyms without lang code
-    // let num_nacro_wolc = number of non-acronyms without lang code
-    // let pc_label_wolc = labels without lang code as percentage of total labels
-    // let pc_alias_wolc = aliases without lang code as percentage of total aliases
-    // let pc_acro_wolc = acronyms without lang code as percentage of total acronyms
-    // let pc_nacro_wolc = non-acronyms without lang code as percentage of total non-acronyms
-
-    let total_wolc = get_count("select count(*) from src.names where lang_code is null", pool).await?;
-    let pc_wolc = get_pc (total_wolc,num_names);
     let num_label = get_count("select count(*) from src.names where name_type = 5", pool).await?;
     let num_alias = get_count("select count(*) from src.names where name_type = 7", pool).await?;
     let num_acronym = get_count("select count(*) from src.names where name_type = 10", pool).await?;
     let num_nacro = get_count("select count(*) from src.names where name_type <> 10", pool).await?;
+      
     let pc_label = get_pc (num_label,num_names);
     let pc_alias = get_pc (num_alias,num_names);
     let pc_acronym = get_pc (num_acronym,num_names);
     let pc_nacro = get_pc (num_nacro,num_names);
+
+    let num_nacro_ne = get_count("select count(*) from src.names where name_type <> 10 and lang_code <> 'en'", pool).await?;
+    let pc_nacro_ne = get_pc (num_nacro_ne,num_nacro);   
+    let num_nltn = get_count("select count(*) from src.names where script_code <> 'Latn'", pool).await?; 
+    let pc_nltn = get_pc (num_nltn,num_nacro);  
+
+    let sql = r#"INSERT into smm.name_summary (vcode, vdate, total, 
+    num_label, num_alias, num_nacro, num_acronym, 
+    pc_label,  pc_alias, pc_nacro, pc_acronym, 
+    num_nacro_ne, pc_nacro_ne, num_nltn, pc_nltn)
+    values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)"#;
+
+    sqlx::query(sql)
+    .bind(v.vcode.clone()).bind(v.vdate).bind(num_names)
+    .bind(num_label).bind(num_alias).bind(num_nacro).bind(num_acronym)
+    .bind(pc_label).bind(pc_alias).bind(pc_nacro).bind(pc_acronym)
+    .bind(num_nacro_ne).bind(pc_nacro_ne).bind(num_nltn).bind(pc_nltn)
+    .execute(pool)
+    .await?;
+
+    // 'wolc' = without lang code
+
+    let total_wolc = get_count("select count(*) from src.names where lang_code is null", pool).await?;
+    let pc_total_wolc = get_pc (total_wolc,num_names);
+    
     let num_label_wolc = get_count(r#"select count(*) from src.names 
                                                      where name_type = 5 and lang_code is null"#, pool).await?;
     let num_alias_wolc = get_count(r#"select count(*) from src.names 
@@ -78,53 +85,62 @@ pub async fn store_name_summary(v: &RorVersion, pool: &Pool<Postgres>, num_names
     let num_acro_wolc = get_count(r#"select count(*) from src.names 
                                                      where name_type = 10 and lang_code is null"#, pool).await?;
     let num_nacro_wolc = get_count(r#"select count(*) from src.names 
-                                                     where (name_type = 5 or name_type = 7) and lang_code is null"#, pool).await?;
+                                                     where name_type <> 10 and lang_code is null"#, pool).await?;
+    
     let pc_label_wolc = get_pc (num_label_wolc,num_label);
     let pc_alias_wolc = get_pc (num_alias_wolc,num_alias);
     let pc_acro_wolc = get_pc (num_acro_wolc,num_acronym);
     let pc_nacro_wolc = get_pc (num_nacro_wolc,num_nacro);
-    let num_nacro_ne = get_count("select count(*) from src.names where name_type <> 10 and lang_code <> 'en'", pool).await?;
-    let pc_nacro_ne = get_pc (num_nacro_ne,num_nacro);   
-    let num_nltn = get_count("select count(*) from src.names where script_code <> 'Latn'", pool).await?; 
-    let pc_nltn = get_pc (num_nltn,num_nacro);  
 
-    let sql = r#"INSERT into smm.name_summary (vcode, vdate, total, total_wolc,
-    pc_wolc, num_label, num_alias, num_acronym, num_nacro, pc_label, pc_alias, pc_acronym, pc_nacro,
-    num_label_wolc, num_alias_wolc, num_acro_wolc, num_nacro_wolc, pc_label_wolc,
-    pc_alias_wolc, pc_acro_wolc, pc_nacro_wolc, num_nacro_ne, pc_nacro_ne, num_nltn, pc_nltn)
-    values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 
-            $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)"#;
+    // Consider non company, non acronym names.
+
+    let num_ncmpacr = get_count(r#"select count(*) from 
+                                                    src.names n
+                                                    inner join 
+                                                    (   select cd.id from src.core_data cd
+                                                        left join 
+                                                            (select id from src.type 
+                                                            where org_type = 400) cmps 
+                                                        on cd.id = cmps.id
+                                                        where cmps.id is null) ncorgs
+                                                    on n.id = ncorgs.id
+                                                    where name_type <> 10"#, pool).await?;  
+
+    let num_ncmpacr_wolc = get_count(r#"select count(*) from 
+                                                    src.names n
+                                                    inner join 
+                                                    (   select cd.id from src.core_data cd
+                                                        left join 
+                                                            (select id from src.type 
+                                                            where org_type = 400) cmps 
+                                                        on cd.id = cmps.id
+                                                        where cmps.id is null) ncorgs
+                                                    on n.id = ncorgs.id
+                                                    where name_type <> 10
+                                                    and n.lang_code is null"#, pool).await?;  
+
+    let pc_ncmpacr_wolc = get_pc (num_ncmpacr_wolc,num_ncmpacr);
+
+    let sql = r#"INSERT into smm.name_lang_code (vcode, vdate, total, 
+    total_wolc, label_wolc, alias_wolc, acro_wolc, nacro_wolc, ncmpacr_wolc,
+    pc_total_wolc, pc_label_wolc, pc_alias_wolc, pc_acro_wolc, pc_nacro_wolc, pc_ncmpacr_wolc)
+    values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)"#;
 
     sqlx::query(sql)
     .bind(v.vcode.clone()).bind(v.vdate).bind(num_names)
-    .bind(total_wolc).bind(pc_wolc)
-    .bind(num_label).bind(num_alias).bind(num_acronym).bind(num_nacro)
-    .bind(pc_label).bind(pc_alias).bind(pc_acronym).bind(pc_nacro)
-    .bind(num_label_wolc).bind(num_alias_wolc).bind(num_acro_wolc).bind(num_nacro_wolc)
-    .bind(pc_label_wolc).bind(pc_alias_wolc).bind(pc_acro_wolc).bind(pc_nacro_wolc)
-    .bind(num_nacro_ne).bind(pc_nacro_ne).bind(num_nltn).bind(pc_nltn)
+    .bind(total_wolc).bind(num_label_wolc).bind(num_alias_wolc)
+    .bind(num_acro_wolc).bind(num_nacro_wolc).bind(num_ncmpacr_wolc)
+    .bind(pc_total_wolc).bind(pc_label_wolc).bind(pc_alias_wolc)
+    .bind(pc_acro_wolc).bind(pc_nacro_wolc).bind(pc_ncmpacr_wolc)
     .execute(pool)
     .await?;
 
     Ok(())
     
-  }
+}
 
-  
+
 pub async fn store_name_ror(v: &RorVersion, pool: &Pool<Postgres>) -> Result<(), AppError> {
-
-    // name_ror
-    
-    // num_label_ror =  // labels that are also ror names
-    // num_label_nror =  // labels that are not ror names
-    // num_nlabel_ror =  // ror names that are not labels
-    // pc_nlabel_ror = // percentage ror names that are not labels
-    // num_en_ror =  // ror names that are english
-    // num_nen_ror =  // ror names that are not english
-    // num_wolc_ror =  // ror names that are not english
-    // pc_en_ror = // pecentage ror names that are not english
-    // pc_nen_ror = // pecentage ror names that are not english
-    // pc_wolc_ror = // pecentage ror names that have no lang code
 
     let num_label_ror = get_count(r#"select count(*) from src.names 
                                                         where name_type = 5 and is_ror_name = true"#, pool).await?; 
@@ -139,19 +155,44 @@ pub async fn store_name_ror(v: &RorVersion, pool: &Pool<Postgres>) -> Result<(),
                                                         where is_ror_name = true and lang_code <> 'en' and lang_code is not null"#, pool).await?; 
     let num_wolc_ror = get_count(r#"select count(*) from src.names 
                                                         where is_ror_name = true and lang_code is null"#, pool).await?; 
+                                                   
     let pc_en_ror = get_pc(num_en_ror, v.num_orgs);
     let pc_nen_ror = get_pc(num_nen_ror, v.num_orgs);
     let pc_wolc_ror = get_pc(num_wolc_ror, v.num_orgs); 
+    
+    // Consider non-company organisations only.
+
+    let num_ncmp_orgs = get_count(r#"select count(*) from src.core_data cd
+                                                    left join 
+                                                        (select id from src.type 
+                                                        where org_type = 400) cmps 
+                                                    on cd.id = cmps.id
+                                                    where cmps.id is null"#, pool).await?;
+    let num_ncmp_wolc_ror = get_count(r#"select count(*) from 
+                                                    src.names n
+                                                    inner join 
+                                                    (
+                                                        select cd.id from src.core_data cd
+                                                        left join 
+                                                            (select id from src.type 
+                                                            where org_type = 400) cmps 
+                                                        on cd.id = cmps.id
+                                                        where cmps.id is null) ncorgs
+                                                    on n.id = ncorgs.id
+                                                    where is_ror_name = true
+                                                    and n.lang_code is null"#, pool).await?;   
+    let pc_ncmp_wolc_ror = get_pc(num_ncmp_wolc_ror, num_ncmp_orgs); 
 
     let sql = r#"INSERT into smm.name_ror (vcode, vdate, num_label_ror, num_label_nror,
-    num_nlabel_ror, pc_nlabel_ror, num_en_ror, num_nen_ror, num_wolc_ror, pc_en_ror, pc_nen_ror, pc_wolc_ror)
-    values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)"#;
+    num_nlabel_ror, pc_nlabel_ror, num_en_ror, num_nen_ror, num_wolc_ror, num_ncmp_wolc_ror, 
+    pc_en_ror, pc_nen_ror, pc_wolc_ror, pc_ncmp_wolc_ror)
+    values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)"#;
 
     sqlx::query(sql)
     .bind(v.vcode.clone()).bind(v.vdate).bind(num_label_ror)
     .bind(num_label_nror).bind(num_nlabel_ror).bind(pc_nlabel_ror)
-    .bind(num_en_ror).bind(num_nen_ror).bind(num_wolc_ror)
-    .bind(pc_en_ror).bind(pc_nen_ror).bind(pc_wolc_ror)
+    .bind(num_en_ror).bind(num_nen_ror).bind(num_wolc_ror).bind(num_ncmp_wolc_ror)
+    .bind(pc_en_ror).bind(pc_nen_ror).bind(pc_wolc_ror).bind(pc_ncmp_wolc_ror)
     .execute(pool)
     .await?;
 
@@ -216,7 +257,7 @@ pub async fn store_lang_code_distrib(v: &RorVersion, pool: &Pool<Postgres>) -> R
                         round(count(id) * 10000 :: float / "# + &(v.num_orgs.to_string()) + r#":: float)/100 :: float as pc_of_all_names
                         from src.names where lang_code <> 'en'
                         group by lang_code
-                        order by lang_code;"#;
+                        order by count(id) desc;"#;
     let rows: Vec<LangCodeRow> = sqlx::query_as(&sql).fetch_all(pool).await?;
 
     let mut i = 0;
@@ -235,18 +276,19 @@ pub async fn store_lang_code_distrib(v: &RorVersion, pool: &Pool<Postgres>) -> R
         } 
         i += 1;
     }
-    let rest_ne_pc = get_pc(rest_total, total_of_ne);
-    let rest_total_pc = get_pc(rest_total, v.num_orgs);
 
-    sqlx::query(r#"INSERT INTO smm.ne_lang_code_distribution (vcode, vdate, lang, num_of_names, pc_of_ne_names, pc_of_all_names) 
-    values($1, $2, $3, $4, $5, $6)"#)
-    .bind(v.vcode.clone()).bind(v.vdate)
-    .bind("Remaining languages")
-    .bind(rest_total)
-    .bind(rest_ne_pc)
-    .bind(rest_total_pc)
-    .execute(pool)
-    .await?;
+    if rest_total > 0 {
+        let rest_ne_pc = get_pc(rest_total, total_of_ne);
+        let rest_total_pc = get_pc(rest_total, v.num_orgs);
+
+        sqlx::query(r#"INSERT INTO smm.ne_lang_code_distribution (vcode, vdate, lang, num_of_names, pc_of_ne_names, pc_of_all_names) 
+        values($1, $2, $3, $4, $5, $6)"#)
+        .bind(v.vcode.clone()).bind(v.vdate)
+        .bind("Remaining languages")
+        .bind(rest_total).bind(rest_ne_pc).bind(rest_total_pc)
+        .execute(pool)
+        .await?;
+    }
     
     Ok(())
 }
@@ -260,17 +302,39 @@ pub async fn store_script_code_distrib(v: &RorVersion, pool: &Pool<Postgres>) ->
                         round(count(id) * 10000 :: float / "# + &(v.num_orgs.to_string()) + r#":: float)/100 :: float as pc_of_all_names
                         from src.names where script_code <> 'Latn'
                         group by script_code
-                        order by script_code;"#;
+                        order by count(id) desc;"#;
     let rows: Vec<ScriptCodeRow> = sqlx::query_as(&sql).fetch_all(pool).await?;
+    
+    let mut i = 0;
+    let mut rest_total = 0;
 
     for r in rows {
+        if i < 25 {
+            sqlx::query(r#"INSERT INTO smm.nl_lang_script_distribution (vcode, vdate, script, num_of_names, pc_of_nl_names, pc_of_all_names) 
+                                values($1, $2, $3, $4, $5, $6)"#)
+            .bind(r.vcode).bind(r.vdate).bind(r.script)
+            .bind(r.num_of_names).bind(r.pc_of_nl_names).bind(r.pc_of_all_names)
+            .execute(pool)
+            .await?;
+        }
+        else {
+            rest_total += r.num_of_names;
+        }
+        i += 1;
+    }
+
+    if rest_total > 0 {
+        let rest_nl_pc = get_pc(rest_total, total_of_nltn);
+        let rest_total_pc = get_pc(rest_total, v.num_orgs);
+
         sqlx::query(r#"INSERT INTO smm.nl_lang_script_distribution (vcode, vdate, script, num_of_names, pc_of_nl_names, pc_of_all_names) 
-                            values($1, $2, $3, $4, $5, $6)"#)
-        .bind(r.vcode).bind(r.vdate)
-        .bind(r.script).bind(r.num_of_names).bind(r.pc_of_nl_names).bind(r.pc_of_all_names)
+                        values($1, $2, $3, $4, $5, $6)"#)
+        .bind(v.vcode.clone()).bind(v.vdate).bind("Remaining scripts")
+        .bind(rest_total).bind(rest_nl_pc).bind(rest_total_pc)
         .execute(pool)
         .await?;
     }
+
     Ok(())
 
 }
