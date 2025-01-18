@@ -62,7 +62,7 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
         , pc_nacro_wolc     real        null
         , pc_ncmpacr_wolc   real        null
     );
-
+    
 
     drop table if exists smm.name_ror;
     create table smm.name_ror
@@ -83,132 +83,46 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
         , pc_ncmp_wolc_ror  real        null
     );
 
-
-    drop table if exists smm.name_count_distribution;
-    create table smm.name_count_distribution
+    drop table if exists smm.count_distributions;
+    create table smm.count_distributions
     (    
           vcode             varchar     not null
         , vdate             date        not null
+        , count_type        varchar     not null
         , count             int         null
         , num_of_orgs       int         null
         , pc_of_orgs        real        null
     );
 
-    drop table if exists smm.name_label_distribution;
-    create table smm.name_label_distribution
+    
+    drop table if exists smm.ranked_distributions;
+    create table smm.ranked_distributions
     (    
           vcode             varchar     not null
         , vdate             date        not null
-        , count             int         null
-        , num_of_orgs       int         null
-        , pc_of_orgs        real        null
+        , dist_type         int         not null 
+        , rank              int         not null 
+        , entity            varchar     null
+        , number            int         null
+        , pc_of_entities    real        null
+        , pc_of_base_set    real        null
     );
 
-    drop table if exists smm.name_alias_distribution;
-    create table smm.name_alias_distribution
+
+    drop table if exists smm.attributes_summary;
+    create table smm.attributes_summary
     (    
           vcode             varchar     not null
         , vdate             date        not null
-        , count             int         null
-        , num_of_orgs       int         null
-        , pc_of_orgs        real        null
+        , att_type          int         null
+        , att_name          varchar     null
+        , id                int         null
+        , name              varchar     null
+        , number            int         null
+        , pc_of_atts        real        null
+        , pc_of_orgs        real        null        
     );
 
-    drop table if exists smm.name_acronym_distribution;
-    create table smm.name_acronym_distribution
-    (    
-          vcode             varchar     not null
-        , vdate             date        not null
-        , count             int         null
-        , num_of_orgs       int         null
-        , pc_of_orgs        real        null
-    );
-
-
-    drop table if exists smm.ne_lang_code_distribution;
-    create table smm.ne_lang_code_distribution
-    (    
-          vcode             varchar     not null
-        , vdate             date        not null
-        , lang              varchar     null
-        , num_of_names      int         null
-        , pc_of_ne_names    real        null
-        , pc_of_all_names   real        null
-    );
-
-
-    drop table if exists smm.nl_lang_script_distribution;
-    create table smm.nl_lang_script_distribution
-    (    
-          vcode             varchar     not null
-        , vdate             date        not null
-        , script            varchar     null
-        , num_of_names      int         null
-        , pc_of_nl_names    real        null
-        , pc_of_all_names   real        null
-    );
-
-    drop table if exists smm.type_summary;
-    create table smm.type_summary
-    (    
-          vcode             varchar     not null primary key
-        , vdate             date        not null
-        , num_types         int         null
-        , government        int         null
-        , education         int         null
-        , healthcare        int         null
-        , company           int         null
-        , nonprofit         int         null
-        , funder            int         null
-        , facility          int         null
-        , archive           int         null
-        , other             int         null
-        , government_pc     real        null
-        , education_pc      real        null
-        , healthcare_pc     real        null
-        , company_pc        real        null
-        , nonprofit_pc      real        null
-        , funder_pc         real        null
-        , facility_pc       real        null
-        , archive_pc        real        null
-        , other_pc          real        null
-    );
-
-    drop table if exists smm.type_by_orgs_summary;
-    create table smm.type_by_orgs_summary
-    (    
-          vcode             varchar     not null primary key
-        , vdate             date        not null
-        , num_orgs          int         null
-        , government        int         null
-        , education         int         null
-        , healthcare        int         null
-        , company           int         null
-        , nonprofit         int         null
-        , funder            int         null
-        , facility          int         null
-        , archive           int         null
-        , other             int         null
-        , government_pc     real        null
-        , education_pc      real        null
-        , healthcare_pc     real        null
-        , company_pc        real        null
-        , nonprofit_pc      real        null
-        , funder_pc         real        null
-        , facility_pc       real        null
-        , archive_pc        real        null
-        , other_pc          real        null
-    );
-
-    drop table if exists smm.type_count_distribution;
-    create table smm.type_count_distribution
-    (    
-          vcode             varchar     not null
-        , vdate             date        not null
-        , count             int         null
-        , num_of_orgs       int         null
-        , pc_of_orgs        real        null
-    );
 
     drop table if exists smm.type_name_lang_code;
     create table smm.type_name_lang_code
@@ -224,68 +138,7 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
         , names_wolc_pc     real        null
     );
 
-    drop table if exists smm.ext_ids_summary;
-    create table smm.ext_ids_summary
-    (    
-          vcode             varchar     not null primary key
-        , vdate             date        not null
-        , num_ids           int         null
-        , isni              int         null
-        , grid              int         null
-        , fundref           int         null
-        , wikidata          int         null
-        , isni_pc           real        null
-        , grid_pc           real        null
-        , fundref_pc        real        null
-        , wikidata_pc       real        null
-        , num_orgs          int         null
-        , isni_orgs         int         null
-        , grid_orgs         int         null
-        , fundref_orgs      int         null
-        , wikidata_orgs     int         null
-        , isni_pc_orgs      real        null
-        , grid_pc_orgs      real        null
-        , fundref_pc_orgs   real        null
-        , wikidata_pc_orgs  real        null
-    );
-
-    drop table if exists smm.ext_ids_count_distribution;
-    create table smm.ext_ids_count_distribution
-    (    
-          vcode             varchar     not null
-        , vdate             date        not null
-        , count             int         null
-        , num_of_orgs       int         null
-        , pc_of_orgs        real        null
-    );
-
-    drop table if exists smm.links_summary;
-    create table smm.links_summary
-    (    
-          vcode             varchar     not null primary key
-        , vdate             date        not null
-        , num_links         int         null
-        , wikipedia         int         null
-        , website           int         null
-        , website_pc        real        null
-        , wikipedia_pc      real        null
-        , num_orgs          int         null
-        , wikipedia_orgs    int         null
-        , website_orgs      int         null
-        , wikipedia_pc_orgs real        null
-        , website_pc_orgs   real        null
-    );
-
-    drop table if exists smm.links_count_distribution;
-    create table smm.links_count_distribution
-    (    
-          vcode             varchar     not null
-        , vdate             date        not null
-        , count             int         null
-        , num_of_orgs       int         null
-        , pc_of_orgs        real        null
-    );
-
+   
     drop table if exists smm.relationships_summary;
     create table smm.relationships_summary
     (    
@@ -320,6 +173,7 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
         , non_recip_ps      int         null
     );
 
+
     drop table if exists smm.type_relationship;
     create table smm.type_relationship
     (    
@@ -332,26 +186,6 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
         , num_orgs          int         null
         , num_orgs_total    int         null
         , num_orgs_pc       real        null
-    );
-  
-    drop table if exists smm.country_distribution;
-    create table smm.country_distribution
-    (    
-          vcode             varchar     not null
-        , vdate             date        not null
-        , country           varchar     null
-        , num_of_locs       int         null
-        , pc_of_locs        real        null
-    );
-
-    drop table if exists smm.locs_count_distribution;
-    create table smm.locs_count_distribution
-    (    
-          vcode             varchar     not null
-        , vdate             date        not null
-        , count             int         null
-        , num_of_orgs       int         null
-        , pc_of_orgs        real        null
     );
 
     SET client_min_messages TO NOTICE;";

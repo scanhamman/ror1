@@ -1,6 +1,6 @@
 use sqlx::{Pool, Postgres};
 use crate::AppError;
-use super::smm_structs::{RorVersion, DistribRow, CountryRow, LangCodeRow, ScriptCodeRow};
+use super::smm_structs::{RorVersion, DistribRow, RankedRow, TypeRow};
 
 
 pub async fn delete_any_existing_data(v: &RorVersion,pool: &Pool<Postgres>) -> Result<(), AppError> {
@@ -14,31 +14,16 @@ pub async fn delete_any_existing_data(v: &RorVersion,pool: &Pool<Postgres>) -> R
                 DELETE from smm.name_summary {}
                 DELETE from smm.name_lang_code {}
                 DELETE from smm.name_ror {}
-                DELETE from smm.name_count_distribution {}
-                DELETE from smm.name_label_distribution {}
-                DELETE from smm.name_alias_distribution {}
-                DELETE from smm.name_acronym_distribution {}
-                DELETE from smm.ne_lang_code_distribution {}
-                DELETE from smm.nl_lang_script_distribution {}
-                DELETE from smm.type_summary {}
-                DELETE from smm.type_by_orgs_summary {}
-                DELETE from smm.type_count_distribution {}
+                DELETE from smm.count_distributions {}
+                DELETE from smm.ranked_distributions {}
+                DELETE from smm.attributes_summary {}
                 DELETE from smm.type_name_lang_code {}
-                DELETE from smm.ext_ids_summary {}
-                DELETE from smm.ext_ids_count_distribution {}
-                DELETE from smm.links_summary {}
-                DELETE from smm.links_count_distribution {}
                 DELETE from smm.relationships_summary {}
-                DELETE from smm.type_relationship {}
-                DELETE from smm.country_distribution {}
-                DELETE from smm.locs_count_distribution {}"#
-                , wc, wc, wc, wc, wc, wc, wc, wc, wc, wc, wc
-                , wc, wc, wc, wc, wc, wc, wc, wc, wc, wc, wc);
+                DELETE from smm.type_relationship {}"#
+                , wc, wc, wc, wc, wc, wc, wc, wc, wc, wc);
 
    sqlx::raw_sql(&del_sql).execute(pool).await?;
-
-    Ok(())
-
+   Ok(())
 }
 
 
@@ -209,7 +194,7 @@ pub async fn store_name_count_distrib(v: &RorVersion, pool: &Pool<Postgres>) -> 
                         group by n_names
                         order by n_names;"#;
     let rows: Vec<DistribRow> = sqlx::query_as(&sql).fetch_all(pool).await?;
-    store_distrib(rows, "name_count_distribution", pool).await
+    store_distrib(rows, "names", pool).await
 }
 
 
@@ -217,11 +202,11 @@ pub async fn store_label_count_distrib(v: &RorVersion, pool: &Pool<Postgres>) ->
 
     let sql = v.dvdd.clone() + r#"n_labels as count, count(id) as num_of_orgs, 
                         round(count(id) * 10000 :: float / "# + &(v.num_orgs.to_string()) + r#":: float)/100 :: float as pc_of_orgs
-                        from src.admin_data where n_labels <> 0
+                        from src.admin_data
                         group by n_labels
                         order by n_labels;"#;
     let rows: Vec<DistribRow> = sqlx::query_as(&sql).fetch_all(pool).await?;
-    store_distrib(rows, "name_label_distribution", pool).await
+    store_distrib(rows, "labels", pool).await
 }
 
 
@@ -229,11 +214,11 @@ pub async fn store_alias_count_distrib(v: &RorVersion, pool: &Pool<Postgres>) ->
 
     let sql = v.dvdd.clone() + r#"n_aliases as count, count(id) as num_of_orgs, 
                         round(count(id) * 10000 :: float / "# + &(v.num_orgs.to_string()) + r#":: float)/100 :: float as pc_of_orgs
-                        from src.admin_data where n_aliases <> 0
+                        from src.admin_data
                         group by n_aliases
                         order by n_aliases;"#;
     let rows: Vec<DistribRow> = sqlx::query_as(&sql).fetch_all(pool).await?;
-    store_distrib(rows, "name_alias_distribution", pool).await
+    store_distrib(rows, "aliases", pool).await
 }
 
 
@@ -241,168 +226,102 @@ pub async fn store_acronym_count_distrib(v: &RorVersion, pool: &Pool<Postgres>) 
 
     let sql = v.dvdd.clone() + r#"n_acronyms as count, count(id) as num_of_orgs, 
                         round(count(id) * 10000 :: float / "# + &(v.num_orgs.to_string()) + r#":: float)/100 :: float as pc_of_orgs
-                        from src.admin_data where n_acronyms <> 0
+                        from src.admin_data
                         group by n_acronyms
                         order by n_acronyms;"#;
     let rows: Vec<DistribRow> = sqlx::query_as(&sql).fetch_all(pool).await?;
-    store_distrib(rows, "name_acronym_distribution", pool).await
+    store_distrib(rows, "acronyms", pool).await
 }
 
 
-pub async fn store_lang_code_distrib(v: &RorVersion, pool: &Pool<Postgres>) -> Result<(), AppError> {
+pub async fn store_lang_code_distrib(v: &RorVersion, pool: &Pool<Postgres>, num_names: i64) -> Result<(), AppError> {
     
     let total_of_ne = get_count("select count(*) from src.names where lang_code <> 'en'", pool).await?;
-    let sql = v.dvdd.clone() + r#"lang_code as lang, count(id) as num_of_names, 
-                        round(count(id) * 10000 :: float / "# + &total_of_ne.to_string() + r#":: float)/100 :: float as pc_of_ne_names,
-                        round(count(id) * 10000 :: float / "# + &(v.num_orgs.to_string()) + r#":: float)/100 :: float as pc_of_all_names
-                        from src.names where lang_code <> 'en'
-                        group by lang_code
-                        order by count(id) desc;"#;
-    let rows: Vec<LangCodeRow> = sqlx::query_as(&sql).fetch_all(pool).await?;
 
-    let mut i = 0;
-    let mut rest_total = 0;
-    for r in rows {
-        if i < 25 {
-            sqlx::query(r#"INSERT INTO smm.ne_lang_code_distribution (vcode, vdate, lang, num_of_names, pc_of_ne_names, pc_of_all_names) 
-                                values($1, $2, $3, $4, $5, $6)"#)
-            .bind(r.vcode).bind(r.vdate)
-            .bind(r.lang).bind(r.num_of_names).bind(r.pc_of_ne_names).bind(r.pc_of_all_names)
-            .execute(pool)
-            .await?;
-        }
-        else {
-          rest_total += r.num_of_names;
-        } 
-        i += 1;
-    }
+    let sql = v.dvdd.clone() + r#"lc.name as entity, count(n.id) as number,
+                        round(count(n.id) * 10000 :: float / "# + &total_of_ne.to_string() + r#":: float)/100 :: float as pc_of_entities,
+                        round(count(n.id) * 10000 :: float / "# + &(num_names.to_string()) + r#":: float)/100 :: float as pc_of_base_set
+                        from src.names n inner join lup.lang_codes lc 
+                        on n.lang_code = lc.code 
+                        where lang_code <> 'en'
+                        group by lc.name
+                        order by count(n.id) desc;"#;
+    let rows: Vec<RankedRow> = sqlx::query_as(&sql).fetch_all(pool).await?;
+    store_ranked_distrib(&v, &rows, pool, "Remaining languages", 1, 
+           total_of_ne, num_names).await?;
 
-    if rest_total > 0 {
-        let rest_ne_pc = get_pc(rest_total, total_of_ne);
-        let rest_total_pc = get_pc(rest_total, v.num_orgs);
+    Ok(())
 
-        sqlx::query(r#"INSERT INTO smm.ne_lang_code_distribution (vcode, vdate, lang, num_of_names, pc_of_ne_names, pc_of_all_names) 
-        values($1, $2, $3, $4, $5, $6)"#)
-        .bind(v.vcode.clone()).bind(v.vdate)
-        .bind("Remaining languages")
-        .bind(rest_total).bind(rest_ne_pc).bind(rest_total_pc)
-        .execute(pool)
-        .await?;
-    }
-    
+}
+
+
+pub async fn store_script_code_distrib(v: &RorVersion, pool: &Pool<Postgres>, num_names: i64) -> Result<(), AppError> {
+  
+    let total_of_nltn = get_count("select count(*) from src.names where script_code <> 'Latn'", pool).await?;
+
+    let sql = v.dvdd.clone() + r#"ls.iso_name as entity, count(n.id) as number,
+                        round(count(id) * 10000 :: float / "# + &total_of_nltn.to_string() + r#":: float)/100 :: float as pc_of_entities,
+                        round(count(id) * 10000 :: float / "# + &(num_names.to_string()) + r#":: float)/100 :: float as pc_of_base_set
+                        from src.names n inner join lup.lang_scripts ls 
+                        on n.script_code = ls.code 
+                        where script_code <> 'Latn'
+                        group by ls.iso_name
+                        order by count(n.id) desc; "#;
+    let rows: Vec<RankedRow> = sqlx::query_as(&sql).fetch_all(pool).await?;
+    store_ranked_distrib(&v, &rows, pool, "Remaining scripts", 2,
+                        total_of_nltn, num_names).await?;
+
     Ok(())
 }
 
 
-pub async fn store_script_code_distrib(v: &RorVersion, pool: &Pool<Postgres>) -> Result<(), AppError> {
-  
-    let total_of_nltn = get_count("select count(*) from src.names where script_code <> 'Latn'", pool).await?;
-    let sql = v.dvdd.clone() + r#"script_code as script, count(id) as num_of_names, 
-                        round(count(id) * 10000 :: float / "# + &total_of_nltn.to_string() + r#":: float)/100 :: float as pc_of_nl_names,
-                        round(count(id) * 10000 :: float / "# + &(v.num_orgs.to_string()) + r#":: float)/100 :: float as pc_of_all_names
-                        from src.names where script_code <> 'Latn'
-                        group by script_code
-                        order by count(id) desc;"#;
-    let rows: Vec<ScriptCodeRow> = sqlx::query_as(&sql).fetch_all(pool).await?;
+pub async fn store_country_distrib(v: &RorVersion, pool: &Pool<Postgres>, num_locs: i64) -> Result<(), AppError> {
+
+    // At the moment num_of_locs = num_of_orgs - might change!
+
+    let total_of_nus = get_count("select count(*) from src.locations where country_code <> 'US'", pool).await?;
+
+    let sql = v.dvdd.clone() + r#"country_name as entity, count(id) as number, 
+                      round(count(id) * 10000 :: float / "# + &total_of_nus.to_string() + r#":: float)/100 :: float as pc_of_entities,
+                      round(count(id) * 10000 :: float / "# + &(num_locs.to_string()) + r#":: float)/100 :: float as pc_of_base_set
+                      from src.locations
+                      group by country_name
+                      order by count(country_name) desc;"#;
+    let rows: Vec<RankedRow> = sqlx::query_as(&sql).fetch_all(pool).await?;
+    store_ranked_distrib(&v, &rows, pool, "Remaining countries", 3,
+                        total_of_nus, num_locs).await?;
     
-    let mut i = 0;
-    let mut rest_total = 0;
-
-    for r in rows {
-        if i < 25 {
-            sqlx::query(r#"INSERT INTO smm.nl_lang_script_distribution (vcode, vdate, script, num_of_names, pc_of_nl_names, pc_of_all_names) 
-                                values($1, $2, $3, $4, $5, $6)"#)
-            .bind(r.vcode).bind(r.vdate).bind(r.script)
-            .bind(r.num_of_names).bind(r.pc_of_nl_names).bind(r.pc_of_all_names)
-            .execute(pool)
-            .await?;
-        }
-        else {
-            rest_total += r.num_of_names;
-        }
-        i += 1;
-    }
-
-    if rest_total > 0 {
-        let rest_nl_pc = get_pc(rest_total, total_of_nltn);
-        let rest_total_pc = get_pc(rest_total, v.num_orgs);
-
-        sqlx::query(r#"INSERT INTO smm.nl_lang_script_distribution (vcode, vdate, script, num_of_names, pc_of_nl_names, pc_of_all_names) 
-                        values($1, $2, $3, $4, $5, $6)"#)
-        .bind(v.vcode.clone()).bind(v.vdate).bind("Remaining scripts")
-        .bind(rest_total).bind(rest_nl_pc).bind(rest_total_pc)
-        .execute(pool)
-        .await?;
-    }
-
     Ok(())
-
 }
 
 
 pub async fn store_type_summary(v: &RorVersion, pool: &Pool<Postgres>, num_types: i64) -> Result<(), AppError> {
 
-    let government =  get_count("select count(*) from src.type where org_type = 100", pool).await?;   // num of orgs with type government
-    let education =  get_count("select count(*) from src.type where org_type = 200", pool).await?;       // num of orgs with type education
-    let healthcare =  get_count("select count(*) from src.type where org_type = 300", pool).await?;       // num of orgs with type healthcare
-    let company =  get_count("select count(*) from src.type where org_type = 400", pool).await?;          // num of orgs with type company
-    let nonprofit =  get_count("select count(*) from src.type where org_type = 500", pool).await?;        // num of orgs with type nonprofit
-    let funder =  get_count("select count(*) from src.type where org_type = 600", pool).await?;           // num of orgs with type funder
-    let facility=  get_count("select count(*) from src.type where org_type = 700", pool).await?;          // num of orgs with type facility
-    let archive=  get_count("select count(*) from src.type where org_type = 800", pool).await?;           // num of orgs with type archive
-    let other =  get_count("select count(*) from src.type where org_type = 900", pool).await?;            // num of orgs with type other
-    
-    let government_pc =  get_pc (government,num_types);   // pc of types with type government
-    let education_pc =  get_pc (education,num_types);      // pc of types with type education
-    let healthcare_pc =  get_pc (healthcare,num_types);     // pc of types with type healthcare
-    let company_pc =  get_pc (company,num_types);        // pc of types with type company
-    let nonprofit_pc =  get_pc (nonprofit,num_types);      // pc of types with type nonprofit
-    let funder_pc =  get_pc (funder,num_types);         // pc of types with type funder
-    let facility_pc =  get_pc (facility,num_types);       // pc of types with type facility
-    let archive_pc =  get_pc (archive,num_types);        // pc of types with type archive
-    let other_pc =  get_pc (other,num_types);          // pc of types with type other
-    
-    let sql = r#"INSERT into smm.type_summary (vcode, vdate, num_types, government,
-    education, healthcare, company, nonprofit, funder, facility, archive, other,
-    government_pc, education_pc, healthcare_pc, company_pc, nonprofit_pc, funder_pc, 
-    facility_pc, archive_pc, other_pc)
-    values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)"#;
+    let sql  = "".to_string() + r#"select gt.id, gt.name, count(t.id) as number,
+                        round(count(t.id) * 10000 :: float /  "# + &num_types.to_string() + r#":: float)/100 :: float as pc_of_atts,
+                        round(count(t.id) * 10000 :: float /  "# + &v.num_orgs.to_string() + r#":: float)/100 :: float as pc_of_orgs
+                        from lup.ror_org_types gt
+                        inner join src.type t
+                        on gt.id = t.org_type 
+                        group by gt.id, gt.name
+                        order by gt.id;"#;
+    let rows: Vec<TypeRow> = sqlx::query_as(&sql).fetch_all(pool).await?;
 
-    sqlx::query(sql)
-    .bind(v.vcode.clone()).bind(v.vdate).bind(num_types)
-    .bind(government).bind(education).bind(healthcare).bind(company)
-    .bind(nonprofit).bind(funder).bind(facility).bind(archive).bind(other)
-    .bind(government_pc).bind(education_pc).bind(healthcare_pc).bind(company_pc)
-    .bind(nonprofit_pc).bind(funder_pc).bind(facility_pc).bind(archive_pc).bind(other_pc)
-    .execute(pool)
-    .await?;
+    for t in rows {
 
-    let government_pc =  get_pc (government,v.num_orgs);   // pc of orgs with type government
-    let education_pc =  get_pc (education,v.num_orgs);      // pc of orgs with type education
-    let healthcare_pc =  get_pc (healthcare,v.num_orgs);     // pc of orgs with type healthcare
-    let company_pc =  get_pc (company,v.num_orgs);        // pc of orgs with type company
-    let nonprofit_pc =  get_pc (nonprofit,v.num_orgs);      // pc of orgs with type nonprofit
-    let funder_pc =  get_pc (funder,v.num_orgs);         // pc of orgs with type funder
-    let facility_pc =  get_pc (facility,v.num_orgs);       // pc of orgs with type facility
-    let archive_pc =  get_pc (archive,v.num_orgs);        // pc of orgs with type archive
-    let other_pc =  get_pc (other,v.num_orgs);          // pc of orgs with type 
-    
-    let sql = r#"INSERT into smm.type_by_orgs_summary (vcode, vdate, num_orgs, government,
-    education, healthcare, company, nonprofit, funder, facility, archive, other,
-    government_pc, education_pc, healthcare_pc, company_pc, nonprofit_pc, funder_pc, 
-    facility_pc, archive_pc, other_pc)
-    values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)"#;
-
-    sqlx::query(sql)
-    .bind(v.vcode.clone()).bind(v.vdate).bind(v.num_orgs)
-    .bind(government).bind(education).bind(healthcare).bind(company)
-    .bind(nonprofit).bind(funder).bind(facility).bind(archive).bind(other)
-    .bind(government_pc).bind(education_pc).bind(healthcare_pc).bind(company_pc)
-    .bind(nonprofit_pc).bind(funder_pc).bind(facility_pc).bind(archive_pc).bind(other_pc)
-    .execute(pool)
-    .await?;
+        let sql = r#"INSERT into smm.attributes_summary (vcode, vdate, att_type, att_name, 
+        id, name, number, pc_of_atts, pc_of_orgs)
+        values ($1, $2, $3, $4, $5, $6, $7, $8, $9)"#;
+            
+        sqlx::query(sql)
+        .bind(v.vcode.clone()).bind(v.vdate).bind(2).bind("org types").bind(t.id).bind(t.name)
+        .bind(t.number).bind(t.pc_of_atts).bind(t.pc_of_orgs)
+        .execute(pool)
+        .await?;
+    }
 
     Ok(())
+
 }
    
 
@@ -414,7 +333,7 @@ pub async fn store_type_count_distrib(v: &RorVersion, pool: &Pool<Postgres>) -> 
                       group by n_types
                       order by n_types;"#;
     let rows: Vec<DistribRow> = sqlx::query_as(&sql).fetch_all(pool).await?;
-    store_distrib(rows, "type_count_distribution", pool).await
+    store_distrib(rows, "org_types", pool).await
 }
 
 
@@ -497,37 +416,29 @@ pub async fn store_types_with_lang_code(v: &RorVersion, pool: &Pool<Postgres>) -
 
 
 pub async fn store_ext_ids_summary(v: &RorVersion, pool: &Pool<Postgres>, num_ids: i64) -> Result<(), AppError> {
-  
-    let isni =  get_count("select count(*) from src.external_ids where id_type = 11", pool).await?;   
-    let grid =  get_count("select count(*) from src.external_ids where id_type = 13", pool).await?;      
-    let fundref =  get_count("select count(*) from src.external_ids where id_type = 14", pool).await?;     
-    let wikidata =  get_count("select count(*) from src.external_ids where id_type = 12", pool).await?;    
-    let isni_pc =  get_pc(isni, num_ids); 
-    let grid_pc =  get_pc(grid, num_ids); 
-    let fundref_pc = get_pc(fundref, num_ids); 
-    let wikidata_pc =  get_pc(wikidata, num_ids); 
-    let isni_orgs =  get_count("select count(*) from src.admin_data where n_isni > 0", pool).await?;   
-    let grid_orgs =  get_count("select count(*) from src.admin_data where n_grid > 0", pool).await?;      
-    let fundref_orgs =  get_count("select count(*) from src.admin_data where n_fundref > 0", pool).await?;     
-    let wikidata_orgs =  get_count("select count(*) from src.admin_data where n_wikidata > 0", pool).await?;    
-    let isni_pc_orgs =  get_pc(isni_orgs, v.num_orgs); 
-    let grid_pc_orgs =  get_pc(grid_orgs, v.num_orgs); 
-    let fundref_pc_orgs = get_pc(fundref_orgs, v.num_orgs); 
-    let wikidata_pc_orgs =  get_pc(wikidata_orgs, v.num_orgs); 
+      
+    let sql = "".to_string() + r#"select it.id, it.name, count(t.id) as number,
+        round(count(t.id) * 10000 :: float / "# + &num_ids.to_string() + r#":: float)/100 :: float as pc_of_atts,
+        round(count(t.id) * 10000 :: float / "# + &v.num_orgs.to_string() + r#":: float)/100 :: float as pc_of_orgs
+        from lup.ror_id_types it
+        inner join src.external_ids t
+        on it.id = t.id_type 
+        group by it.id, it.name
+        order by it.id;"#;
+    let rows: Vec<TypeRow> = sqlx::query_as(&sql).fetch_all(pool).await?;
 
-    let sql = r#"INSERT into smm.ext_ids_summary (vcode, vdate, num_ids, isni,
-    grid, fundref, wikidata, isni_pc, grid_pc, fundref_pc, wikidata_pc, num_orgs, isni_orgs,
-    grid_orgs, fundref_orgs, wikidata_orgs, isni_pc_orgs, grid_pc_orgs, fundref_pc_orgs, wikidata_pc_orgs)
-    values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)"#;
+    for t in rows {
 
-    sqlx::query(sql)
-    .bind(v.vcode.clone()).bind(v.vdate).bind(num_ids)
-    .bind(isni).bind(grid).bind(fundref).bind(wikidata)
-    .bind(isni_pc).bind(grid_pc).bind(fundref_pc).bind(wikidata_pc)
-    .bind(v.num_orgs).bind(isni_orgs).bind(grid_orgs).bind(fundref_orgs).bind(wikidata_orgs)
-    .bind(isni_pc_orgs).bind(grid_pc_orgs).bind(fundref_pc_orgs).bind(wikidata_pc_orgs)
-    .execute(pool)
-    .await?;
+        let sql = r#"INSERT into smm.attributes_summary (vcode, vdate, att_type, att_name,
+        id, name, number, pc_of_atts, pc_of_orgs)
+        values ($1, $2, $3, $4, $5, $6, $7, $8, $9)"#;
+            
+        sqlx::query(sql)
+        .bind(v.vcode.clone()).bind(v.vdate).bind(3).bind("ext id types").bind(t.id).bind(t.name)
+        .bind(t.number).bind(t.pc_of_atts).bind(t.pc_of_orgs)
+        .execute(pool)
+        .await?;
+    }
 
     Ok(())
 }
@@ -541,36 +452,35 @@ pub async fn store_ext_ids_count_distrib(v: &RorVersion, pool: &Pool<Postgres>) 
                     group by n_ext_ids
                     order by n_ext_ids;"#;
   let rows: Vec<DistribRow> = sqlx::query_as(&sql).fetch_all(pool).await?;
-  store_distrib(rows, "ext_ids_count_distribution", pool).await
+  store_distrib(rows, "ext_ids", pool).await
 }
 
 
 pub async fn store_links_summary(v: &RorVersion, pool: &Pool<Postgres>, num_links: i64) -> Result<(), AppError> {
 
-    let wikipedia =  get_count("select count(*) from src.links where link_type = 21", pool).await?;   
-    let website =  get_count("select count(*) from src.links where link_type = 22", pool).await?;      
-    
-    let wikipedia_pc =  get_pc(wikipedia, num_links); 
-    let website_pc =  get_pc(website, num_links); 
-    
-    let wikipedia_orgs =  get_count("select count(*) from src.admin_data where n_wikipedia > 0", pool).await?;   
-    let website_orgs =  get_count("select count(*) from src.admin_data where n_website > 0", pool).await?;      
-   
-    let wikipedia_pc_orgs =  get_pc(wikipedia_orgs, v.num_orgs); 
-    let website_pc_orgs =  get_pc(website_orgs, v.num_orgs); 
+   let sql = "".to_string() + r#"select lt.id, lt.name, count(t.id) as number,
+        round(count(t.id) * 10000 :: float / "# + &num_links.to_string() + r#":: float)/100 :: float as pc_of_atts,
+        round(count(t.id) * 10000 :: float / "# + &v.num_orgs.to_string() + r#":: float)/100 :: float as pc_of_orgs
+        from lup.ror_link_types lt
+        inner join src.links t
+        on lt.id = t.link_type 
+        group by lt.id, lt.name
+        order by lt.id;"#;
+    let rows: Vec<TypeRow> = sqlx::query_as(&sql).fetch_all(pool).await?;
 
-    let sql = r#"INSERT into smm.links_summary (vcode, vdate, 
-    num_links, wikipedia, website, wikipedia_pc, website_pc, 
-    num_orgs, wikipedia_orgs, website_orgs, wikipedia_pc_orgs, website_pc_orgs)
-    values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)"#;
+    for t in rows {
 
-    sqlx::query(sql)
-    .bind(v.vcode.clone()).bind(v.vdate).bind(num_links)
-    .bind(wikipedia).bind(website).bind(wikipedia_pc).bind(website_pc)
-    .bind(v.num_orgs).bind(wikipedia_orgs).bind(website_orgs).bind(wikipedia_pc_orgs).bind(website_pc_orgs)
-    .execute(pool)
-    .await?;
-    
+        let sql = r#"INSERT into smm.attributes_summary (vcode, vdate, att_type, att_name,
+        id, name, number, pc_of_atts, pc_of_orgs)
+        values ($1, $2, $3, $4, $5, $6, $7, $8, $9)"#;
+            
+        sqlx::query(sql)
+        .bind(v.vcode.clone()).bind(v.vdate).bind(4).bind("link types").bind(t.id).bind(t.name)
+        .bind(t.number).bind(t.pc_of_atts).bind(t.pc_of_orgs)
+        .execute(pool)
+        .await?;
+    }
+
     Ok(())
 }
 
@@ -583,7 +493,7 @@ pub async fn store_links_count_distrib(v: &RorVersion, pool: &Pool<Postgres>) ->
                     group by n_links
                     order by n_links;"#;
   let rows: Vec<DistribRow> = sqlx::query_as(&sql).fetch_all(pool).await?;
-  store_distrib(rows, "links_count_distribution", pool).await
+  store_distrib(rows, "links", pool).await
 }
 
 
@@ -725,46 +635,6 @@ pub async fn store_types_and_relationships(v: &RorVersion, pool: &Pool<Postgres>
 }
 
 
-pub async fn store_country_top_25_distrib(v: &RorVersion, pool: &Pool<Postgres>, num_locs: i64) -> Result<(), AppError> {
-
-    // At the moment num_of_locs = num_of_orgs - might change!
-
-    let sql = v.dvdd.clone() + r#"country_name as country, count(country_name) as num_of_locs, 
-                      round(count(country_name) * 10000 :: float / "# + &(num_locs.to_string()) + r#":: float)/100 :: float as pc_of_locs
-                      from src.locations
-                      group by country_name
-                      order by count(country_name) desc;"#;
-    let rows: Vec<CountryRow> = sqlx::query_as(&sql).fetch_all(pool).await?;
-
-    let mut i = 0;
-    let mut rest_total = 0;
-    for r in rows {
-        if i < 25 {
-            sqlx::query(r#"INSERT INTO smm.country_distribution (vcode, vdate, country, num_of_locs, pc_of_locs) 
-                                values($1, $2, $3, $4, $5)"#)
-            .bind(r.vcode).bind(r.vdate)
-            .bind(r.country).bind(r.num_of_locs).bind(r.pc_of_locs)
-            .execute(pool)
-            .await?;
-        }
-        else {
-          rest_total += r.num_of_locs;
-        } 
-        i += 1;
-    }
-    let rest_total_pc = get_pc(rest_total, num_locs);
-
-    sqlx::query(r#"INSERT INTO smm.country_distribution (vcode, vdate, country, num_of_locs, pc_of_locs) 
-                        values($1, $2, $3, $4, $5)"#)
-    .bind(v.vcode.clone()).bind(v.vdate)
-    .bind("Remaining countries").bind(rest_total).bind(rest_total_pc)
-    .execute(pool)
-    .await?;
-  
-  Ok(())
-}
-
-
 pub async fn store_locs_count_distrib(v: &RorVersion, pool: &Pool<Postgres>) -> Result<(), AppError> {
 
   let sql = v.dvdd.clone() + r#"n_locs as count, count(id) as num_of_orgs, 
@@ -773,7 +643,7 @@ pub async fn store_locs_count_distrib(v: &RorVersion, pool: &Pool<Postgres>) -> 
                      group by n_locs
                      order by n_locs;"#;
   let rows: Vec<DistribRow> = sqlx::query_as(&sql).fetch_all(pool).await?;
-  store_distrib(rows, "locs_count_distribution", pool).await
+  store_distrib(rows, "locs", pool).await
 }
 
 
@@ -784,6 +654,7 @@ pub async fn get_count (sql_string: &str, pool: &Pool<Postgres>) -> Result<i64, 
     Ok(res)
 }
 
+
 fn get_pc (top:i64, bottom:i64) -> f32 {
     if bottom == 0
     { 0.0 }
@@ -793,19 +664,61 @@ fn get_pc (top:i64, bottom:i64) -> f32 {
     }
 }
 
-async fn store_distrib(rows: Vec<DistribRow>, table_name: &str, pool: &Pool<Postgres>)-> Result<(), AppError> {
 
-    let sql = format!(r#"INSERT INTO smm.{} (vcode, vdate, count, num_of_orgs, pc_of_orgs) 
-                                values($1, $2, $3, $4, $5)"#, table_name);
+async fn store_distrib(rows: Vec<DistribRow>, count_type: &str, pool: &Pool<Postgres>)-> Result<(), AppError> {
+
+    let sql = format!(r#"INSERT INTO smm.count_distributions (vcode, vdate, 
+    count_type, count, num_of_orgs, pc_of_orgs) values($1, $2, $3, $4, $5, $6)"#);
     for r in rows {
         sqlx::query(&sql)
-        .bind(r.vcode).bind(r.vdate)
+        .bind(r.vcode).bind(r.vdate).bind(count_type)
         .bind(r.count).bind(r.num_of_orgs).bind(r.pc_of_orgs)
         .execute(pool)
         .await?;
     }
     Ok(())
 }
+
+
+pub async fn store_ranked_distrib(v: &RorVersion, rows: &Vec<RankedRow>, pool: &Pool<Postgres>, remainder_name: &str,
+    dist_type : i32, entity_total: i64, base_set_total: i64) -> Result<(), AppError> {
+
+    let mut i = 0;
+    let mut rest_total = 0;
+
+    for r in rows {
+        i += 1;
+        if i < 26 {
+            sqlx::query(r#"INSERT INTO smm.ranked_distributions (vcode, vdate, dist_type, rank, entity, 
+            number, pc_of_entities, pc_of_base_set) 
+            values($1, $2, $3, $4, $5, $6, $7, $8)"#)
+            .bind(r.vcode.clone()).bind(r.vdate).bind(dist_type).bind(i)
+            .bind(r.entity.clone()).bind(r.number).bind(r.pc_of_entities).bind(r.pc_of_base_set)
+            .execute(pool)
+            .await?;
+        }
+        else {
+            rest_total += r.number;
+        } 
+    }
+
+    if rest_total > 0 {
+
+        let rest_ne_pc: f64 = get_pc(rest_total, entity_total).into();
+        let rest_total_pc: f64 = get_pc(rest_total, base_set_total).into();
+
+        sqlx::query(r#"INSERT INTO smm.ranked_distributions (vcode, vdate, dist_type, rank, entity, 
+        number, pc_of_entities, pc_of_base_set) 
+        values($1, $2, $3, $4, $5, $6, $7, $8)"#)
+        .bind(v.vcode.clone()).bind(v.vdate).bind(dist_type).bind(26)
+        .bind(remainder_name).bind(rest_total).bind(rest_ne_pc).bind(rest_total_pc)
+        .execute(pool)
+        .await?;
+    }
+
+    Ok(())
+}
+
 
 async fn get_rel_imbalance(f1_type: u8, f2_type: u8, pool: &Pool<Postgres>) -> Result<i64, AppError> {
  

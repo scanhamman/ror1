@@ -23,31 +23,20 @@ pub struct DistribRow {
 }
 
 #[derive(sqlx::FromRow)]
-pub struct CountryRow {
+pub struct RankedRow {
   pub vcode: String,
   pub vdate: NaiveDate,
-  pub country: String,
-  pub num_of_locs: i64,
-  pub pc_of_locs: f64,
+  pub entity: String,
+  pub number: i64,
+  pub pc_of_entities: f64,
+  pub pc_of_base_set: f64,
 }
 
 #[derive(sqlx::FromRow)]
-pub struct LangCodeRow {
-  pub vcode: String,
-  pub vdate: NaiveDate,
-  pub lang: String,
-  pub num_of_names: i64,
-  pub pc_of_ne_names: f64,
-  pub pc_of_all_names: f64,
+pub struct TypeRow {
+    pub id: i32,
+    pub name: String,
+    pub number: i64,
+    pub pc_of_atts: f64,
+    pub pc_of_orgs: f64,
 }
-
-#[derive(sqlx::FromRow)]
-pub struct ScriptCodeRow {
-  pub vcode: String,
-  pub vdate: NaiveDate,
-  pub script: String,
-  pub num_of_names: i64,
-  pub pc_of_nl_names: f64,
-  pub pc_of_all_names: f64,
-}
-

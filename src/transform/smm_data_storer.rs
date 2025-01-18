@@ -26,7 +26,7 @@ pub async fn store_summary_data (pool: &Pool<Postgres>) -> Result<(), AppError> 
         vcode: fp.vcode.to_string(),
         vdate: vdate.to_owned(),
         num_orgs: num_orgs,
-        dvdd: dv_dt.to_string(),
+        dvdd: dv_dt
     };
 
     smm_storage_helper::delete_any_existing_data(&v, pool).await?;
@@ -64,9 +64,9 @@ pub async fn store_summary_data (pool: &Pool<Postgres>) -> Result<(), AppError> 
 
     smm_storage_helper::store_acronym_count_distrib(&v, pool).await?;
 
-    smm_storage_helper::store_lang_code_distrib(&v, pool).await?;
+    smm_storage_helper::store_lang_code_distrib(&v, pool, num_names).await?;
 
-    smm_storage_helper::store_script_code_distrib(&v, pool).await?;
+    smm_storage_helper::store_script_code_distrib(&v, pool, num_names).await?;
    
     smm_storage_helper::store_type_summary(&v, pool, num_types).await?;
 
@@ -86,7 +86,7 @@ pub async fn store_summary_data (pool: &Pool<Postgres>) -> Result<(), AppError> 
 
     smm_storage_helper::store_types_and_relationships(&v, pool).await?;
 
-    smm_storage_helper::store_country_top_25_distrib(&v, pool, num_locations).await?;
+    smm_storage_helper::store_country_distrib(&v, pool, num_locations).await?;
 
     smm_storage_helper::store_locs_count_distrib(&v, pool).await?;
 
