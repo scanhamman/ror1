@@ -29,6 +29,7 @@ async fn summarise_names (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::
     Ok(qry_res)
 }
 async fn summarise_nametypes (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Error> {
+   
     let import_sql  = r#"update src.admin_data ad
           set n_labels = n
           from (
@@ -54,22 +55,46 @@ async fn summarise_nametypes (pool: &Pool<Postgres>) -> Result<PgQueryResult, sq
               from src.names where name_type = 10
               group by id) c
           where ad.id = c.id;"#;
+    sqlx::raw_sql(import_sql).execute(pool).await?;
+
+    let import_sql  = r#"update src.admin_data ad
+          set n_nacro = n_names - n_acronyms;"#;
     let qry_res= sqlx::raw_sql(import_sql).execute(pool).await?;
+
     Ok(qry_res)
 }
 
 async fn summarise_namenulls (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Error> {
     
     let import_sql  = r#"update src.admin_data ad
-          set n_null_langs = n
+          set n_names_wolc = n
+          from (
+              select id, count(id) as n
+              from src.names 
+              where lang_code is null
+              group by id) c
+          where ad.id = c.id;"#;
+    sqlx::raw_sql(import_sql).execute(pool).await?;
+
+    let import_sql  = r#"update src.admin_data ad
+          set n_nacro_wolc = n
           from (
               select id, count(id) as n
               from src.names 
               where lang_code is null and name_type <> 10
               group by id) c
           where ad.id = c.id;"#;
+    sqlx::raw_sql(import_sql).execute(pool).await?;
+
+    let import_sql  = r#"update src.admin_data ad
+          set n_is_company = 1
+          from src.type t
+          where ad.id = t.id
+          and t.org_type = 400;"#;
     let qry_res = sqlx::raw_sql(import_sql).execute(pool).await?;
     Ok(qry_res)
+
+
 }
 
 async fn summarise_external_ids (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Error> {

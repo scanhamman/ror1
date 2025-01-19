@@ -118,8 +118,9 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
         , att_name          varchar     null
         , id                int         null
         , name              varchar     null
-        , number            int         null
+        , number_atts       int         null
         , pc_of_atts        real        null
+        , number_orgs       int         null
         , pc_of_orgs        real        null        
     );
 
@@ -139,38 +140,14 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
     );
 
    
-    drop table if exists smm.relationships_summary;
-    create table smm.relationships_summary
+    drop table if exists smm.singletons;
+    create table smm.singletons
     (    
-          vcode             varchar     not null primary key
+          vcode             varchar     not null
         , vdate             date        not null
-        , total_lnks        int         null
-        , parent_lnks       int         null
-        , child_lnks        int         null
-        , rel_lnks          int         null
-        , pred_lnks         int         null
-        , succ_lnks         int         null
-        , parent_lnks_pc    real        null
-        , child_lnks_pc     real        null
-        , rel_lnks_pc       real        null
-        , pred_lnks_pc      real        null
-        , succ_lnks_pc      real        null
-        , total_orgs        int         null
-        , parent_orgs       int         null
-        , child_orgs        int         null
-        , parch_orgs        int         null
-        , rel_orgs          int         null
-        , pred_orgs         int         null
-        , succ_orgs         int         null
-        , parent_orgs_pc    real        null
-        , child_orgs_pc     real        null
-        , parch_orgs_pc     real        null
-        , rel_orgs_pc       real        null
-        , pred_orgs_pc      real        null
-        , succ_orgs_pc      real        null
-        , non_recip_pc      int         null
-        , non_recip_rr      int         null
-        , non_recip_ps      int         null
+        , description       varchar     null
+        , number            int         null
+        , pc                real        null
     );
 
 
@@ -180,7 +157,6 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
           vcode             varchar     not null
         , vdate             date        not null
         , org_type          varchar     null
-        , org_type_total    int         null
         , rel_type          varchar     null
         , num_links         int         null
         , num_orgs          int         null

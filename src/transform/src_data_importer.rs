@@ -5,7 +5,7 @@ pub async fn import_data (pool: &Pool<Postgres>) -> Result<(), sqlx::Error> {
     import_version_details(pool).await?;
     import_to_core_data (pool).await?;
     update_core_data_locations (pool).await?;
-    import_admin_data_base (pool).await?;
+    import_admin_data_basics (pool).await?;
     import_names (pool).await?;
     import_links (pool).await?;
     import_domains (pool).await?;
@@ -56,7 +56,7 @@ async fn update_core_data_locations (pool: &Pool<Postgres>) -> Result<PgQueryRes
     Ok(qry_res)
 }
 
-async fn import_admin_data_base (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Error> {
+async fn import_admin_data_basics (pool: &Pool<Postgres>) -> Result<PgQueryResult, sqlx::Error> {
 
     let import_sql  = r#"insert into src.admin_data(id, ror_name, created, cr_schema, 
           last_modified, lm_schema)

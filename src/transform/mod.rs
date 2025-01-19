@@ -26,7 +26,15 @@ pub async fn create_src_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
             return Err(e)
             },
     };
+    match src_tables_create::create_admin_data_table(pool).await {
+        Ok(()) => info!("Admin data table created in src schema"),
+        Err(e) => {
+            error!("An error occured while creating the src admin data table: {}", e);
+            return Err(e)
+            },
+    };
     Ok(())
+
 }
 
 pub async fn process_data(pool : &Pool<Postgres>) -> Result<(), AppError>

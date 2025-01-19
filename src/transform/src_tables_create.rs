@@ -28,38 +28,6 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
         , country_code      varchar     null
     );
 
-    drop table if exists src.admin_data;
-    create table src.admin_data
-    (
-          id                varchar     not null primary key
-        , ror_name          varchar     not null	              
-        , n_locs            int         not null default 0
-        , n_labels          int         not null default 0
-        , n_aliases         int         not null default 0
-        , n_acronyms        int         not null default 0
-        , n_names           int         not null default 0
-        , n_null_langs      int         not null default 0
-        , n_isni            int         not null default 0
-        , n_grid            int         not null default 0
-        , n_fundref         int         not null default 0
-        , n_wikidata        int         not null default 0
-        , n_ext_ids         int         not null default 0
-        , n_wikipedia       int         not null default 0
-        , n_website         int         not null default 0
-        , n_links           int         not null default 0
-        , n_types           int         not null default 0
-        , n_relrels         int         not null default 0
-        , n_parrels         int         not null default 0
-        , n_chrels          int         not null default 0
-        , n_sucrels         int         not null default 0
-        , n_predrels        int         not null default 0
-        , n_doms            int         not null default 0
-        , created           date        not null
-        , cr_schema         varchar     not null
-        , last_modified     date        not null
-        , lm_schema        varchar      not null  
-    );
-
     drop table if exists src.names;
     create table src.names
     (
@@ -147,3 +115,48 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
     Ok(())
     
 }
+
+
+pub async fn create_admin_data_table(pool: &Pool<Postgres>) -> Result<(), AppError> {
+
+    let sql = r#"
+    drop table if exists src.admin_data;
+    create table src.admin_data
+    (
+          id                varchar     not null primary key
+        , ror_name          varchar     not null	              
+        , n_locs            int         not null default 0
+        , n_labels          int         not null default 0
+        , n_aliases         int         not null default 0
+        , n_acronyms        int         not null default 0
+        , n_names           int         not null default 0
+        , n_names_wolc      int         not null default 0
+        , n_nacro           int         not null default 0
+        , n_nacro_wolc      int         not null default 0
+        , n_is_company      int         not null default 0
+        , n_isni            int         not null default 0
+        , n_grid            int         not null default 0
+        , n_fundref         int         not null default 0
+        , n_wikidata        int         not null default 0
+        , n_ext_ids         int         not null default 0
+        , n_wikipedia       int         not null default 0
+        , n_website         int         not null default 0
+        , n_links           int         not null default 0
+        , n_types           int         not null default 0
+        , n_relrels         int         not null default 0
+        , n_parrels         int         not null default 0
+        , n_chrels          int         not null default 0
+        , n_sucrels         int         not null default 0
+        , n_predrels        int         not null default 0
+        , n_doms            int         not null default 0
+        , created           date        not null
+        , cr_schema         varchar     not null
+        , last_modified     date        not null
+        , lm_schema         varchar     not null  
+    );"#;
+
+    sqlx::raw_sql(sql).execute(pool).await?;
+    Ok(())
+    
+}
+
