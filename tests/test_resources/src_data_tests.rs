@@ -13,7 +13,6 @@ use super::src_data_access;
 use super::src_record_structs::{SrcCoreData, SrcRelationship, SrcExternalId, 
     SrcName, SrcLocation, SrcLink, SrcType, SrcAdminData};
 
-
 pub async fn fetch_db_pool() -> Result<Pool<Postgres>, AppError>  {
 
     // Use the process set up in the library under test
@@ -22,7 +21,6 @@ pub async fn fetch_db_pool() -> Result<Pool<Postgres>, AppError>  {
     env_reader::populate_env_vars()?; 
     get_db_pool().await
 }
-
 
 #[tokio::test] 
 async fn process_v2_0_data_to_src_and_summarise() {
@@ -33,7 +31,7 @@ async fn process_v2_0_data_to_src_and_summarise() {
   
     // Act 
     // Run the program with v2.0 test data
-    let args : Vec<&str> = vec!["target/debug/src1.exe", "-p", "-t"];
+    let args : Vec<&str> = vec!["target/debug/src1.exe", "-p", "-z"];
     let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
     run(test_args).await.unwrap();
 
@@ -102,7 +100,7 @@ async fn check_src_core_data() {
 
     assert_eq!(admin_data, SrcAdminData{
         ror_name: "Bond University".to_string(), n_locs: 1, n_labels: 1,  n_aliases: 0, n_acronyms: 0,
-        n_names: 1, n_null_langs: 0, n_isni: 1, n_grid: 1, n_fundref: 1, n_wikidata: 1,
+        n_names: 1, n_names_wolc: 0, n_nacro: 1, n_nacro_wolc: 0, n_is_company:0, n_isni: 1, n_grid: 1, n_fundref: 1, n_wikidata: 1,
         n_ext_ids: 4, n_wikipedia: 1, n_website: 1, n_links: 2, n_types: 2, n_relrels: 2,
         n_parrels: 0, n_chrels: 0, n_sucrels: 0, n_predrels: 0, n_doms: 0,
         created: cr_dt, cr_schema: "1.0".to_string(), 
@@ -124,7 +122,7 @@ async fn check_src_core_data() {
     let admin_data: SrcAdminData = src_data_access::fetch_src_admin_data_record (id, &pool).await;
     assert_eq!(admin_data, SrcAdminData{
         ror_name: "Food Packaging Forum Foundation".to_string(), n_locs: 1, n_labels: 1,  
-        n_aliases: 1, n_acronyms: 1, n_names: 3, n_null_langs: 0, n_isni: 1, n_grid: 0, 
+        n_aliases: 1, n_acronyms: 1, n_names: 3, n_names_wolc: 1, n_nacro: 2, n_nacro_wolc: 0, n_is_company:0, n_isni: 1, n_grid: 0, 
         n_fundref: 0, n_wikidata: 1, n_ext_ids: 2, n_wikipedia: 1, n_website: 1, 
         n_links: 2, n_types: 1, n_relrels: 0, n_parrels: 0, n_chrels: 0, n_sucrels: 0, 
         n_predrels: 0, n_doms: 0,

@@ -38,7 +38,8 @@ use regex::Regex;
 pub struct InitParams {
     pub import_ror: bool,
     pub process_data: bool,
-    pub report_data: bool,
+    pub export_text: bool,
+    pub export_csv: bool,
     pub create_context: bool,
     pub create_summary: bool,
     pub test_run: bool,
@@ -69,7 +70,8 @@ pub async fn get_params(args: Vec<OsString>) -> Result<InitParams, AppError> {
         Ok(InitParams {
             import_ror : false,
             process_data : false,
-            report_data : false,
+            export_text : false,
+            export_csv : false,
             create_context: true,
             create_summary: true,
             test_run: false,
@@ -140,7 +142,6 @@ pub async fn get_params(args: Vec<OsString>) -> Result<InitParams, AppError> {
                 return Result::Err(AppError::CsErr(cf_err));
              }
         }
-
         
         let mut data_version = "".to_string();
         let mut data_date = "".to_string();
@@ -201,7 +202,8 @@ pub async fn get_params(args: Vec<OsString>) -> Result<InitParams, AppError> {
         Ok(InitParams {
             import_ror : cli_pars.import_ror,
             process_data : cli_pars.process_data,
-            report_data: cli_pars.report_data,
+            export_text: cli_pars.export_text,
+            export_csv: cli_pars.export_csv,
             create_context: cli_pars.create_lup,
             create_summary: cli_pars.create_smm,
             test_run: cli_pars.test_run,
@@ -417,7 +419,7 @@ mod tests {
     
             assert_eq!(res.import_ror, true);
             assert_eq!(res.process_data, false);
-            assert_eq!(res.report_data, false);
+            assert_eq!(res.export_text, false);
             assert_eq!(res.create_context, false);
             assert_eq!(res.create_summary, false);
             assert_eq!(res.data_folder, PathBuf::from("E:/ROR/data"));
@@ -450,14 +452,15 @@ mod tests {
             ("output_file_name", Some("results 27.json")),
         ],
         async { 
-            let args : Vec<&str> = vec!["target/debug/ror1.exe", "-R", "-P", "-X", 
+            let args : Vec<&str> = vec!["target/debug/ror1.exe", "-R", "-P", "-T", "-X",
                                      "-f", "E:/ROR/data", "-d", "2026-12-25", "-s", "schema2 data.json", "-v", "v1.60"];
             let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
             let res = get_params(test_args).await.unwrap();
     
             assert_eq!(res.import_ror, true);
             assert_eq!(res.process_data, true);
-            assert_eq!(res.report_data, true);
+            assert_eq!(res.export_text, true);
+            assert_eq!(res.export_csv, true);
             assert_eq!(res.create_context, false);
             assert_eq!(res.create_summary, false);
             assert_eq!(res.data_folder, PathBuf::from("E:/ROR/data"));
@@ -495,7 +498,7 @@ mod tests {
     
             assert_eq!(res.import_ror, false);
             assert_eq!(res.process_data, false);
-            assert_eq!(res.report_data, false);
+            assert_eq!(res.export_text, false);
             assert_eq!(res.create_context,true);
             assert_eq!(res.create_summary, true);
             assert_eq!(res.data_folder, PathBuf::new());
@@ -535,7 +538,7 @@ mod tests {
     
             assert_eq!(res.import_ror, true);
             assert_eq!(res.process_data, true);
-            assert_eq!(res.report_data, true);
+            assert_eq!(res.export_text, true);
             assert_eq!(res.create_context, false);
             assert_eq!(res.create_summary, false);
             assert_eq!(res.data_folder, PathBuf::from("E:/ROR/data"));
@@ -575,7 +578,7 @@ mod tests {
     
             assert_eq!(res.import_ror, true);
             assert_eq!(res.process_data, true);
-            assert_eq!(res.report_data, true);
+            assert_eq!(res.export_text, true);
             assert_eq!(res.create_context, false);
             assert_eq!(res.create_summary, false);
             assert_eq!(res.data_folder, PathBuf::from("E:/ROR/data"));
@@ -633,7 +636,7 @@ mod tests {
             let res = get_params(test_args).await.unwrap();
             assert_eq!(res.import_ror, false);
             assert_eq!(res.process_data, true);
-            assert_eq!(res.report_data, false);
+            assert_eq!(res.export_text, false);
             assert_eq!(res.create_context, false);
             assert_eq!(res.create_summary, false);
             assert_eq!(res.data_folder, PathBuf::from("E:/ROR/silly folder name"));

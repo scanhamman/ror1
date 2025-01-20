@@ -8,8 +8,7 @@ mod src_tables_create;
 
 mod smm_data_report;
 mod smm_data_storer;
-mod smm_storage_helper;
-mod smm_structs;
+mod smm_helper;
 
 use log::{info, error};
 use sqlx::{Pool, Postgres};

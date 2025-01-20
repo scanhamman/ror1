@@ -103,7 +103,8 @@ pub fn log_startup_params (ip : &InitParams) {
     info!("create summary tables: {}", ip.create_summary);
     info!("import_ror: {}", ip.import_ror);
     info!("process_data: {}", ip.process_data);
-    info!("report_data: {}", ip.report_data);
+    info!("export_text: {}", ip.export_text);
+    info!("export_csv: {}", ip.export_csv);
     info!("");
     info!("************************************");
     info!("");

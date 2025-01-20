@@ -41,7 +41,7 @@ async fn import_v2_0_data_to_ror_and_check_org_numbers() {
     let target_folder = target_path.to_str().unwrap();
     let target_file = "v2_test_data.json";
     let tdate = "2026-01-01";
-    let args : Vec<&str> = vec!["target/debug/ror1.exe", "-f", target_folder, "-s", target_file, "-v", "v2", "-d", tdate, "-r", "-t"];
+    let args : Vec<&str> = vec!["target/debug/ror1.exe", "-f", target_folder, "-s", target_file, "-v", "v2", "-d", tdate, "-r", "-z"];
 
     let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
     run(test_args).await.unwrap();

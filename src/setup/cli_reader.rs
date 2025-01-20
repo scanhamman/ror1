@@ -19,7 +19,8 @@ pub struct CliPars {
     pub data_date: String,
     pub import_ror: bool,
     pub process_data: bool,
-    pub report_data: bool,
+    pub export_text: bool,
+    pub export_csv: bool,
     pub create_lup: bool,
     pub create_smm: bool,
     pub test_run: bool,
@@ -42,13 +43,13 @@ pub fn fetch_valid_arguments(args: Vec<OsString>) -> Result<CliPars, AppError>
 
     let a_flag = parse_result.get_flag("a_flag");
     let i_flag = parse_result.get_flag("i_flag");
-
     let r_flag = parse_result.get_flag("r_flag");
     let p_flag = parse_result.get_flag("p_flag");
+    let t_flag = parse_result.get_flag("t_flag");
     let x_flag = parse_result.get_flag("x_flag");
     let c_flag = parse_result.get_flag("c_flag");
     let m_flag = parse_result.get_flag("m_flag");
-    let t_flag = parse_result.get_flag("t_flag");
+    let z_flag = parse_result.get_flag("z_flag");
 
     let mut import = true;
     let mut process = false;
@@ -65,10 +66,10 @@ pub fn fetch_valid_arguments(args: Vec<OsString>) -> Result<CliPars, AppError>
         // if none set, use initial default values,
         // otherwise use values as provided
 
-        if !(r_flag == false && p_flag == false && x_flag == false) {
+        if !(r_flag == false && p_flag == false && t_flag == false) {
             import = r_flag;
             process = p_flag;
-            report_data = x_flag;
+            report_data = t_flag;
         }
     }
 
@@ -82,7 +83,8 @@ pub fn fetch_valid_arguments(args: Vec<OsString>) -> Result<CliPars, AppError>
                 data_date: "".to_string(),
                 import_ror: false,
                 process_data: false,
-                report_data: false,
+                export_text: false,
+                export_csv: false,
                 create_lup: true,
                 create_smm: true,
                 test_run: false,
@@ -97,10 +99,11 @@ pub fn fetch_valid_arguments(args: Vec<OsString>) -> Result<CliPars, AppError>
                 data_date: data_date.clone(),
                 import_ror: import,
                 process_data: process,
-                report_data: report_data,
+                export_text: report_data,
+                export_csv: x_flag,
                 create_lup: c_flag,
                 create_smm: m_flag,
-                test_run: t_flag,
+                test_run: z_flag,
             })
         }
     }
@@ -174,14 +177,23 @@ fn parse_args(args: Vec<OsString>) -> Result<ArgMatches, clap::Error> {
             .action(clap::ArgAction::SetTrue)
         )
         .arg(
-            Arg::new("x_flag")
-           .short('x')
-           .long("export")
-           .visible_short_aliases(['X'])
+            Arg::new("t_flag")
+           .short('t')
+           .long("textout")
+           .visible_short_aliases(['T'])
            .required(false)
            .help("A flag signifying output a summary of the current data into a text file")
            .action(clap::ArgAction::SetTrue)
        )
+       .arg(
+             Arg::new("x_flag")
+            .short('x')
+            .long("fileout")
+            .visible_short_aliases(['X'])
+            .required(false)
+            .help("A flag signifying output a summary of the current data into csv files")
+            .action(clap::ArgAction::SetTrue)
+        )
        .arg(
             Arg::new("i_flag")
            .short('i')
@@ -210,10 +222,10 @@ fn parse_args(args: Vec<OsString>) -> Result<ArgMatches, clap::Error> {
             .action(clap::ArgAction::SetTrue)
        )
        .arg(
-            Arg::new("t_flag")
-            .short('t')
+            Arg::new("z_flag")
+            .short('z')
             .long("test")
-            .visible_short_aliases(['T'])
+            .visible_short_aliases(['Z'])
             .required(false)
             .help("A flag signifying that this is part of an integration test run - suppresses logs")
             .action(clap::ArgAction::SetTrue)
@@ -239,7 +251,7 @@ mod tests {
         assert_eq!(res.source_file, "");
         assert_eq!(res.import_ror, true);
         assert_eq!(res.process_data, false);
-        assert_eq!(res.report_data, false);
+        assert_eq!(res.export_text, false);
         assert_eq!(res.create_lup, false);
         assert_eq!(res.create_smm, false);
         assert_eq!(res.test_run, false);
@@ -258,7 +270,7 @@ mod tests {
         assert_eq!(res.source_file, "");
         assert_eq!(res.import_ror, true);
         assert_eq!(res.process_data, true);
-        assert_eq!(res.report_data, true);
+        assert_eq!(res.export_text, true);
         assert_eq!(res.create_lup, false);
         assert_eq!(res.create_smm, false);
         assert_eq!(res.test_run, false);
@@ -277,7 +289,7 @@ mod tests {
         assert_eq!(res.source_file, "");
         assert_eq!(res.import_ror, false);
         assert_eq!(res.process_data, false);
-        assert_eq!(res.report_data, false);
+        assert_eq!(res.export_text, false);
         assert_eq!(res.create_lup, true);
         assert_eq!(res.create_smm, true);
         assert_eq!(res.test_run, false);
@@ -296,7 +308,7 @@ mod tests {
         assert_eq!(res.source_file, "");
         assert_eq!(res.import_ror, false);
         assert_eq!(res.process_data, false);
-        assert_eq!(res.report_data, false);
+        assert_eq!(res.export_text, false);
         assert_eq!(res.create_lup, true);
         assert_eq!(res.create_smm, true);
         assert_eq!(res.test_run, false);
@@ -316,7 +328,7 @@ mod tests {
         assert_eq!(res.source_file, "");
         assert_eq!(res.import_ror, false);
         assert_eq!(res.process_data, true);
-        assert_eq!(res.report_data, false);
+        assert_eq!(res.export_text, false);
         assert_eq!(res.create_lup, true);
         assert_eq!(res.create_smm, false);
         assert_eq!(res.test_run, false);
@@ -336,7 +348,7 @@ mod tests {
         assert_eq!(res.source_file, "schema2 data.json");
         assert_eq!(res.import_ror, true);
         assert_eq!(res.process_data, false);
-        assert_eq!(res.report_data, false);
+        assert_eq!(res.export_text, false);
         assert_eq!(res.create_lup, false);
         assert_eq!(res.create_smm, false);
         assert_eq!(res.test_run, false);
@@ -348,7 +360,7 @@ mod tests {
     fn check_cli_with_most_params_explicit() {
         let target = &"target\\debug\\ror1.exe".replace("\\", "/");
         let args : Vec<&str> = vec![target, "-f", "E:\\ROR\\some other data folder", 
-        "-s", "schema2.1 data.json", "-d", "2026-12-25", "-v", "1.63", "-R", "-P", "-X", "-C", "-T"];
+        "-s", "schema2.1 data.json", "-d", "2026-12-25", "-v", "1.63", "-R", "-P", "-T", "-C", "-Z"];
         let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
 
         let res = fetch_valid_arguments(test_args).unwrap();
@@ -356,7 +368,7 @@ mod tests {
         assert_eq!(res.source_file, "schema2.1 data.json");
         assert_eq!(res.import_ror, true);
         assert_eq!(res.process_data, true);
-        assert_eq!(res.report_data, true);
+        assert_eq!(res.export_text, true);
         assert_eq!(res.create_lup, true);
         assert_eq!(res.create_smm, false);
         assert_eq!(res.test_run, true);

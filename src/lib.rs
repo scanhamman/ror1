@@ -79,11 +79,16 @@ pub async fn run(args: Vec<OsString>) -> Result<(), AppError> {
             transform::summarise_data(&pool).await?;
         }
 
-        if params.report_data  // write out summary data from data in smm tables
+        if params.export_text  // write out summary data from data in smm tables
         { 
             if !params.test_run {
                 transform::report_results(&params.output_folder, &params.output_file_name, &pool).await?;
             }
+        }
+
+        if params.export_csv// write out summary data from data in smm tables
+        { 
+            // To DO
         }
     }
 
