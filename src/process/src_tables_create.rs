@@ -12,6 +12,7 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
     (
           version           varchar     not null
         , data_date         varchar     not null
+        , data_days         int         not null
         , process_datetime  timestamp   not null  default current_timestamp
     );
 
@@ -32,7 +33,6 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
     create table src.names
     (
           id                varchar     not null
-        , ror_name          varchar     not null
         , value             varchar     not null  
         , name_type         int         not null 
         , is_ror_name       bool        not null default false
@@ -40,6 +40,30 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
         , script_code       varchar     null
     );
     create index names_idx on src.names(id);
+        
+    drop table if exists src.dup_names;
+    create table src.dup_names
+    (
+          id                varchar     not null
+        , value             varchar     not null  
+        , name_type         int         null 
+        , dup_type          varchar     not null
+        , is_ror_name       bool        null
+        , lang_code         varchar     null
+    );
+    create index dup_names_idx on src.dup_names(id);
+
+    drop table if exists src.dup_names_deleted;
+    create table src.dup_names_deleted
+    (
+          id                varchar     not null
+        , value             varchar     not null  
+        , name_type         int         null 
+        , dup_type          varchar     not null
+        , is_ror_name       bool        null
+        , lang_code         varchar     null
+    );
+    create index dup_names_deleted_idx on src.dup_names(id);
 
     drop table if exists src.locations;
     create table src.locations

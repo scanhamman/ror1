@@ -12,6 +12,7 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
     (    
           vcode             varchar     not null primary key
         , vdate             date        not null
+        , vdays             int         not null
         , num_orgs          int         null	
         , num_names         int         null	
         , num_types         int         null
@@ -27,7 +28,6 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
     create table smm.count_distributions
     (    
           vcode             varchar     not null
-        , vdate             date        not null
         , count_type        varchar     not null
         , count             int         null
         , num_of_orgs       int         null
@@ -39,7 +39,6 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
     create table smm.ranked_distributions
     (    
           vcode             varchar     not null
-        , vdate             date        not null
         , dist_type         int         not null 
         , rank              int         not null 
         , entity            varchar     null
@@ -53,7 +52,6 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
     create table smm.attributes_summary
     (    
           vcode             varchar     not null
-        , vdate             date        not null
         , att_type          int         null
         , att_name          varchar     null
         , id                int         null
@@ -68,7 +66,7 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
     create table smm.singletons
     (    
           vcode             varchar     not null
-        , vdate             date        not null
+        , id                int         not null
         , description       varchar     null
         , number            int         null
         , pc                real        null
@@ -79,7 +77,6 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
     create table smm.org_type_and_relationships
     (    
           vcode             varchar     not null
-        , vdate             date        not null
         , org_type          varchar     null
         , rel_type          varchar     null
         , num_links         int         null
@@ -93,7 +90,6 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
     create table smm.org_type_and_lang_code
     (    
           vcode             varchar     not null
-        , vdate             date        not null
         , org_type          varchar     null
         , name_type         varchar     null
         , names_num         int         null

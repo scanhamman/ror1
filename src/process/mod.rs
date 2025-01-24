@@ -5,15 +5,14 @@
 mod src_data_importer;
 mod src_data_processor;
 mod src_tables_create;
-
-mod smm_data_report;
 mod smm_data_storer;
-mod smm_helper;
+mod smm_structs;
+mod src_rmv_dup_names;
+pub mod smm_helper;
 
 use log::{info, error};
 use sqlx::{Pool, Postgres};
 use crate::AppError;
-use std::path::PathBuf;
 
 
 pub async fn create_src_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
@@ -38,36 +37,37 @@ pub async fn create_src_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
 
 pub async fn process_data(pool : &Pool<Postgres>) -> Result<(), AppError>
 {
+
     // Import the data from ror schema to src schema.
 
-    let r = src_data_importer::import_data(pool).await;
-    match r {
+    match src_data_importer::import_data(pool).await
+    {
         Ok(()) => {
-            info!("Initial ror data processed and transferred to src tables"); 
+            info!("ror schema data processed and transferred to src tables"); 
         },
         Err(e) => {
             error!("An error occured while transferring to the src tables: {}", e);
-            return Err(AppError::SqErr(e))
+            return Err(e)
             },
     }
 
     // Calculate number of attributes for each org, and populate the admin data table with results.
 
-    let r = src_data_processor::store_org_attribute_numbers(pool).await;
-    match r {
+    match src_data_processor::store_org_attribute_numbers(pool).await
+    {
         Ok(()) => {
             info!("Org attributes counted and results added to admin table"); 
         },
         Err(e) => {
             error!("An error occured while processing the imported data: {}", e);
-            return Err(AppError::SqErr(e))
+            return Err(e)
             },
     }
 
     // Add the script codes to the names.
 
-    let r = src_data_processor::add_script_codes(pool).await;
-    match r {
+    match src_data_processor::add_script_codes(pool).await
+    {
         Ok(()) => {
             info!("Script codes added to organisation names"); 
         },
@@ -85,9 +85,8 @@ pub async fn summarise_data(pool : &Pool<Postgres>) -> Result<(), AppError>
 {
     // Store data into smm tables.
 
-    let r = smm_data_storer::store_summary_data(pool).await;
-    
-    match r {
+    match smm_data_storer::store_summary_data(pool).await
+    {
         Ok(()) => {
             info!("Summary data transferred to smm tables"); 
             return Ok(())
@@ -99,21 +98,4 @@ pub async fn summarise_data(pool : &Pool<Postgres>) -> Result<(), AppError>
     }
 }
 
-
-pub async fn report_results(output_folder : &PathBuf, output_file_name: &String, pool : &Pool<Postgres>) -> Result<(), AppError>
-{
-    // Write out summary data for this dataset into the designated file
-
-    let r = smm_data_report::report_on_data(output_folder, output_file_name, pool).await;
-    match r {
-        Ok(()) => {
-            info!("Data summary generated as file"); 
-            return Ok(())
-        },
-        Err(e) => {
-            error!("An error occured while writing out the results: {}", e);
-            return Err(e)
-            },
-    }
-}
 

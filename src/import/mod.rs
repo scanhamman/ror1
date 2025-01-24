@@ -11,6 +11,7 @@ use std::path::PathBuf;
 use std::fs;
 use sqlx::{Pool, Postgres};
 use crate::AppError;
+use chrono::NaiveDate;
 
 use ror_json_models::RorRecord;
 use ror_data_vectors::{CoreDataVecs, RequiredDataVecs, NonRequiredDataVecs, extract_id_from};
@@ -31,11 +32,15 @@ pub async fn import_data(data_folder : &PathBuf, source_file_name: &String,
                         data_version: &String, data_date: &String, 
                         pool : &Pool<Postgres>) -> Result<(), AppError>
 {
-    // Record data verrsion and date in single record table.
-
-    let sql = r#"INSERT into ror.version_details (version, data_date)
-                    values ($1, $2);"#;
-    sqlx::query(&sql).bind(data_version).bind(data_date)
+    // Record data version, date and elapsed days in single record table.
+    
+    let end_of_period = NaiveDate::parse_from_str(data_date, "%Y-%m-%d").unwrap();
+    let start_of_period = NaiveDate::parse_from_str("2024-04-11", "%Y-%m-%d").unwrap();
+    let duration = end_of_period - start_of_period;
+ 
+    let sql = r#"INSERT into ror.version_details (version, data_date, data_days)
+                    values ($1, $2, $3);"#;
+    sqlx::query(&sql).bind(data_version).bind(data_date).bind(duration.num_days())
     .execute(pool).await?;
 
     // Import data into matching tables. First obtain the raw data as text
@@ -91,7 +96,7 @@ pub async fn import_data(data_folder : &PathBuf, source_file_name: &String,
         rdv.add_required_data(r, &db_id); 
         ndv.add_non_required_data(r, &db_id); 
         
-        if i > 35005 { break;  }
+        //if i > 705 { break;  }
 
         if (i + 1) % vector_size == 0 {  
             

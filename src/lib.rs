@@ -10,7 +10,8 @@
 
 pub mod setup;
 mod import;
-mod transform;
+mod process;
+mod export;
 pub mod error_defs;
 
 use error_defs::AppError;
@@ -74,21 +75,25 @@ pub async fn run(args: Vec<OsString>) -> Result<(), AppError> {
     
         if params.process_data  // transfer data to src tables, and summarise in smm tables
         {
-            transform::create_src_tables(&pool).await?;
-            transform::process_data(&pool).await?;
-            transform::summarise_data(&pool).await?;
+            process::create_src_tables(&pool).await?;
+            process::process_data(&pool).await?;
+            process::summarise_data(&pool).await?;
         }
 
         if params.export_text  // write out summary data from data in smm tables
         { 
             if !params.test_run {
-                transform::report_results(&params.output_folder, &params.output_file_name, &pool).await?;
+                export::export_as_text(&params.output_folder, &params.output_file_name, 
+                    &params.data_version, &pool).await?;
             }
         }
 
         if params.export_csv// write out summary data from data in smm tables
         { 
-            // To DO
+            if !params.test_run {
+                export::export_as_csv(&params.output_folder, &params.output_file_name,
+                    &params.data_version, &pool).await?;
+            }
         }
     }
 

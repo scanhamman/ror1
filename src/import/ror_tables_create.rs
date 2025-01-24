@@ -11,6 +11,7 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
     (
           version           varchar     not null
         , data_date         varchar     not null
+        , data_days         int         not null
         , import_datetime   timestamp   not null  default current_timestamp
     );
 

@@ -10,7 +10,7 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "C:/Users/steve/OneDrive/Development/Rust/rust_projects/ror1/target/debug/ror1.exe",
-            "args": ["-p"],
+            "args": ["-t"],
             "stopAtEntry": false,
             "cwd": "C:/Users/steve/OneDrive/Development/Rust/rust_projects/ror1",
             "environment": [],
@@ -21,7 +21,7 @@
             "type": "lldb",
             "request": "launch",
             "program": "C:/Users/steve/OneDrive/Development/Rust/rust_projects/ror1/target/debug/ror1.exe",
-            "args": ["-p"],
+            "args": ["-t"],
             "cwd": "C:/Users/steve/OneDrive/Development/Rust/rust_projects/ror1",
         }
 
