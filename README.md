@@ -79,12 +79,15 @@ lookup tables (set up within the 'lup' or lookup schema) which effectively provi
 of these categorised values, e.g. the organisation, name, link, external id and relationship types. 
 This is intended to make any future data processing quicker and future display more flexible.
 
-b) The expansion of the admin_data table, to include for each organisation the numbers of entities 
-of each type it is linked with, e.g. how many names (of various types), links and external ids (of 
-various types), relationships (of various types), locations, etc. are included in the ror record.
-This is to make it easier both to use and display the information, to support some of the 
-production of summary data, and to more easily identify organisations that are missing certain 
-types of data.
+b) The removal of duplicates from the names table. There are a small number of organisations that 
+have two names with the same value. In most cases (currently 65) these are names of different types, usually both a label and an alias. In about half of these cases the name is also designated (usually for both versions) as a 'ror name'. In a further 9 cases (currently) the names are the same type but have two different language codes applied. These duplications are removed, according to the folowing rules:
+<ul>
+<li>If one of the duplicte pairs is a ror name and the other is not, the one that is not is removed.</li> 
+<li>If one is a label and the other an alias or acronym, the alias or acronym is removed.</li> 
+<li>If one is an alias and the other an acronym, the alias is removed, as the names in this group all appear to be acronyms.</li> 
+<li>For the remaining 6 duplicated names, the language code least associated with the organisation's location, or if that is not clear that is referring to the more obscure language, is removed. This is an arbitrary decision but the choices are not difficult in practice.</li>
+</ul>
+While having a name categorised as two name types does seem a clear error, there is a possible debate about names that could be claimed to be genuinely the same in two or more languages. For the time being, however, it is simpler to remove all of the (very small number of) duplicates. 
 
 c) The addition of script codes to the name data. Though most of the the names listed (apart 
 from acronyms and company names) have language codes linked to them there is no explicit indication of 
@@ -94,8 +97,14 @@ provided by ISO 15924, which also provides the Unicode code pages on which each 
 Examining the Unicodes of the characters in the names allows the script to be readily identified, and this 
 information is added to each name record, as being of potential value when selecting names for display.
 
-d) The simplification of a few field names to make them easier to use, e.g. country_subdivision_code 
-becomes csubdiv_code, and continent_code becomes cont_code.
+d) The expansion of the admin_data table, to include for each organisation the numbers of entities 
+of each type it is linked with, e.g. how many names (of various types), links and external ids (of 
+various types), relationships (of various types), locations, etc. are included in the ror record.
+This is to make it easier both to use and display the information, to support some of the 
+production of summary data, and to more easily identify organisations that are missing certain 
+types of data.
+
+e) The renaming of a few field names to make them clearer, more consistent or simpler, e.g. country_subdivision_code becomes csubdiv_code, continent_code becomes cont_code, lang becomes lang_code, etc.
  
 The src data is designed to be used as the basis for ad hoc SQL queries of the data. They are also used as 
 the basis of the summary statistics described below, and are designed to provide a more useful set of base 
@@ -104,39 +113,23 @@ tables are recreated each time a version's data is transformed into them.
 
 <h3>Summary data and the smm schema</h3>
 
-The Summary (smm) schema includes a set of persistent tables that summarise various aspects of the ROR dataset. It includes records for all versions of the ROR data that have been imported (within each table the initial two fields are the data version and date, allowing easy selection of the summary data for any particular version). The summary tables are:
+The Summary (smm) schema includes a set of persistent tables that summarise various aspects of the ROR dataset. It includes records for all versions of the ROR data that have been imported (within each table the initial field is the data version, allowing easy selection of the summary data for any particular version). To make processing and export easier, many of the summary tables are aggregate, i.e. they hold data about different entities in the same table, because that data has the same structure. The tables are:
 
 <ul>
-<li>version_summary - Gives the number of organisations, and the numbers of records in each of the tables in the ror/src schemas.</li>
-<li>name_summary - Gives the numbers of total names and of different name types, of different types as a percentage of the whole, and of the numbers and percentage of each type that do not have a language code attached, plus the numbers and percentages of non-acronym and / or non comnpany names without a language code. </li>
-<li>name_lang_code - Gives the numbers and percentage of each type that do not have a language code attached, plus the numbers and percentages of non-acronym and non-acronym-non-comnpany names without a language code. </li>
-<li>name_count_distribution - The numbers and percentage of organisations that have different numbers of names linked to them (multiple rows per ROR version).</li>
-<li>name_label_distribution - The numbers and percentage of organisations that have different numbers of labels linked to them (multiple rows per ROR version).</li>
-<li>name_alias_distribution - The numbers and percentage of organisations that have different numbers of aliases linked to them (multiple rows per ROR version).</li>
-<li>name_acronym_distribution - The numbers and percentage of organisations that have different numbers of acronyms linked to them (multiple rows per ROR version).</li>
-<li>name_ror - The numbers of labels that are designated as the ROR name, labels not so designated, any non-labels designated as the ROR name, the numbers and percentages of English and non English ror names, and the ROR names without language codes, including and excluding company names. </li>
-<li>ne_lang_code_distribution - The numbers and percentages of the 25 most frequently used non-English language codes - the others are grouped together as 'Remaining languages' (multiple rows per ROR version).</li>
-<li>nl_lang_script_distribution - The numbers and percentages of the 25 most frequently used non-Latin script codes - the others are grouped together as 'Remaining scripts' (multiple rows per ROR version).</li></li>
-<li>country_distribution - The numbers and percentages of the 25 most frequently specified countries - the others are grouped together as 'Remaining countries' (multiple rows per ROR version).</li>
-<li>locs_count_distribution - The numbers and percentage of organisations that have different numbers of locations linked to them (multiple rows per ROR version, though very few organisations will ever have more than one location).</li>
-<li>ext_ids_summary - Numbers and percentages of the different external id types, plus numbers and percentages of the organisations that are linked to those types.</li>
-<li>ext_ids_count_distribution - The numbers and percentage of organisations that have different numbers of external ids linked to them (multiple rows per ROR version).</li>
-<li>links_summary - Numbers and percentages of the different link types, plus numbers and percentages of the organisations that posess those link types.</li></li>
-<li>links_count_distribution - The numbers and percentage of organisations that have different numbers of links (multiple rows per ROR version).</li>
-<li>type_summary - The numbers and percentages of each of the different organisational type indicators within the system.</li>
-<li>type_by_orgs_summary - The numbers and percentages of organisations with each of the different organisational type indicators.</li>
-<li>type_count_distribution - The numbers and percentage of organisations that have different numbers of organisational types linked to them (multiple rows per ROR version).</li>
-<li>type_name_lang_code - For each combination of organisational type and name type, the numbers and percentages of names with and without language codes (multiple rows per ROR version).</li>
-<li>relationships_summary -  The numbers and percentages of each of the different relationship indicators within the system, plus the numbers and percentages of organisations with each of the different relationship types. Also includes the numbers and percentage of organisations that have both parents <i>and</i> child links, plus the numbers of any non-reciprocated relationship records. </li>
-<li>type_relationship - For each combination of organisational type and relationship type, the numbers and percentages (of that organisational type) which include that relationship. (multiple rows per ROR version)</li>
+<li>version_summary - Gives the number of organisations, and the numbers of linked entities (names, organisation types, locations, external ids, links, relationships, domains), for a specified version, equivalent to the record numbers in each of the tables in the src schemas when the version is processed. It also includes the version date, and the number of days that date represents since 11/04/2024, whern the ROR v2 schema was first published.</li>
 
-The data in the smm schema is also used as the basis of the output text file for any version.
+<li>attributes_summary - Entities in the system have categorised attributes, e.g. the various types of name, organisation, relationship, external id and link. For each attribute value, this table provides the numbers found, and the percentage this represents of the total attributes of this type, plus the number of organisations with this attribute type, and the percentage this represents of all organisations. For names, additional rows are given for 'nacro' or non-acronym names, i.e. labels and aliases together, and also for names (of each type) that are without a language code ('wolc').</li>
 
+<li>count_distributions - Indicates the numbers and percentage of organisations that are linked to different numbers (counts) of properties. This includes the numbers and percentages of organisations with 'n' names, labels, aliases, acronyms, organisational types, locations, external ids, and links, where n varies over whatever count values are found in the dataset. For instance, for organisational types n currently varies (January 2025) from 1 to 3, for names, from 1 to 28.</li>
+
+<li>ranked_distributions - Three ranked distributions are provided: giving the usage of non English languages,  the usage of non-Latin scripts, and the countries listed in locations. In each case the numbers for the 25 most common (language / script / country) values are listed, with numbers for remaining languages, scripts and countries rolled up into a 26th 'remaining' entry. The percentages each entry represents of the property of interest (non English languages, non Latin scripts and countries other than the US) and the percentage of the 'base set' (names, names and locations respectively) are also provided. </li>
+
+<li>org_type_and_lang_code - For each combination of organisational type and name type, gives the numbers and percentages of names with and without language codes.</li>
+
+<li>org_type_and_relationships - For each combination of organisational type and relationship type, gives the numbers and percentages (of that organisational type) which include that relationship.</li>
+
+<li>singletons - There are a variety of useful measures (currently 16) which do not easily fit into any of the tables listed above. They are provided as a table which includes an id and a description for each data point, the number found and where relevant a percentage (both defined in the description). The singleton data points include, for instance, the numbers of labels that are designated as the ROR name, labels not so designated, the numbers and percentages of English and non English ror names, and the ROR names without language codes, including and excluding company names. They also include the numbers and percentage of organisations that have both parents <i>and</i> child links, i.e. are part of a hierarchy of at least 3 levels, plus the numbers of any non-reciprocated relationship records.</li>
 </ul>
-
-
-
-
 
 <h3>Pre-requisites</h3>
 
@@ -190,7 +183,7 @@ The folowing command line arguments are available:
 
 <i><b>-f</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -F, -folder]. Followed by a double quoted string representing the full path to the source data folder. Usually provided as a configuration variable, but the CLI argument will over-write that if present.
 
-<i><b>-v</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -data_version]. Followed by a double quoted string representing a version number, e.g. "v1.52". In many circumstances can be derived from the surce file name.
+<i><b>-v</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -data_version]. Followed by a double quoted string representing a version number, e.g. "v1.52". In many circumstances can be derived from the surce file name. (Note that 'V' is <i>not</i> an option in this case, as it reserved by the command line processing system).
 
 <i><b>-d</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -D, -date]. Followed by a double quoted string in ISO YYYY-mm-DD format, representing the date of the data. In many circumstances can be derived from the surce file name.
 
@@ -200,17 +193,17 @@ The folowing command line arguments are available:
 
 <i><b>-p</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -P, -process]. A flag that causes processing and summarising of the data in the ror schema tables to the src and smm schema tables. 
 
-<i><b>-x</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -X, -export]. A flag that causes production of a text file summarising the main features of the version currently held within the system. The name of the file is normally constructed from the version and the date-time of the run, but can be specified in the configuration file, e.g. during testing.
+<i><b>-t</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -T, -report]. A flag that causes production of a text file summarising the main features of a version currently held within the system's summary tables. The version can be specified explicitly using the -v flag. If not specified the 'current' version is used, i.e. the last imported one, which has its data in the ror and src schema. The name of the output file is normally constructed from the version and the date-time of the run, but can be specified in the configuration file, e.g. during testing. 
 
-<i><b>-a</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -A, -all]. Equivalent to -r -p -x, i.e. run all main processes, in that order. The source file, data version and data date must be specified, but the latter two can usually be derived from the first.
+<i><b>-a</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -A, -all]. Equivalent to -r -p -t, i.e. run all main processes, in that order. The source file, data version and data date must be specified, but the latter two can usually be derived from the first.
+
+<i><b>-x</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -X, -export]. A flag that causes production of a small collection of csv files, representing the data in the summary tables for the specified version. The version can be specified explicitly using the -v flag. If not specified the 'current' version is used, i.e. the last imported one, which has its data inthe rior and src schema. The name of the files are constructed from the version and the date-time of the run.
 
 <i><b>-i</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -I, -install].  Equivalent to -c -m, i.e. initialise the permanent data tables.
 
 <i><b>-c</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -C, -context]. A flag that causes the re-establishment of the lookup tables. Useful after any revision of those tables or the data within them.
 
-<i><b>-m</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -M, -summsetup]. A flag that causes the re-establishment of the summary tables in the smm schema. NOTE - ANY EXISTING DATA IN THOSE TABLES WILL BE DESTROYED. It may therefore be necessary to re-run against different source files if a series of data points over time needs to be re-established.
-
-<i><b>-t</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -T, -test]. A flag applied from within integration tests in the system, to suppress log creation. It is not available to users.
+<i><b>-m</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -M, -summsetup]. A flag that causes the re-establishment of the summary tables in the smm schema. NOTE - ANY EXISTING DATA IN THOSE TABLES WILL BE DESTROYED. It may therefore be necessary to re-run against source files if a series of data points over time needs to be re-established.
 
 <h4>File name convention and deriving version and data</h4>
 
@@ -219,6 +212,8 @@ If the file name starts with a 'v' followed by a semantic versioning string, fol
 File names such as <b>v1.58-2024-12-11-ror-data_schema_v2.json, v1.51-20240821.json, v1.48 20240620.json</b>, and <b>v1.47 2024-05-30.json</b> all follow the required pattern. The first is the form of the name supplied by ROR, so renaming the file is not necessary (though it can help to simplify it by removing the '-ror-data_schema_v2.json' tail).
 
 <h4>Routine use</h4>
+
+The system is designed to be as flexible as possible, but has reasonable defaults to make routine use very straightforward.
 
 TO DO
 

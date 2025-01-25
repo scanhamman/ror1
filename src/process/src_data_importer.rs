@@ -7,7 +7,7 @@ pub async fn import_data (pool: &Pool<Postgres>) -> Result<(), AppError> {
 
     execute_sql(get_version_details_sql(), pool).await?;
     execute_sql(get_import_names_sql(), pool).await?;
-    src_rmv_dup_names::remove_dups(pool).await?;
+    src_rmv_dup_names::remove_dups(pool).await?;         // done here to prevent PK errors in core_data
     execute_sql(get_core_data_sql(), pool).await?;
     execute_sql(update_core_data_sql(), pool).await?;
     execute_sql(get_admin_data_sql(), pool).await?;
@@ -61,7 +61,7 @@ fn get_import_names_sql <'a>() -> &'a str {
 fn get_core_data_sql <'a>() -> &'a str {
 
     // Note reference to src.names (not ror.names) as the 
-    // src table has had duplicates removed.
+    // src table has now had duplicates removed.
     
         r#"insert into src.core_data (id, ror_full_id, 
         ror_name, status, established)

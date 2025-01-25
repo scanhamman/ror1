@@ -4,7 +4,7 @@
 
 mod ror_json_models;
 mod ror_data_vectors;
-mod ror_tables_create;
+mod ror_create_tables;
 
 use log::{info, error};
 use std::path::PathBuf;
@@ -18,7 +18,7 @@ use ror_data_vectors::{CoreDataVecs, RequiredDataVecs, NonRequiredDataVecs, extr
 
 pub async fn create_ror_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
 {
-    match ror_tables_create::create_tables(pool).await {
+    match ror_create_tables::create_tables(pool).await {
         Ok(()) => info!("Tables created for ror schema"),
         Err(e) => {
             error!("An error occured while creating the ror schema tables: {}", e);

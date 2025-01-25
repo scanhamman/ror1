@@ -4,11 +4,9 @@
 
 mod src_data_importer;
 mod src_data_processor;
-mod src_tables_create;
-mod smm_data_storer;
-mod smm_structs;
+mod src_create_tables;
 mod src_rmv_dup_names;
-pub mod smm_helper;
+
 
 use log::{info, error};
 use sqlx::{Pool, Postgres};
@@ -17,14 +15,14 @@ use crate::AppError;
 
 pub async fn create_src_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
 {
-    match src_tables_create::create_tables(pool).await {
+    match src_create_tables::create_tables(pool).await {
         Ok(()) => info!("Tables created for src schema"),
         Err(e) => {
             error!("An error occured while creating the src schema tables: {}", e);
             return Err(e)
             },
     };
-    match src_tables_create::create_admin_data_table(pool).await {
+    match src_create_tables::create_admin_data_table(pool).await {
         Ok(()) => info!("Admin data table created in src schema"),
         Err(e) => {
             error!("An error occured while creating the src admin data table: {}", e);
@@ -79,23 +77,3 @@ pub async fn process_data(pool : &Pool<Postgres>) -> Result<(), AppError>
 
     Ok(())
 }
-
-
-pub async fn summarise_data(pool : &Pool<Postgres>) -> Result<(), AppError>
-{
-    // Store data into smm tables.
-
-    match smm_data_storer::store_summary_data(pool).await
-    {
-        Ok(()) => {
-            info!("Summary data transferred to smm tables"); 
-            return Ok(())
-        },
-        Err(e) => {
-            error!("An error occured while transferring summary: {}", e);
-            return Err(e)
-            },
-    }
-}
-
-

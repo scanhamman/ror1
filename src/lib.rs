@@ -11,6 +11,7 @@
 pub mod setup;
 mod import;
 mod process;
+mod summarise;
 mod export;
 pub mod error_defs;
 
@@ -53,7 +54,7 @@ pub async fn run(args: Vec<OsString>) -> Result<(), AppError> {
 
     if params.create_summary
     {  
-        setup::create_smm_tables(&pool).await?;
+        summarise::create_smm_tables(&pool).await?;
     }
     
     // In each of the following stages, the initial step is to recreate 
@@ -77,7 +78,7 @@ pub async fn run(args: Vec<OsString>) -> Result<(), AppError> {
         {
             process::create_src_tables(&pool).await?;
             process::process_data(&pool).await?;
-            process::summarise_data(&pool).await?;
+            summarise::summarise_data(&pool).await?;
         }
 
         if params.export_text  // write out summary data from data in smm tables
