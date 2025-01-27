@@ -157,7 +157,8 @@ pub async fn create_admin_data_table(pool: &Pool<Postgres>) -> Result<(), AppErr
         , n_names_wolc      int         not null default 0
         , n_nacro           int         not null default 0
         , n_nacro_wolc      int         not null default 0
-        , n_is_company      int         not null default 0
+        , is_company        bool        not null default false
+        , n_types           int         not null default 0
         , n_isni            int         not null default 0
         , n_grid            int         not null default 0
         , n_fundref         int         not null default 0
@@ -166,7 +167,6 @@ pub async fn create_admin_data_table(pool: &Pool<Postgres>) -> Result<(), AppErr
         , n_wikipedia       int         not null default 0
         , n_website         int         not null default 0
         , n_links           int         not null default 0
-        , n_types           int         not null default 0
         , n_relrels         int         not null default 0
         , n_parrels         int         not null default 0
         , n_chrels          int         not null default 0

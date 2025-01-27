@@ -3,7 +3,7 @@ use super::smm_structs::FileParams;
 use sqlx::{Pool, Postgres};
 use chrono::NaiveDate;
 use crate::AppError;
-
+use log::info;
 
 pub async fn store_summary_data (pool: &Pool<Postgres>) -> Result<(), AppError> {
     
@@ -41,6 +41,8 @@ pub async fn store_summary_data (pool: &Pool<Postgres>) -> Result<(), AppError> 
     .execute(pool)
     .await?;
 
+    info!("Version summary record created");
+
     // Summarise the data in the groups represented by the functions below.
 
     let num_orgs_str = num_orgs.to_string();
@@ -50,7 +52,11 @@ pub async fn store_summary_data (pool: &Pool<Postgres>) -> Result<(), AppError> 
     smm_helper::create_other_attributes(&sdv, &num_orgs_str, &num_types.to_string(), &num_ext_ids.to_string(), 
                             &num_links.to_string(), &num_rels.to_string(), pool).await?;
 
+    info!("Attribute summaries created");
+
     smm_helper::create_count_distributions(&sdv, &num_orgs_str, pool).await?;     
+
+    info!("Count distributions created");
 
     let num_ne = smm_helper::get_count("select count(*) from src.names where lang_code <> 'en'", pool).await?;
     let num_nltn = smm_helper::get_count("select count(*) from src.names where script_code <> 'Latn'", pool).await?;
@@ -59,9 +65,12 @@ pub async fn store_summary_data (pool: &Pool<Postgres>) -> Result<(), AppError> 
     smm_helper::create_ranked_count_distributions(&vcode, &sdv, num_names, num_locations,  
                                     num_ne, num_nltn, num_nus, pool).await?;   
 
+    info!("Ranked count distributions created");
+
     smm_helper::create_type_linked_tables(&sdv, pool).await?;
 
-    smm_helper::store_singletons(&vcode, num_orgs, num_names, num_nltn, pool).await?;
+    smm_helper::store_singletons(&vcode, num_orgs, num_names, pool).await?;
+
 
     Ok(())
 }

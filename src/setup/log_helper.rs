@@ -46,7 +46,7 @@ fn config_log (log_file_path: &PathBuf) -> Result<log4rs::Handle, AppError> {
     
     // Initially establish a pattern for each log line.
 
-    let log_pattern = "{d(%d/%m %H:%M:%S)}  {h({l})}  {({M}.{L}):>35.45}:  {m}\n";
+    let log_pattern = "{d(%d/%m %H:%M:%S)}  {h({l})}  {({M}.{L}):>38.48}:  {m}\n";
 
     // Define a stderr logger, as one of the 'logging' sinks or 'appender's.
 

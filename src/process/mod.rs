@@ -41,7 +41,7 @@ pub async fn process_data(pool : &Pool<Postgres>) -> Result<(), AppError>
     match src_data_importer::import_data(pool).await
     {
         Ok(()) => {
-            info!("ror schema data processed and transferred to src tables"); 
+            info!("Data imported from ror to src tables"); 
         },
         Err(e) => {
             error!("An error occured while transferring to the src tables: {}", e);
@@ -54,7 +54,7 @@ pub async fn process_data(pool : &Pool<Postgres>) -> Result<(), AppError>
     match src_data_processor::store_org_attribute_numbers(pool).await
     {
         Ok(()) => {
-            info!("Org attributes counted and results added to admin table"); 
+            info!("All org attributes counted and results added to admin table"); 
         },
         Err(e) => {
             error!("An error occured while processing the imported data: {}", e);

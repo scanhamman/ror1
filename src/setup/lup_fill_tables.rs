@@ -24,8 +24,8 @@ pub async fn fill_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
       values (21, 'wikipedia'), (22, 'website');
     
     insert into lup.ror_org_rels(id, name) 
-       values (1, 'parent'), (2, 'child'), (3, 'related'),
-    (4, 'predecessor'), (5, 'successor');
+       values (1, 'has parent'), (2, 'has child'), (3, 'is related to'),
+        (4, 'has predecessor'), (5, 'has successor');
 
     insert into lup.countries(code, name) values
              ('AD', 'Andorra'), ('AE', 'United Arab Emirates'), ('AF', 'Afghanistan'), ('AG', 'Antigua and Barbuda'), ('AI', 'Anguilla'), 

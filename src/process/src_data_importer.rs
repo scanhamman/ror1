@@ -7,18 +7,25 @@ pub async fn import_data (pool: &Pool<Postgres>) -> Result<(), AppError> {
 
     execute_sql(get_version_details_sql(), pool).await?;
     execute_sql(get_import_names_sql(), pool).await?;
-    src_rmv_dup_names::remove_dups(pool).await?;         // done here to prevent PK errors in core_data
+    info!("Name data transferred to src table");
+    
+    src_rmv_dup_names::remove_dups(pool).await?;  // done here to prevent PK errors in core_data
+    
     execute_sql(get_core_data_sql(), pool).await?;
     execute_sql(update_core_data_sql(), pool).await?;
     execute_sql(get_admin_data_sql(), pool).await?;
+    info!("Core organisation data transferred to src table");
+
     execute_sql(get_links_sql(), pool).await?;
     execute_sql(get_external_ids_sql(), pool).await?;
     execute_sql(get_types_sql(), pool).await?;
+    info!("External Ids, links and types data transferred to src table");
+    
     execute_sql(get_locations_sql(), pool).await?;
     execute_sql(get_relationships_sql(), pool).await?;
     execute_sql(get_domains_sql(), pool).await?;
+    info!("Location, relationship and domain data transferred to src table");
 
-    info!("ror schema data processed and transferred to src tables");
     Ok(())
 }
 

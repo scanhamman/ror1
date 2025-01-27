@@ -27,6 +27,8 @@ pub async fn remove_dups (pool: &Pool<Postgres>) -> Result<(), AppError> {
     execute_sql(get_dup_names_with_2_name_types_and_diff_ror_status_sql(), pool).await?;           // group 3
     execute_sql(get_dup_names_with_2_lang_codes_and_diff_ror_status_sql(), pool).await?;           // group 4
 
+    info!("Duplicates names identified");
+
     // Then, for each group, identify the records to be deleted and add then to the 
     // src.dup_names_deleted table
 
@@ -44,7 +46,7 @@ pub async fn remove_dups (pool: &Pool<Postgres>) -> Result<(), AppError> {
     execute_sql(get_delete_names_with_superfluous_name_type_sql(), pool).await?;
     execute_sql(get_delete_names_with_superfluous_lang_code_sql(), pool).await?;
 
-    info!("Duplicates removed from the src.names table");
+    info!("Duplicates transferred from src.names to src.dup_names_deleted table");
     Ok(())
 }
 

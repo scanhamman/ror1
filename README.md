@@ -87,7 +87,7 @@ have two names with the same value. In most cases (currently 65) these are names
 <li>If one is an alias and the other an acronym, the alias is removed, as the names in this group all appear to be acronyms.</li> 
 <li>For the remaining 6 duplicated names, the language code least associated with the organisation's location, or if that is not clear that is referring to the more obscure language, is removed. This is an arbitrary decision but the choices are not difficult in practice.</li>
 </ul>
-While having a name categorised as two name types does seem a clear error, there is a possible debate about names that could be claimed to be genuinely the same in two or more languages. For the time being, however, it is simpler to remove all of the (very small number of) duplicates. 
+While having a name categorised as two name types does seem a clear error, there is a possible debate about names that could be claimed to be genuinely the same in two or more languages. For the time being, however, it is simpler to remove all of the (very small number of) duplicates.
 
 c) The addition of script codes to the name data. Though most of the the names listed (apart 
 from acronyms and company names) have language codes linked to them there is no explicit indication of 

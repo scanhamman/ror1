@@ -12,7 +12,6 @@ mod cli_reader;
 mod lup_create_tables;
 mod lup_fill_tables;
 
-
 /**********************************************************************************
 * This over-arching 'mod' setup module 
 * a) establishes the final collection of parameters, taking into account both 
@@ -26,14 +25,17 @@ mod lup_fill_tables;
 
 use crate::error_defs::{AppError, CustomError};
 use chrono::NaiveDate;
-use sqlx::postgres::PgPoolOptions;
+use sqlx::postgres::{PgPoolOptions, PgConnectOptions, PgPool};
 use sqlx::{Postgres, Pool};
 use log::{info, error};
 use chrono::Local;
 use std::path::PathBuf;
 use std::ffi::OsString;
 use std::fs;
+use std::time::Duration;
 use regex::Regex;
+use sqlx::ConnectOptions;
+
 
 pub struct InitParams {
     pub import_ror: bool,
@@ -221,21 +223,30 @@ pub async fn get_params(args: Vec<OsString>) -> Result<InitParams, AppError> {
 }
 
 
-pub async fn get_db_pool() -> Result<Pool<Postgres>, AppError> {  
+pub async fn get_db_pool() -> Result<PgPool, AppError> {  
 
-    let db_name = env_reader::fetch_db_name().unwrap();  // default value of ror
+    // Establish DB name and thence the connection string
+    // (done as two separate steps to allow for future development).
+    // Use the string to set up a connection options object and change 
+    // the time threshold for warnings. Set up a DB pool option and 
+    // connect using the connection options object.
+
+    let db_name = env_reader::fetch_db_name().unwrap();  // default value of 'ror'
     let db_conn_string = env_reader::fetch_db_conn_string(db_name)?;  
-    let try_pool = PgPoolOptions::new()
-              .max_connections(5).connect(&db_conn_string).await;
-    let pool = match try_pool {
+    
+    let mut opts: PgConnectOptions = db_conn_string.parse()?;
+    opts = opts.log_slow_statements(log::LevelFilter::Warn, Duration::from_secs(3));
+
+    match PgPoolOptions::new()
+    .max_connections(5) 
+    .connect_with(opts).await {
         Ok(p) => Ok(p),
         Err(e) => {
             error!("An error occured while creating the DB pool: {}", e);
             error!("Check the DB credentials and confirm the database is available");
             return Err(AppError::SqErr(e))
-        }, 
-    };
-    pool
+        }
+    }
 }
 
 

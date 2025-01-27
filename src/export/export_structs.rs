@@ -2,7 +2,6 @@ use chrono::NaiveDate;
 
 #[derive(sqlx::FromRow)]
 pub struct VSummary {
-    pub vcode: String,
     pub vdate: NaiveDate,
     pub vdays: i32,
     pub num_orgs: i32,
@@ -16,48 +15,61 @@ pub struct VSummary {
 }
 
 #[derive(sqlx::FromRow)]
-pub struct SingletonRow {
-    pub number: i32,
-    pub pc: Option<f32>,
+pub struct TypeRow {
+    pub name: String,
+    pub number_atts: i32,
+    pub pc_of_atts: f32,
+    pub number_orgs: i32,
+    pub pc_of_orgs: f32,
 }
 
-/* 
 #[derive(sqlx::FromRow)]
 pub struct DistribRow {
-  pub vcode: String,
   pub count: i32,
-  pub num_of_orgs: i64,
-  pub pc_of_orgs: f64,
+  pub num_of_orgs: i32,
+  pub pc_of_orgs: f32,
 }
 
 #[derive(sqlx::FromRow)]
 pub struct RankedRow {
-  pub vcode: String,
   pub entity: String,
-  pub number: i64,
-  pub pc_of_entities: f64,
-  pub pc_of_base_set: f64,
+  pub number: i32,
+  pub pc_of_entities: f32,
+  pub pc_of_base_set: f32,
 }
 
 #[derive(sqlx::FromRow)]
-pub struct TypeRow {
-    pub vcode: String,
+pub struct SingletonRow {
     pub id: i32,
-    pub name: String,
-    pub number_atts: i64,
-    pub pc_of_atts: f64,
-    pub number_orgs: i64,
-    pub pc_of_orgs: f64,
+    pub number: i32,
+    pub pc: Option<f32>,
+}
+
+pub struct Singleton {
+    pub description: String,
+    pub number: i32,
+    pub pc: Option<f32>,
 }
 
 #[derive(sqlx::FromRow)]
-pub struct OrgRow {
-    pub type_id: i32, 
-    pub name: String,
-    pub org_num: i64, 
+pub struct OrgAndRel{
+    pub org_type: String,
+    pub rel_type: String,
+    pub num_links: i32,
+    pub num_orgs: i32,
+    pub num_orgs_pc: f32,
 }
 
-*/
+#[derive(sqlx::FromRow)]
+pub struct OrgAndLangCode{
+    pub org_type: String,
+    pub name_type: String,
+    pub names_num: i32,
+    pub names_wolc: i32,
+    pub names_wolc_pc: f32,
+}
+
+
 
 
 

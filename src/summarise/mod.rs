@@ -26,7 +26,7 @@ pub async fn summarise_data(pool : &Pool<Postgres>) -> Result<(), AppError>
     match smm_storer::store_summary_data(pool).await
     {
         Ok(()) => {
-            info!("Summary data transferred to smm tables"); 
+            info!("All summary data transferred to smm tables"); 
             return Ok(())
         },
         Err(e) => {
