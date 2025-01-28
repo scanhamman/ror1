@@ -66,7 +66,7 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
     create table smm.singletons
     (    
           vcode             varchar     not null
-        , id                int         not null
+        , id                varchar     not null
         , description       varchar     null
         , number            int         null
         , pc                real        null

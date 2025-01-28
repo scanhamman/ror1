@@ -58,12 +58,11 @@ pub async fn store_summary_data (pool: &Pool<Postgres>) -> Result<(), AppError> 
 
     info!("Count distributions created");
 
-    let num_ne = smm_helper::get_count("select count(*) from src.names where lang_code <> 'en'", pool).await?;
-    let num_nltn = smm_helper::get_count("select count(*) from src.names where script_code <> 'Latn'", pool).await?;
-    let num_nus = smm_helper::get_count("select count(*) from src.locations where country_code <> 'US'", pool).await?;
+    //let num_ne = smm_helper::get_count("select count(*) from src.names where lang_code <> 'en'", pool).await?;
+    //let num_nltn = smm_helper::get_count("select count(*) from src.names where script_code <> 'Latn'", pool).await?;
+    //let num_nus = smm_helper::get_count("select count(*) from src.locations where country_code <> 'US'", pool).await?;
 
-    smm_helper::create_ranked_count_distributions(&vcode, &sdv, num_names, num_locations,  
-                                    num_ne, num_nltn, num_nus, pool).await?;   
+    smm_helper::create_ranked_count_distributions(&vcode, &sdv, num_names, num_locations, pool).await?;   
 
     info!("Ranked count distributions created");
 

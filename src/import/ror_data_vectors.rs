@@ -1,7 +1,6 @@
 use chrono::NaiveDate;
 use sqlx::{Pool, Postgres};
 use crate::import::ror_json_models::RorRecord;
-use std::str::FromStr;
 
 // vectors to hold column values, 100 at a time
 
@@ -132,20 +131,32 @@ impl RequiredDataVecs{
             for name in r.names.iter()
             {
                 if name.types.len() > 0 {
-                    let mut is_a_ror_name: Option<bool> = None;
-                    let ror_name_indicator = String::from_str("ror_display").unwrap();
-                    if name.types.contains(&ror_name_indicator)
-                    {
-                        is_a_ror_name = Some(true);
+
+                    // First option inserted for the small number of cases (~30)
+                    // where only 'ror_display' is provided as the name type
+
+                    if name.types.len() == 1 && name.types[0] == "ror_display" {
+                        self.name_db_ids.push(db_id.clone());
+                        self.names.push(name.value.clone());
+                        self.name_types.push("label".to_string());
+                        self.is_rors.push(Some(true));
+                        self.langs.push(name.lang.clone()); 
                     }
-                    for name_type in name.types.iter()
-                    {
-                        if name_type != "ror_display" {
-                            self.name_db_ids.push(db_id.clone());
-                            self.names.push(name.value.clone());
-                            self.name_types.push(name_type.clone());
-                            self.is_rors.push(is_a_ror_name);
-                            self.langs.push(name.lang.clone()); 
+                    else {
+                        let mut is_a_ror_name: Option<bool> = None;
+                        if name.types.contains(&"ror_display".to_string())
+                        {
+                            is_a_ror_name = Some(true);
+                        }
+                        for name_type in name.types.iter()
+                        {
+                            if name_type != "ror_display" {
+                                self.name_db_ids.push(db_id.clone());
+                                self.names.push(name.value.clone());
+                                self.name_types.push(name_type.clone());
+                                self.is_rors.push(is_a_ror_name);
+                                self.langs.push(name.lang.clone()); 
+                            }
                         }
                     }
                 }

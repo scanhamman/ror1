@@ -40,11 +40,13 @@ pub struct RankedRow {
 
 #[derive(sqlx::FromRow)]
 pub struct SingletonRow {
-    pub id: i32,
+    pub id: String,
+    pub description: String,
     pub number: i32,
     pub pc: Option<f32>,
 }
 
+#[derive(sqlx::FromRow)]
 pub struct Singleton {
     pub description: String,
     pub number: i32,

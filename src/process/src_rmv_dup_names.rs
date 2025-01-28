@@ -6,7 +6,7 @@ pub async fn remove_dups (pool: &Pool<Postgres>) -> Result<(), AppError> {
     
     // Before further processing the duplicate names need to be removed from 
     // src.names. 
-    // If this is not done the import to the core data, belothat follows, will fail, 
+    // If this is not done the import to the core data, that follows, will fail, 
     // as some organisations have more than one name marked as the 'ror name' (the 
     // import therefore fails because of a duplicated PK). 
     // The duplicates are stored separately in src.dup_names, which 
@@ -45,6 +45,7 @@ pub async fn remove_dups (pool: &Pool<Postgres>) -> Result<(), AppError> {
 
     execute_sql(get_delete_names_with_superfluous_name_type_sql(), pool).await?;
     execute_sql(get_delete_names_with_superfluous_lang_code_sql(), pool).await?;
+    execute_sql(replace_deprecated_lang_code_sql(), pool).await?;
 
     info!("Duplicates transferred from src.names to src.dup_names_deleted table");
     Ok(())
@@ -195,7 +196,7 @@ fn get_delete_names_with_superfluous_name_type_sql <'a>() -> &'a str {
     and n.id = dnd.id
     and n.value = dnd.value
     and n.name_type = dnd.name_type;"#
-    }
+}
 
 fn get_delete_names_with_superfluous_lang_code_sql <'a>() -> &'a str {
     r#"delete from src.names n
@@ -204,4 +205,10 @@ fn get_delete_names_with_superfluous_lang_code_sql <'a>() -> &'a str {
     and n.id = dnd.id
     and n.value = dnd.value
     and n.lang_code = dnd.lang_code;"#
+}
+
+fn replace_deprecated_lang_code_sql <'a>() -> &'a str {
+    r#"update src.names n
+    set n.lang_code = 'sr'
+    where n.lang_code = 'sh';"#
 }

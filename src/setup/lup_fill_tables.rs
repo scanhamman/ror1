@@ -123,6 +123,20 @@ pub async fn fill_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
            ('xh', 'xho', 'Xhosa', 'ISO 639-1'), ('yo', 'yor', 'Yoruba', 'ISO 639-1'), ('zh', 'chi', 'Chinese', 'ISO 639-1'),
            ('zu', 'zul', 'Zulu', 'ISO 639-1');
 
+    insert into lup.lang_codes(code, marc_code, name, source) values
+           ('aa', 'aar', 'Afar', 'ISO 639-1'), ('ab', 'abk', 'Abkhazian', 'ISO 639-1'), ('as', 'asm', 'Assamese', 'ISO 639-1'),
+           ('ba', 'bak', 'Bashkir', 'ISO 639-1'), ('bi', 'bis', 'Bislama', 'ISO 639-1'), ('ch', 'cha', 'Chamorro', 'ISO 639-1'),
+           ('cu', 'chu', 'Church Slavonic', 'ISO 639-1'), ('dv', 'div', 'Divehi', 'ISO 639-1'), ('dz', 'dzo', 'Dzongkha', 'ISO 639-1'),
+           ('fo', 'fao', 'Faroese', 'ISO 639-1'), ('fy', 'fry', 'Western Frisian', 'ISO 639-1'), ('gv', 'glv', 'Manx', 'ISO 639-1'),
+           ('ht', 'hat', 'Haitian', 'ISO 639-1'), ('ki', 'kik', 'Kikuyu', 'ISO 639-1'), ('kr', 'kau', 'Kanuri', 'ISO 639-1'),
+           ('ky', 'kir', 'Kyrgyz', 'ISO 639-1'), ('lu', 'lub', 'Luba-Katanga', 'ISO 639-1'), ('mg', 'mlg', 'Malagasy', 'ISO 639-1'),
+           ('na', 'nau', 'Nauru', 'ISO 639-1'), ('nb', 'nob', 'Norwegian Bokmål', 'ISO 639-1'), ('nn', 'nno', 'Norwegian Nynorsk', 'ISO 639-1'),
+           ('ny', 'nya', 'Chichewa', 'ISO 639-1'), ('oc', 'oci', 'Occitan', 'ISO 639-1'), ('oj', 'oji', 'Ojibwa', 'ISO 639-1'),
+           ('om', 'orm', 'Oromo', 'ISO 639-1'), ('or', 'ori', 'Oriya', 'ISO 639-1'), ('sa', 'san', 'Sanskrit', 'ISO 639-1'),
+           ('sd', 'snd', 'Sindhi', 'ISO 639-1'), ('st', 'sot', 'Southern Sotho', 'ISO 639-1'), ('ti', 'tir', 'Tigrinya', 'ISO 639-1'),
+           ('tl', 'tgl', 'Tagalog', 'ISO 639-1'), ('ug', 'uig', 'Uighur', 'ISO 639-1');
+
+
     insert into lup.lang_scripts(code, unicode_name, iso_name, dir, chars, notes, hex_start, hex_end, ascii_start, ascii_end, source) 
          values 
          ('Adlm', 'Adlam',  'Adlam', 'RtL', 88, 'Used in parts of West and Central Africa', '1E900', '1E95F', 125184, 125279, 'ISO 15924'),
