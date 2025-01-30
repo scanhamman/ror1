@@ -3,6 +3,7 @@ use std::{collections::HashMap, path::PathBuf};
 use crate::AppError;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
+use chrono::{NaiveDateTime, Local};
 use super::export_structs::{VSummary, TypeRow, DistribRow, RankedRow, 
                             SingletonRow, Singleton, OrgAndLangCode, OrgAndRel};
 use log::info;
@@ -24,7 +25,7 @@ pub async fn generate_text(output_folder : &PathBuf, output_file_name: &String,
     
     let output_file_path: PathBuf = [output_folder, &PathBuf::from(output_file_name)].iter().collect();
     let output_file_str = output_file_path.to_str().unwrap();
-    
+            
     let singvals:HashMap<String, Singleton> = collect_singleton_values(&vcode, pool).await?;
     write_header_and_summary(output_file_str, &vcode, pool).await?;
     write_explanation(output_file_str).await?;
@@ -61,12 +62,19 @@ async fn collect_singleton_values(vcode: &String, pool: &Pool<Postgres>) -> Resu
 
 async fn write_header_and_summary(output_file_str: &str, vcode: &String, pool: &Pool<Postgres>) -> Result<(), AppError> {
     
-    let sql = "SELECT * from smm.version_summary WHERE vcode = \'".to_string() + &vcode  + "\' ;";
+    // get import date from the ror table
+    let sql = "SELECT import_datetime from ror.version_details;";
+    let import_dt: NaiveDateTime = sqlx::query_scalar(sql).fetch_one(pool).await?;
+
+    let sql = "SELECT * from smm.version_summaries WHERE vcode = \'".to_string() + &vcode  + "\' ;";
     let summ: VSummary = sqlx::query_as(&sql).fetch_one(pool).await?;
     let header_txt = get_hdr_line("SUMMARY OF ROR DATASET")
                    + "\n\n\tVersion: " + vcode  
                    + "\n\tDate: " + &summ.vdate.to_string() 
-                   + "\n\tDays since 11/04/24: " + &summ.vdays.to_string();
+                   + "\n\tDays since 29/04/24: " + &summ.vdays.to_string()
+                   + "\n"
+                   + "\n\tTime data imported: " + &import_dt.format("%Y-%m-%d %H:%M:%S").to_string()
+                   + "\n\tReport generated: " + &Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
     append_to_file(output_file_str, &header_txt)?;
 
     let summary_txt = "\n\n\tENTITY NUMBERS\n\t".to_string() 

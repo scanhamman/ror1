@@ -7,8 +7,8 @@ pub async fn create_tables(pool: &Pool<Postgres>) -> Result<(), AppError> {
     SET client_min_messages TO WARNING; 
     create schema if not exists smm;
  
-    drop table if exists smm.version_summary;
-    create table smm.version_summary
+    drop table if exists smm.version_summaries;
+    create table smm.version_summaries
     (    
           vcode             varchar     not null primary key
         , vdate             date        not null

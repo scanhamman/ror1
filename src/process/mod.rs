@@ -33,12 +33,12 @@ pub async fn create_src_tables(pool : &Pool<Postgres>) -> Result<(), AppError>
 
 }
 
-pub async fn process_data(pool : &Pool<Postgres>) -> Result<(), AppError>
+pub async fn process_data(data_version: &String, pool : &Pool<Postgres>) -> Result<(), AppError>
 {
 
     // Import the data from ror schema to src schema.
 
-    match src_data_importer::import_data(pool).await
+    match src_data_importer::import_data(data_version, pool).await
     {
         Ok(()) => {
             info!("Data imported from ror to src tables"); 

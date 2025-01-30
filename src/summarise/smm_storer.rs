@@ -32,7 +32,7 @@ pub async fn store_summary_data (pool: &Pool<Postgres>) -> Result<(), AppError> 
     let num_locations= smm_helper::get_count("select count(*) from src.locations", pool).await?;
     let num_domains= smm_helper::get_count("select count(*) from src.domains", pool).await?;
     
-    let sql = r#"INSERT into smm.version_summary (vcode, vdate, vdays, num_orgs, num_names,
+    let sql = r#"INSERT into smm.version_summaries (vcode, vdate, vdays, num_orgs, num_names,
                       num_types, num_links, num_ext_ids, num_rels, num_locations , num_domains)
                       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)"#;
     sqlx::query(sql).bind(&vcode).bind(vdate).bind(vdays)
@@ -47,7 +47,7 @@ pub async fn store_summary_data (pool: &Pool<Postgres>) -> Result<(), AppError> 
 
     let num_orgs_str = num_orgs.to_string();
 
-    smm_helper::create_name_attributes(&sdv, &num_orgs_str, &num_names.to_string(), pool).await?;
+    smm_helper::create_name_attributes(&sdv, &vcode, &num_orgs_str, &num_names.to_string(), pool).await?;
 
     smm_helper::create_other_attributes(&sdv, &num_orgs_str, &num_types.to_string(), &num_ext_ids.to_string(), 
                             &num_links.to_string(), &num_rels.to_string(), pool).await?;
@@ -69,7 +69,6 @@ pub async fn store_summary_data (pool: &Pool<Postgres>) -> Result<(), AppError> 
     smm_helper::create_type_linked_tables(&sdv, pool).await?;
 
     smm_helper::store_singletons(&vcode, num_orgs, num_names, pool).await?;
-
 
     Ok(())
 }

@@ -23,7 +23,7 @@ pub struct SrcAdminData {
     pub n_names_wolc: i32,
     pub n_nacro: i32,
     pub n_nacro_wolc: i32,
-    pub n_is_company: i32,
+    pub is_company: bool,
     pub n_isni: i32,
     pub n_grid: i32,
     pub n_fundref: i32,
@@ -91,7 +91,6 @@ pub struct SrcLocation {
 
 #[derive(Debug, Clone, FromRow, PartialEq)]
 pub struct SrcName {
-    pub ror_name: String, 
     pub value: String,
     pub name_type: i32, 
     pub is_ror_name: bool,

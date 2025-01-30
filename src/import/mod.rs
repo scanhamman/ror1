@@ -35,7 +35,7 @@ pub async fn import_data(data_folder : &PathBuf, source_file_name: &String,
     // Record data version, date and elapsed days in single record table.
     
     let end_of_period = NaiveDate::parse_from_str(data_date, "%Y-%m-%d").unwrap();
-    let start_of_period = NaiveDate::parse_from_str("2024-04-11", "%Y-%m-%d").unwrap();
+    let start_of_period = NaiveDate::parse_from_str("2024-04-29", "%Y-%m-%d").unwrap();
     let duration = end_of_period - start_of_period;
  
     let sql = r#"INSERT into ror.version_details (version, data_date, data_days)

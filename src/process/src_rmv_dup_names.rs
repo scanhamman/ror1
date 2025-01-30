@@ -208,7 +208,7 @@ fn get_delete_names_with_superfluous_lang_code_sql <'a>() -> &'a str {
 }
 
 fn replace_deprecated_lang_code_sql <'a>() -> &'a str {
-    r#"update src.names n
-    set n.lang_code = 'sr'
-    where n.lang_code = 'sh';"#
+    r#"update src.names 
+    set lang_code = 'sr'
+    where lang_code = 'sh';"#
 }

@@ -1,9 +1,11 @@
 use sqlx::{Pool, Postgres};
 use log::{info, error};
-use crate::AppError;
+use crate::error_defs::{AppError, CustomError};
 use super::src_rmv_dup_names;
 
-pub async fn import_data (pool: &Pool<Postgres>) -> Result<(), AppError> {
+pub async fn import_data (data_version: &String, pool: &Pool<Postgres>) -> Result<(), AppError> {
+
+    check_data_version_matches_ror_schema_data(data_version, pool).await?;
 
     execute_sql(get_version_details_sql(), pool).await?;
     execute_sql(get_import_names_sql(), pool).await?;
@@ -29,6 +31,22 @@ pub async fn import_data (pool: &Pool<Postgres>) -> Result<(), AppError> {
     Ok(())
 }
 
+async fn check_data_version_matches_ror_schema_data(data_version: &String, pool: &Pool<Postgres>)-> Result<(), AppError> {
+    
+    let sql = "select version from ror.version_details";
+    let stored_version: String  = sqlx::query_scalar(sql).fetch_one(pool).await?;
+    if stored_version != data_version.to_string()
+    {
+        let mut msg = format!("\n\nThe version specified ({}), does not match \nthe data stored in the ror schema ({}).\n\n",
+                               data_version, stored_version);
+        msg += "You will need to run -r (or -a) with the specified version, \nto re-import the data and allow processing \nand summarising to occur.";
+        let cf_err = CustomError::new(&msg);
+        return Result::Err(AppError::CsErr(cf_err));
+    }
+    else {
+        Ok(())
+    }
+}
 
 async fn execute_sql(sql: &str, pool: &Pool<Postgres>) -> Result<(), AppError> {
     match sqlx::query(&sql).execute(pool).await

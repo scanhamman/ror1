@@ -1,6 +1,6 @@
 mod smm_storer;
 mod smm_structs;
-mod smm_helper;
+pub mod smm_helper;
 mod smm_create_tables;
 
 use log::{info, error};

@@ -8,7 +8,7 @@ pub async fn delete_any_existing_data(vcode: &String, pool: &Pool<Postgres>) -> 
 
     let wc = " WHERE vcode = \'".to_string() + vcode + "\'; ";
         
-    let del_sql = format!(r#"DELETE from smm.version_summary {}
+    let del_sql = format!(r#"DELETE from smm.version_summaries {}
                 DELETE from smm.attributes_summary {}
                 DELETE from smm.count_distributions {}
                 DELETE from smm.ranked_distributions {}
@@ -22,7 +22,7 @@ pub async fn delete_any_existing_data(vcode: &String, pool: &Pool<Postgres>) -> 
 }
 
 
-pub async fn create_name_attributes(sdv: &str, num_orgs_str: &String, num_names: &String, 
+pub async fn create_name_attributes(sdv: &str, vcode: &String, num_orgs_str: &String, num_names: &String, 
     pool: &Pool<Postgres>) ->  Result<(), AppError> {
 
     // Name attributes summary     
@@ -68,7 +68,8 @@ pub async fn create_name_attributes(sdv: &str, num_orgs_str: &String, num_names:
 
     let sql  = "".to_string() + r#"Update smm.attributes_summary set 
             pc_of_atts = round(number_atts * 10000::float / "# + num_names + r#"::float)/100::float,
-            pc_of_orgs = round(number_orgs * 10000::float / "# + num_orgs_str + r#"::float)/100::float"#;
+            pc_of_orgs = round(number_orgs * 10000::float / "# + num_orgs_str + r#"::float)/100::float
+            where vcode = '"# + vcode + r#"' and att_type in (1, 11) "#;
     sqlx::raw_sql(&sql).execute(pool).await?;
     Ok(())
 }
@@ -502,8 +503,12 @@ pub async fn store_singletons(vcode: &String, num_orgs: i64, num_names: i64, poo
                     where n.name_type <> 10 and ad.is_company = false
                     and n.lang_code is null"#, pool).await?;   
     
-    let num_ncmp_orgs = get_count(r#"select count(id) from src.admin_data where is_company = false"#, pool).await?;
-    let pc_nacro_ncmp_wolc =  get_pc (nacro_ncmp_wolc, num_ncmp_orgs);
+    let num_ncmp_names = get_count(r#"select count(n.id) from 
+                    src.names n
+                    inner join src.admin_data ad
+                    on n.id = ad.id 
+                    where n.name_type <> 10 and ad.is_company = false"#, pool).await?; 
+    let pc_nacro_ncmp_wolc =  get_pc (nacro_ncmp_wolc, num_ncmp_names);
     store_singleton(vcode, "nacncmp_wolc", "Nac-ncmp names wolc, number and pc of nac-ncmp names",  
     nacro_ncmp_wolc, Some(pc_nacro_ncmp_wolc), pool).await?;
   
@@ -608,6 +613,7 @@ pub async fn store_singletons(vcode: &String, num_orgs: i64, num_names: i64, poo
                     where ad.is_company = false
                     and n.is_ror_name = true
                     and n.lang_code is null"#, pool).await?;   
+    let num_ncmp_orgs = get_count(r#"select count(*) from src.admin_data where is_company = false"#, pool).await?;  
     let pc_ncmp_wolc_ror = get_pc(num_ncmp_wolc_ror, num_ncmp_orgs); 
     store_singleton(vcode, "ror_wolc_ncmp", "Noncmp ROR names wolc, number & pc of noncmp orgs", 
     num_ncmp_wolc_ror, Some(pc_ncmp_wolc_ror), pool).await?;

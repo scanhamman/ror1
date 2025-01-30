@@ -31,13 +31,13 @@ async fn process_v2_0_data_to_src_and_summarise() {
   
     // Act 
     // Run the program with v2.0 test data
+    thread::sleep(Duration::from_secs(4));
     let args : Vec<&str> = vec!["target/debug/src1.exe", "-p", "-z"];
     let test_args = args.iter().map(|x| x.to_string().into()).collect::<Vec<OsString>>();
     run(test_args).await.unwrap();
 
     // Assert     
     // Check numbers of records
-    thread::sleep(Duration::from_secs(3));
     let rec_number = src_data_access::fetch_src_record_num("core_data", &pool).await;
     assert_eq!(rec_number, 20);
 }
@@ -46,7 +46,7 @@ async fn process_v2_0_data_to_src_and_summarise() {
 #[tokio::test] 
 async fn check_numbers_in_each_src_table() {
 
-    thread::sleep(Duration::from_secs(4));
+    thread::sleep(Duration::from_secs(6));
     let pool = fetch_db_pool().await.unwrap();
 
     let rec_number = src_data_access::fetch_src_record_num("names", &pool).await;
@@ -65,7 +65,7 @@ async fn check_numbers_in_each_src_table() {
 #[tokio::test] 
 async fn check_src_first_and_last_ids() {
 
-    thread::sleep(Duration::from_secs(4));
+    thread::sleep(Duration::from_secs(6));
     let pool = fetch_db_pool().await.unwrap();
 
     // Check first and last record Ids
@@ -80,7 +80,7 @@ async fn check_src_first_and_last_ids() {
 #[tokio::test] 
 async fn check_src_core_data() {
 
-    thread::sleep(Duration::from_secs(4));
+    thread::sleep(Duration::from_secs(6));
     let pool = fetch_db_pool().await.unwrap();
 
     let id = "006jxzx88";
@@ -100,7 +100,7 @@ async fn check_src_core_data() {
 
     assert_eq!(admin_data, SrcAdminData{
         ror_name: "Bond University".to_string(), n_locs: 1, n_labels: 1,  n_aliases: 0, n_acronyms: 0,
-        n_names: 1, n_names_wolc: 0, n_nacro: 1, n_nacro_wolc: 0, n_is_company:0, n_isni: 1, n_grid: 1, n_fundref: 1, n_wikidata: 1,
+        n_names: 1, n_names_wolc: 0, n_nacro: 1, n_nacro_wolc: 0, is_company:false, n_isni: 1, n_grid: 1, n_fundref: 1, n_wikidata: 1,
         n_ext_ids: 4, n_wikipedia: 1, n_website: 1, n_links: 2, n_types: 2, n_relrels: 2,
         n_parrels: 0, n_chrels: 0, n_sucrels: 0, n_predrels: 0, n_doms: 0,
         created: cr_dt, cr_schema: "1.0".to_string(), 
@@ -122,7 +122,7 @@ async fn check_src_core_data() {
     let admin_data: SrcAdminData = src_data_access::fetch_src_admin_data_record (id, &pool).await;
     assert_eq!(admin_data, SrcAdminData{
         ror_name: "Food Packaging Forum Foundation".to_string(), n_locs: 1, n_labels: 1,  
-        n_aliases: 1, n_acronyms: 1, n_names: 3, n_names_wolc: 1, n_nacro: 2, n_nacro_wolc: 0, n_is_company:0, n_isni: 1, n_grid: 0, 
+        n_aliases: 1, n_acronyms: 1, n_names: 3, n_names_wolc: 1, n_nacro: 2, n_nacro_wolc: 0, is_company:false, n_isni: 1, n_grid: 0, 
         n_fundref: 0, n_wikidata: 1, n_ext_ids: 2, n_wikipedia: 1, n_website: 1, 
         n_links: 2, n_types: 1, n_relrels: 0, n_parrels: 0, n_chrels: 0, n_sucrels: 0, 
         n_predrels: 0, n_doms: 0,
@@ -134,7 +134,7 @@ async fn check_src_core_data() {
 #[tokio::test] 
 async fn check_src_relationship_data() {
 
-    thread::sleep(Duration::from_secs(5));
+    thread::sleep(Duration::from_secs(7));
     let pool = fetch_db_pool().await.unwrap();
 
     let id = "03rd8mf35";
@@ -159,7 +159,7 @@ async fn check_src_relationship_data() {
 #[tokio::test] 
 async fn check_src_external_id_data() {
 
-    thread::sleep(Duration::from_secs(5));
+    thread::sleep(Duration::from_secs(7));
     let pool = fetch_db_pool().await.unwrap();
 
     let id = "04ttjf776";
@@ -188,7 +188,7 @@ async fn check_src_external_id_data() {
 #[tokio::test] 
 async fn check_src_location_data() {
 
-    thread::sleep(Duration::from_secs(5));
+    thread::sleep(Duration::from_secs(7));
     let pool = fetch_db_pool().await.unwrap();
 
     let id = "006jxzx88";
@@ -217,7 +217,7 @@ async fn check_src_location_data() {
 #[tokio::test] 
 async fn check_src_link_data() {
 
-    thread::sleep(Duration::from_secs(5));
+    thread::sleep(Duration::from_secs(7));
     let pool = fetch_db_pool().await.unwrap();
 
     let id = "006jxzx88";
@@ -245,7 +245,7 @@ async fn check_src_link_data() {
 #[tokio::test] 
 async fn check_src_type_data() {
 
-    thread::sleep(Duration::from_secs(5));
+    thread::sleep(Duration::from_secs(7));
     let pool = fetch_db_pool().await.unwrap();
 
     let id = "006jxzx88";
@@ -265,18 +265,16 @@ async fn check_src_type_data() {
 #[tokio::test]
 async fn check_src_name_data() {
 
-    thread::sleep(Duration::from_secs(5));
+    thread::sleep(Duration::from_secs(7));
     let pool = fetch_db_pool().await.unwrap();
 
     let id = "0198t0w55";
     let names:Vec<SrcName> = src_data_access::fetch_src_name_records(id, &pool).await;
     assert_eq!(names.len(), 7);
     assert_eq!(names[0], SrcName{
-        ror_name: "Institute of Reflective Investigation and Specialization".to_string(), 
         value: "Institute of Reflective Investigation and Specialization".to_string(), name_type: 5, 
         is_ror_name: true, lang_code: Some("en".to_string()), script_code: Some("Latn".to_string())});
     assert_eq!(names[4], SrcName{
-        ror_name: "Institute of Reflective Investigation and Specialization".to_string(), 
         value: "Інститут Рефлексивних Досліджень & Спеціалізації".to_string(), name_type: 5, 
         is_ror_name: false, lang_code: Some("uk".to_string()), script_code: Some("Cyrl".to_string())});
 
@@ -284,11 +282,9 @@ async fn check_src_name_data() {
     let names:Vec<SrcName> = src_data_access::fetch_src_name_records(id, &pool).await;
     assert_eq!(names.len(), 7);
     assert_eq!(names[0], SrcName{
-        ror_name: "Yamashita Thyroid Hospital".to_string(), 
         value: "Yamashita Kōjōsen Byōin".to_string(), name_type: 7, 
         is_ror_name: false, lang_code: None, script_code: Some("Latn".to_string())});
     assert_eq!(names[4], SrcName{
-        ror_name: "Yamashita Thyroid Hospital".to_string(), 
         value: "やまし た こうじょう せん びょう いん".to_string(), name_type: 7, 
         is_ror_name: false, lang_code: Some("ja".to_string()), script_code: Some("Hira".to_string())});
 }
