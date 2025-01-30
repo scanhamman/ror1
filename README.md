@@ -31,12 +31,11 @@ b) To allow comparison of the different ROR data versions over time, allowing mo
 the development of ROR data, and the easier identification of possible inconsistencies or 
 anomalies in the data (to help with possible feedback to ROR).
 
-c) On a personal level - to become more familiar with Rust, by using the language in a small 
-but realistic development scenario, implementing features that would be necessary in most similar 
-CLIs. These include data access and manipulation, processing of command line arguments and 
-environmental variables (and interactions between the two), logging, file handling (of both JSON 
-and text files), and unit and integration tests. The system is still 'basic' or beginners Rust, 
-however, and does not use more advanced features of the language.
+c) To become more familiar with Rust, by using the language in a small but realistic development scenario, 
+implementing features that would be necessary in most similar CLIs. These include data access and 
+manipulation, processing of command line arguments and environmental variables (and interactions 
+between the two), logging, file handling (of both JSON and text files), and unit and integration tests. 
+The system is still 'basic' Rust, however, and does not use more advanced features of the language.
 
 <h3>Installation and Routine use</h3>
 
@@ -222,11 +221,13 @@ The folowing command line arguments are available:
 
 <i><b>-y</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -export-all]. A flag that causes production of a collection of 7 csv files, representing <i>all</i> the data in the summary tables, for all imported versions. (v1.57 data is not exported, as it appears to be exactly the same as v1.58, just without the added geographical details of the v2.1 schema). The name of the files are constructed from the version and the date-time of the run. Note that the files are sgenerated on the Postgres server.
 
-<i><b>-i</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -I, -install].  Equivalent to -c -m, i.e. initialise the permanent data tables.
+<b><i>Note that if any of the three 'set up' flags described below, -i, -c or -m, are used, all other flags and parameters will be ignored. The system will simply rebuild the lookup and / or summary tables.</b></i>
 
-<i><b>-c</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -C, -context]. A flag that causes the re-establishment of the lookup tables. Useful after any revision of those tables or the data within them.
+<i><b>-i</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -install].  Equivalent to -c -m, i.e. initialise the permanent data tables.
 
-<i><b>-m</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -M, -summsetup]. A flag that causes the re-establishment of the summary tables in the smm schema. NOTE - ANY EXISTING DATA IN THOSE TABLES WILL BE DESTROYED. It may therefore be necessary to re-run against source files if a series of data points over time needs to be re-established.
+<i><b>-c</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -context]. A flag that causes the re-establishment of the lookup tables. Useful after any revision of those tables or the data within them.
+
+<i><b>-m</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -summsetup]. A flag that causes the re-establishment of the summary tables in the smm schema. NOTE - ANY EXISTING DATA IN THOSE TABLES WILL BE DESTROYED. It may therefore be necessary to re-run against source files if a series of data points over time needs to be re-established.
 
 <h4>File name convention and deriving version and data</h4>
 
