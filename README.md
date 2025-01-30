@@ -50,11 +50,11 @@ created prior to the intial run of the system, but all other database operations
 c) Set up an .env file with the database connection settings and a few key file parameters (see Operations and Arguments for details).<br/>
 d) Download the ror files required, from Zenodo, and place the V2 json files in the folder to be used as the source data folder.<br/>
 
-<h4>Initialising and running the system</h4>1 
+<h4>Initialising and running the system</h4>
 a) All Rust development environments use a program called <i>cargo</i> to manage code. To run ror1, use 'cargo run' followed by command line parameters, input in a terminal linked to the editor. The parameters are preceded by a double hyphen, to separate them from the cargo run command itself, e.g. cargo run -- -a.<br/>
 b) <b>The initial run should be <i>cargo run -- -i</i></b> This initialises the system by creating the permanent schema and tables, that hold the lookup and summary data tables.<br/>
-c) Further runs are most easily done by running <b><i>cargo run -- -a -s "&lt;source-file-name&gt;"</i></b>, e.g. <i>cargo run -- -a -s "v1.59-2025-01-23-ror-data_schema_v2.json"</i>. Alternatively the source file name can be provided within the .env file, when <i>cargo run -- -a </i> is sufficient. 
-d) The -a command will take the data in the json file through a three stage pipeline: - 1) importing it into a set of 'ror' schema tables, with very little change; 2) transforming it, albeit lightly, into a series of 'src' schema tables, and 3) summarising statistics of the data set and storing those in  'smm' schema tables. The -a command will also generate a text file listing the summary data from the imported version in a series of tables.<br/>
+c) Further runs are most easily done by running <b><i>cargo run -- -a -s "&lt;source-file-name&gt;"</i></b>, e.g. <i>cargo run -- -a -s "v1.59-2025-01-23-ror-data_schema_v2.json"</i>. Alternatively the source file name can be provided within the .env file, when <i>cargo run -- -a </i> is sufficient.<br/>
+d) The -a command will take the data in the json file through a three stage pipeline: <br/>1) importing it into a set of 'ror' schema tables, with very little change;<br/> 2) transforming it, albeit lightly, into a series of 'src' schema tables, and <br/>3) summarising statistics of the data set and storing those in  'smm' schema tables.<br/> The -a command will also generate a text file listing the summary data from the imported version in a series of tables.<br/>
 d) Note that successive use of the -a command will overwrite the data in the ror and src schema tables, with data from whatever is the most recently imported version, but that the smm schema data is stored permanently.<br/>
 e) <i>cargo run -- -x</i> will generate a set of 7 csv files with the summary data linked to the current (most recently imported) version. Specifying a different version is also possible as long as it has been previously imported and summarised.<br/>
 f) <i>cargo run -- -y</i> will generate a set of 7 csv files with the summary data from all the versions imported to that point.<br/>
@@ -84,22 +84,22 @@ compatibility the following changes are made:
 <li>'type' in relationships becomes'rel_type'.</li>
 </ul>
 
-The ror schema data also includes a timy single-row table ('version details') that holds the version and 
+The ror schema data also includes a tiny single-row table ('version details') that holds the version and 
 date of the data within the system. This means that these parameters need only be input once. 
 
 <h3>The src data schema</h3>
 
-After initial import into the 'ror' schema, the data can be processed to form a new set of tables 
-within the 'src' schema. The processing is relatively limited but includes:
+The 'ror' schema data can be processed to form a new set of tables within the 'src' schema. 
+The processing is relatively limited but includes:
 
 a) Replacement of the strings of categorised values by integers. The integers are as given by
 lookup tables (set up within the 'lup' or lookup schema) which effectively provide enumerations 
 of these categorised values, e.g. the organisation, name, link, external id and relationship types. 
 This is intended to make any future data processing quicker and future display more flexible.
 
-b) Ensuring all names specified as a 'ror name' have a name type designated. In a small numnber of cases 
-(about 30) this is not the case. In such cases they are classified as labels, which allows them to 
-be processed in the same way as all other ror names.
+b) Ensuring all names specified as a 'ROR name' have a name type designated. In a small number of cases 
+(about 30) this is not the case. They are therefore classified as labels, which allows them to 
+be processed in the same way as all other ROR names.
 
 c) The removal of duplicates from the names table. There are a small number of organisations that 
 have two names with the same value - in some cases, though certainly not all, caused by the correction 
@@ -107,7 +107,7 @@ described in b). In most cases (currently about 65) these are names with two typ
 usually both 'label' and 'alias'. In further cases (currently about 10) the names are the same type but have two 
 different language codes applied. These duplications are removed according to the folowing rules:
 <ul>
-<li>If one of the duplicte pairs is a ror name and the other is not, the one that is not is removed.</li> 
+<li>If one of the duplicate pairs is a ror name and the other is not, the one that is not is removed.</li> 
 <li>If one is a label and the other an alias or acronym, the alias or acronym is removed.</li> 
 <li>If one is an alias and the other an acronym, the alias is removed, as the names in this group all appear to be acronyms.</li> 
 <li>For the remaining (very few) duplicated names, the language code least associated with the organisation's location, or if that 
@@ -149,7 +149,7 @@ and export easier, many of the summary tables are aggregate, i.e. they hold data
 same table, because that data has the same structure. The tables are:
 
 <ul>
-<li>version_summary - Gives the number of organisations, and the numbers of linked entities (names, organisation types, locations, external ids, links, relationships, domains), for a specified version, equivalent to the record numbers in each of the tables in the src schemas when the version is processed. It also includes the version date, and the number of days that date represents since 29/04/2024, the earliest of the datasets in the system. This was the date of the 1.45.2 patch - in general the latest patch of any version seems the most sensibel choice.</li>
+<li>version_summary - Gives the number of organisations, and the numbers of linked entities (names, organisation types, locations, external ids, links, relationships, domains), for a specified version, equivalent to the record numbers in each of the tables in the src schemas when the version is processed. It also includes the version date, and the number of days that date represents since 29/04/2024, the earliest of the datasets in the system. This was the date of the 1.45.2 patch - in general the latest patch of any version is preferred.</li>
 
 <li>attributes_summary - Entities in the system often have categorised attributes, e.g. the various types of name, organisation, relationship, external id and link. For each attribute category this table provides the numbers found, and the percentage this represents of the total attributes of this type, the number of organisations with this attribute type, and the percentage this represents of all organisations. For names, additional rows are given for 'nacro' or non-acronym names, i.e. labels and aliases together, and also for names (of each type) that are without a language code ('wolc').</li>
 
@@ -161,7 +161,7 @@ same table, because that data has the same structure. The tables are:
 
 <li>org_type_and_relationships - For each combination of organisational type and relationship type, gives the numbers and percentages (of that organisational type) which include that relationship.</li>
 
-<li>singletons - There are a variety of measures which do not easily fit into any of the tables listed above. They are provided as a table which includes an id and a description for each data point, the number found and where relevant a percentage (both defined in the description). The singleton data points include, for instance, the numbers of labels that are designated as the ROR name, the numbers and percentages of English and non English ror names, and the ROR names without language codes, including and excluding company names. They also include the numbers and percentage of organisations that have both parents <i>and</i> child links, i.e. are part of a hierarchy of at least 3 levels, plus the numbers of any non-reciprocated relationship records.</li>
+<li>singletons - There are a variety of measures which do not easily fit into any of the tables listed above. They are provided as a table which includes an id and a description for each data point, the number found and where relevant a percentage (both defined in the description). The singleton data points include, for instance, the numbers of labels that are designated as the ROR name, the numbers and percentages of English and non English ROR names, and the ROR names without language codes, including and excluding company names. They also include the numbers and percentage of organisations that have both parents <i>and</i> child links, i.e. are part of a hierarchy of at least 3 levels, plus the numbers of any non-reciprocated relationship records.</li>
 </ul>
 
 <h3>Operations and Arguments</h3>
@@ -214,7 +214,7 @@ The folowing command line arguments are available:
 
 <i><b>-x</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -export]. A flag that causes production of a collection of 7 csv files, representing the data in the summary tables for the specified version. The version can be specified explicitly using the -v flag. If not specified the 'current' version is used, i.e. the last imported one, which has its data in the ror and src schema. The name of the files are constructed from the version and the date-time of the run.
 
-<i><b>-y</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -export-all]. A flag that causes production of a collection of 7 csv files, representing all the data in the summary tables, for all imported versions. The name of the files are constructed from the version and the date-time of the run.
+<i><b>-y</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -export-all]. A flag that causes production of a collection of 7 csv files, representing all the data in the summary tables, for all imported versions. (v1.57 data is not exported, as it appears to be exactly the same as v1.58, just without the added geographical details of the v2.1 schema). The name of the files are constructed from the version and the date-time of the run.
 
 <i><b>-i</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -I, -install].  Equivalent to -c -m, i.e. initialise the permanent data tables.
 
