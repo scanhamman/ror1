@@ -54,7 +54,13 @@ d) Download the ror files required, from Zenodo, and place the V2 json files in 
 a) All Rust development environments use a program called <i>cargo</i> to manage code. To run ror1, use 'cargo run' followed by command line parameters, input in a terminal linked to the editor. The parameters are preceded by a double hyphen, to separate them from the cargo run command itself, e.g. cargo run -- -a.<br/>
 b) <b>The initial run should be <i>cargo run -- -i</i></b> This initialises the system by creating the permanent schema and tables, that hold the lookup and summary data tables.<br/>
 c) Further runs are most easily done by running <b><i>cargo run -- -a -s "&lt;source-file-name&gt;"</i></b>, e.g. <i>cargo run -- -a -s "v1.59-2025-01-23-ror-data_schema_v2.json"</i>. Alternatively the source file name can be provided within the .env file, when <i>cargo run -- -a </i> is sufficient.<br/>
-d) The -a command will take the data in the json file through a three stage pipeline: <br/>1) importing it into a set of 'ror' schema tables, with very little change;<br/> 2) transforming it, albeit lightly, into a series of 'src' schema tables, and <br/>3) summarising statistics of the data set and storing those in  'smm' schema tables.<br/> The -a command will also generate a text file listing the summary data from the imported version in a series of tables.<br/>
+d) The -a command will take the data in the json file through a four stage pipeline: 
+<ul>
+<li>importing it into a set of 'ror' schema tables, with very little change;</li>
+<li>transforming it, albeit lightly, into a series of 'src' schema tables, and </li>
+<li>summarising statistics of the data set and storing those in 'smm' schema tables.</li>
+<li>generating a text file presenting the summary data from the imported version, in a series of tables.</li>
+</ul>
 d) Note that successive use of the -a command will overwrite the data in the ror and src schema tables, with data from whatever is the most recently imported version, but that the smm schema data is stored permanently.<br/>
 e) <i>cargo run -- -x</i> will generate a set of 7 csv files with the summary data linked to the current (most recently imported) version. Specifying a different version is also possible as long as it has been previously imported and summarised.<br/>
 f) <i>cargo run -- -y</i> will generate a set of 7 csv files with the summary data from all the versions imported to that point.<br/>
@@ -212,9 +218,9 @@ The folowing command line arguments are available:
 
 <i><b>-a</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -all]. Equivalent to -r -p -t, i.e. run all three main processes, in that order. The source file, data version and data date must be specified, but the latter two can usually be derived from the first.
 
-<i><b>-x</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -export]. A flag that causes production of a collection of 7 csv files, representing the data in the summary tables for the specified version. The version can be specified explicitly using the -v flag. If not specified the 'current' version is used, i.e. the last imported one, which has its data in the ror and src schema. The name of the files are constructed from the version and the date-time of the run.
+<i><b>-x</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -export]. A flag that causes production of a collection of 7 csv files, representing the data in the summary tables for the specified version. The version can be specified explicitly using the -v flag. If not specified the 'current' version is used, i.e. the last imported one, which has its data in the ror and src schema. The name of the files are constructed from the version and the date-time of the run. Note that the files are sgenerated on the Postgres server. 
 
-<i><b>-y</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -export-all]. A flag that causes production of a collection of 7 csv files, representing all the data in the summary tables, for all imported versions. (v1.57 data is not exported, as it appears to be exactly the same as v1.58, just without the added geographical details of the v2.1 schema). The name of the files are constructed from the version and the date-time of the run.
+<i><b>-y</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -export-all]. A flag that causes production of a collection of 7 csv files, representing <i>all</i> the data in the summary tables, for all imported versions. (v1.57 data is not exported, as it appears to be exactly the same as v1.58, just without the added geographical details of the v2.1 schema). The name of the files are constructed from the version and the date-time of the run. Note that the files are sgenerated on the Postgres server.
 
 <i><b>-i</b></i>&nbsp;&nbsp;&nbsp;&nbsp;[or -I, -install].  Equivalent to -c -m, i.e. initialise the permanent data tables.
 
