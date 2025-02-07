@@ -1,3 +1,7 @@
+************* DEPRECATED **** DEPRECATED **** DEPRECATED ************** <br/>
+**** IMP_ROR HAS SAME FUNCTIONALITY BUT IS SLIGHTLY SIMPLER TO USE **** <br/>
+********** BUT N.B. ROR1 IS STABLE - IMP_ROR STILL EVOLVING ***********
+
 A small program to process and summarise ROR organisation data, as made available by ROR 
 on Zenodo (see https://ror.readme.io/docs/data-dump). A new version of the data is posted 
 on a roughly monthly basis. The program processes and retains a single version at a time, 
